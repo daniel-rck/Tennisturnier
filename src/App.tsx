@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
 import { generateSchedule } from './scheduler'
 import { SetupPanel } from './components/SetupPanel'
@@ -6,16 +6,19 @@ import { PlayersPanel } from './components/PlayersPanel'
 import { SchedulePanel } from './components/SchedulePanel'
 import { RankingPanel } from './components/RankingPanel'
 import { PrintView } from './components/PrintView'
+import { EntriesPanel } from './components/EntriesPanel'
+import { GroupsPanel } from './components/GroupsPanel'
+import { BracketPanel } from './components/BracketPanel'
 
-type Tab = 'setup' | 'players' | 'schedule' | 'ranking' | 'print'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'setup', label: 'Einstellungen' },
-  { id: 'players', label: 'Spieler:innen' },
-  { id: 'schedule', label: 'Spielplan' },
-  { id: 'ranking', label: 'Siegerehrung' },
-  { id: 'print', label: 'Drucken' },
-]
+type Tab =
+  | 'setup'
+  | 'players'
+  | 'entries'
+  | 'schedule'
+  | 'groups'
+  | 'bracket'
+  | 'ranking'
+  | 'print'
 
 function App() {
   const t = useTournament()
@@ -27,6 +30,31 @@ function App() {
     t.setSchedule(result.rounds)
     setWarnings(result.warnings)
   }
+
+  const tabs: { id: Tab; label: string }[] = (() => {
+    const f = t.tournament.format
+    const list: { id: Tab; label: string }[] = [
+      { id: 'setup', label: 'Einstellungen' },
+    ]
+    if (f === 'rotation') {
+      list.push({ id: 'players', label: 'Spieler:innen' })
+      list.push({ id: 'schedule', label: 'Spielplan' })
+    } else {
+      list.push({ id: 'entries', label: 'Teams' })
+      if (f === 'groups' || f === 'groups-ko')
+        list.push({ id: 'groups', label: 'Gruppen' })
+      if (f === 'knockout' || f === 'groups-ko')
+        list.push({ id: 'bracket', label: 'Bracket' })
+    }
+    list.push({ id: 'ranking', label: 'Siegerehrung' })
+    list.push({ id: 'print', label: 'Drucken' })
+    return list
+  })()
+
+  // If selected tab disappeared after format change, fall back to setup
+  useEffect(() => {
+    if (!tabs.some((tt) => tt.id === tab)) setTab('setup')
+  }, [tabs, tab])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -45,7 +73,7 @@ function App() {
           </div>
         </div>
         <nav className="max-w-3xl mx-auto px-4 flex gap-1 overflow-x-auto">
-          {TABS.map((tt) => (
+          {tabs.map((tt) => (
             <button
               key={tt.id}
               type="button"
@@ -68,13 +96,21 @@ function App() {
           {tab === 'setup' && (
             <SetupPanel
               name={t.tournament.name}
+              format={t.tournament.format}
+              entryFormat={t.tournament.entryFormat}
               courts={t.tournament.courts}
               rounds={t.tournament.rounds}
               mode={t.tournament.mode}
+              groupCount={t.tournament.groupCount}
+              advancePerGroup={t.tournament.advancePerGroup}
               onName={t.setName}
+              onFormat={t.setFormat}
+              onEntryFormat={t.setEntryFormat}
               onCourts={t.setCourts}
               onRounds={t.setRounds}
               onMode={t.setMode}
+              onGroupCount={t.setGroupCount}
+              onAdvancePerGroup={t.setAdvancePerGroup}
               onReset={t.reset}
             />
           )}
@@ -88,6 +124,17 @@ function App() {
               onArrayMove={t.setPlayersOrder}
             />
           )}
+          {tab === 'entries' && (
+            <EntriesPanel
+              entries={t.tournament.entries}
+              entryFormat={t.tournament.entryFormat}
+              onAdd={t.addEntry}
+              onUpdate={t.updateEntry}
+              onRemove={t.removeEntry}
+              onReorder={t.setEntriesOrder}
+              onSortByName={t.sortEntriesByName}
+            />
+          )}
           {tab === 'schedule' && (
             <SchedulePanel
               tournament={t.tournament}
@@ -95,6 +142,21 @@ function App() {
               onTimerMinutes={t.setTimerMinutes}
               onScore={t.setMatchScore}
               warnings={warnings}
+            />
+          )}
+          {tab === 'groups' && (
+            <GroupsPanel
+              tournament={t.tournament}
+              onSetGroupSchedule={t.setGroupSchedule}
+              onScore={t.setGroupScore}
+              onSetGroupCount={t.setGroupCount}
+            />
+          )}
+          {tab === 'bracket' && (
+            <BracketPanel
+              tournament={t.tournament}
+              onSetBracket={t.setBracket}
+              onScore={t.setBracketScore}
             />
           )}
           {tab === 'ranking' && <RankingPanel tournament={t.tournament} />}
