@@ -4,14 +4,16 @@ import { generateSchedule } from './scheduler'
 import { SetupPanel } from './components/SetupPanel'
 import { PlayersPanel } from './components/PlayersPanel'
 import { SchedulePanel } from './components/SchedulePanel'
+import { RankingPanel } from './components/RankingPanel'
 import { PrintView } from './components/PrintView'
 
-type Tab = 'setup' | 'players' | 'schedule' | 'print'
+type Tab = 'setup' | 'players' | 'schedule' | 'ranking' | 'print'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'setup', label: 'Einstellungen' },
   { id: 'players', label: 'Spieler:innen' },
   { id: 'schedule', label: 'Spielplan' },
+  { id: 'ranking', label: 'Siegerehrung' },
   { id: 'print', label: 'Drucken' },
 ]
 
@@ -90,9 +92,12 @@ function App() {
             <SchedulePanel
               tournament={t.tournament}
               onGenerate={handleGenerate}
+              onTimerMinutes={t.setTimerMinutes}
+              onScore={t.setMatchScore}
               warnings={warnings}
             />
           )}
+          {tab === 'ranking' && <RankingPanel tournament={t.tournament} />}
           {tab === 'print' && <PrintView tournament={t.tournament} />}
         </div>
       </main>
