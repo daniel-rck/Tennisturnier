@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Tennisturnier-Planer">
+  <defs>
+    <radialGradient id="ball" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#e6ed5b"/>
+      <stop offset="55%" stop-color="#cddc39"/>
+      <stop offset="100%" stop-color="#7e8a25"/>
+    </radialGradient>
+    <linearGradient id="court" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#0f5132"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="124" fill="url(#court)"/>
+  <circle cx="128" cy="128" r="86" fill="url(#ball)" stroke="#5d6717" stroke-width="2"/>
+  <path d="M52 100 Q128 60 204 100" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M52 156 Q128 196 204 156" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="106" cy="106" rx="14" ry="9" fill="#ffffff" opacity="0.45"/>
+</svg>

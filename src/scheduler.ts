@@ -251,9 +251,40 @@ function applyRests(state: PairingState, all: Player[], played: Set<string>) {
 
 export function generateSchedule(t: Tournament): ScheduleResult {
   const warnings: string[] = []
-  const women = t.players.filter((p) => p.gender === 'F')
-  const men = t.players.filter((p) => p.gender === 'M')
+  const womenRaw = t.players.filter((p) => p.gender === 'F')
+  const menRaw = t.players.filter((p) => p.gender === 'M')
   const manualOrder = new Map(t.players.map((p, i) => [p.id, i]))
+
+  // Mixed-Modus: bei ungleicher Geschlechterverteilung die rangletzten
+  // Spieler:innen des Überschuss-Geschlechts als Gegengeschlecht einsetzen,
+  // damit möglichst viele Plätze belegt werden können.
+  let women = womenRaw
+  let men = menRaw
+  if (t.mode === 'mixed' && womenRaw.length !== menRaw.length) {
+    const diff = Math.abs(womenRaw.length - menRaw.length)
+    const reassignCount = Math.floor(diff / 2)
+    if (reassignCount > 0) {
+      if (menRaw.length > womenRaw.length) {
+        const moved = menRaw.slice(menRaw.length - reassignCount)
+        men = menRaw.slice(0, menRaw.length - reassignCount)
+        women = [...womenRaw, ...moved]
+        warnings.push(
+          `Geschlechter unausgeglichen — ${reassignCount} ${reassignCount === 1 ? 'Herr spielt' : 'Herren spielen'} als Dame: ${moved
+            .map((p) => p.name)
+            .join(', ')}.`,
+        )
+      } else {
+        const moved = womenRaw.slice(womenRaw.length - reassignCount)
+        women = womenRaw.slice(0, womenRaw.length - reassignCount)
+        men = [...menRaw, ...moved]
+        warnings.push(
+          `Geschlechter unausgeglichen — ${reassignCount} ${reassignCount === 1 ? 'Dame spielt' : 'Damen spielen'} als Herr: ${moved
+            .map((p) => p.name)
+            .join(', ')}.`,
+        )
+      }
+    }
+  }
 
   let courtsPossible = t.courts
 
@@ -271,7 +302,7 @@ export function generateSchedule(t: Tournament): ScheduleResult {
 
   if (courtsPossible <= 0) {
     warnings.push(
-      `Zu wenige Spieler:innen für den Modus „${t.mode}". Es kann kein Platz besetzt werden.`,
+      `Zu wenige Spieler:innen für den Modus „${t.mode}“. Es kann kein Platz besetzt werden.`,
     )
     return { rounds: [], warnings }
   }
@@ -279,7 +310,7 @@ export function generateSchedule(t: Tournament): ScheduleResult {
     warnings.push(
       `Nur ${courtsPossible} von ${t.courts} Plätzen können besetzt werden — zu wenige passende Spieler:innen für „${labelMode(
         t.mode,
-      )}".`,
+      )}“.`,
     )
   }
 

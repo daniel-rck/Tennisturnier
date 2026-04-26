@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/Tennisturnier-/',
+  base: '/Tennisturnier/',
   plugins: [
     react(),
     tailwindcss(),
@@ -19,8 +19,8 @@ export default defineConfig({
         theme_color: '#15803d',
         background_color: '#f8fafc',
         display: 'standalone',
-        scope: '/Tennisturnier-/',
-        start_url: '/Tennisturnier-/',
+        scope: '/Tennisturnier/',
+        start_url: '/Tennisturnier/',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
