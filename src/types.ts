@@ -15,6 +15,8 @@ export interface Match {
   court: number
   teamA: Pair
   teamB: Pair
+  scoreA?: number
+  scoreB?: number
 }
 
 export interface Round {
@@ -28,6 +30,7 @@ export interface Tournament {
   courts: number
   rounds: number
   mode: Mode
+  timerMinutes: number
   players: Player[]
   schedule: Round[]
 }

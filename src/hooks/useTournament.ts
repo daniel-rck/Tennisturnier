@@ -118,6 +118,38 @@ export function useTournament() {
     [],
   )
 
+  const setTimerMinutes = useCallback(
+    (timerMinutes: number) =>
+      setTournament((prev) => ({
+        ...prev,
+        timerMinutes: Math.max(1, Math.min(120, Math.round(timerMinutes))),
+      })),
+    [],
+  )
+
+  const setMatchScore = useCallback(
+    (
+      roundIndex: number,
+      court: number,
+      scoreA: number | undefined,
+      scoreB: number | undefined,
+    ) =>
+      setTournament((prev) => ({
+        ...prev,
+        schedule: prev.schedule.map((r) =>
+          r.index !== roundIndex
+            ? r
+            : {
+                ...r,
+                matches: r.matches.map((m) =>
+                  m.court !== court ? m : { ...m, scoreA, scoreB },
+                ),
+              },
+        ),
+      })),
+    [],
+  )
+
   const reset = useCallback(() => setTournament(defaultTournament()), [])
 
   return {
@@ -132,6 +164,8 @@ export function useTournament() {
     setCourts,
     setRounds,
     setName,
+    setTimerMinutes,
+    setMatchScore,
     reset,
   }
 }

@@ -7,6 +7,7 @@ export const defaultTournament = (): Tournament => ({
   courts: 2,
   rounds: 5,
   mode: 'mixed',
+  timerMinutes: 15,
   players: [],
   schedule: [],
 })
