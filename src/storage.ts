@@ -4,12 +4,19 @@ const KEY = 'tennisturnier:v1'
 
 export const defaultTournament = (): Tournament => ({
   name: 'Vereinsturnier',
+  format: 'rotation',
   courts: 2,
   rounds: 5,
   mode: 'mixed',
   timerMinutes: 15,
   players: [],
   schedule: [],
+  entryFormat: 'doubles',
+  entries: [],
+  groupCount: 2,
+  advancePerGroup: 2,
+  groupSchedule: [],
+  bracket: [],
 })
 
 export function loadTournament(): Tournament {
