@@ -21,7 +21,7 @@ export function PrintView({ tournament }: Props) {
           Drucken
         </button>
         <p className="text-sm text-slate-500">
-          Tipp: Im Druck-Dialog „Hintergrundgrafiken" aktivieren, falls
+          Tipp: Im Druck-Dialog „Hintergrundgrafiken“ aktivieren, falls
           gewünscht.
         </p>
       </div>
@@ -50,14 +50,14 @@ export function PrintView({ tournament }: Props) {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-left">
-                    <th className="border border-slate-300 px-2 py-1 w-20">
+                    <th className="border border-slate-300 px-2 py-1 w-16">
                       Platz
                     </th>
                     <th className="border border-slate-300 px-2 py-1">
                       Team A
                     </th>
-                    <th className="border border-slate-300 px-2 py-1 w-12 text-center">
-                      vs.
+                    <th className="border border-slate-300 px-2 py-1 w-20 text-center">
+                      Ergebnis
                     </th>
                     <th className="border border-slate-300 px-2 py-1">
                       Team B
@@ -73,8 +73,10 @@ export function PrintView({ tournament }: Props) {
                       <td className="border border-slate-300 px-2 py-1">
                         {m.teamA.players.map(name).join(' & ')}
                       </td>
-                      <td className="border border-slate-300 px-2 py-1 text-center text-slate-500">
-                        vs.
+                      <td className="border border-slate-300 px-2 py-1 text-center tabular-nums">
+                        {m.scoreA != null && m.scoreB != null
+                          ? `${m.scoreA} : ${m.scoreB}`
+                          : '___ : ___'}
                       </td>
                       <td className="border border-slate-300 px-2 py-1">
                         {m.teamB.players.map(name).join(' & ')}
