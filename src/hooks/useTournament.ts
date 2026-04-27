@@ -4,6 +4,7 @@ import {
   loadTournament,
   saveTournament,
 } from '../storage'
+import { assignGroups } from '../groupScheduler'
 import type {
   BracketMatch,
   Entry,
@@ -22,18 +23,47 @@ const newId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2)
 
+const UNDO_LIMIT = 10
+
 export function useTournament() {
   const [tournament, setTournament] = useState<Tournament>(defaultTournament)
   const hydrated = useRef(false)
+  const undoStackRef = useRef<Tournament[]>([])
+  const [undoDepth, setUndoDepth] = useState(0)
 
   useEffect(() => {
     setTournament(loadTournament())
     hydrated.current = true
   }, [])
 
+  // Debounce localStorage writes by ~250ms to avoid serializing the whole
+  // tournament on every keystroke when typing player names.
   useEffect(() => {
-    if (hydrated.current) saveTournament(tournament)
+    if (!hydrated.current) return
+    const id = window.setTimeout(() => saveTournament(tournament), 250)
+    return () => window.clearTimeout(id)
   }, [tournament])
+
+  /** Save current state onto the undo stack. Call before destructive actions. */
+  const snapshot = useCallback(() => {
+    setTournament((prev) => {
+      undoStackRef.current = [
+        ...undoStackRef.current.slice(-(UNDO_LIMIT - 1)),
+        prev,
+      ]
+      setUndoDepth(undoStackRef.current.length)
+      return prev
+    })
+  }, [])
+
+  const undo = useCallback(() => {
+    const stack = undoStackRef.current
+    if (stack.length === 0) return
+    const prev = stack[stack.length - 1]
+    undoStackRef.current = stack.slice(0, -1)
+    setUndoDepth(undoStackRef.current.length)
+    setTournament(prev)
+  }, [])
 
   // ---- Rotation: players ---------------------------------------------------
 
@@ -161,12 +191,19 @@ export function useTournament() {
 
   const setGroupCount = useCallback(
     (groupCount: number) =>
-      setTournament((prev) => ({
-        ...prev,
-        groupCount: Math.max(1, Math.min(8, Math.round(groupCount))),
-        groupSchedule: [],
-        bracket: [],
-      })),
+      setTournament((prev) => {
+        const next = Math.max(1, Math.min(8, Math.round(groupCount)))
+        if (next === prev.groupCount) return prev
+        // Group count changed — re-shuffle (anything else would be inconsistent).
+        const { groups } = assignGroups(prev.entries, next)
+        return {
+          ...prev,
+          groupCount: next,
+          groupAssignment: groups.map((g) => g.map((e) => e.id)),
+          groupSchedule: [],
+          bracket: [],
+        }
+      }),
     [],
   )
 
@@ -204,17 +241,29 @@ export function useTournament() {
         prev.entryFormat === 'doubles' && cleaned.length === 1
           ? [...cleaned, '']
           : cleaned
+      const id = newId()
+      const newEntry: Entry = {
+        id,
+        name: deriveEntryName(filled),
+        members: filled,
+      }
+      // If groups are already assigned, drop the new entry into the smallest group
+      // to keep balance — instead of throwing away all existing scores.
+      let nextAssignment = prev.groupAssignment
+      if (nextAssignment.length > 0) {
+        const smallest = nextAssignment.reduce(
+          (acc, g, i) =>
+            g.length < nextAssignment[acc].length ? i : acc,
+          0,
+        )
+        nextAssignment = nextAssignment.map((g, i) =>
+          i === smallest ? [...g, id] : g,
+        )
+      }
       return {
         ...prev,
-        entries: [
-          ...prev.entries,
-          {
-            id: newId(),
-            name: deriveEntryName(filled),
-            members: filled,
-          },
-        ],
-        groupSchedule: [],
+        entries: [...prev.entries, newEntry],
+        groupAssignment: nextAssignment,
         bracket: [],
       }
     })
@@ -227,9 +276,7 @@ export function useTournament() {
         entries: prev.entries.map((e) => {
           if (e.id !== id) return e
           const members = patch.members
-            ? patch.members.map((m) => m.trim()).map((m, i, all) =>
-                m === '' && i < all.length - 1 ? '' : m,
-              )
+            ? patch.members.map((m) => m.trim())
             : e.members
           const explicitName = patch.name?.trim()
           const autoName = deriveEntryName(members)
@@ -253,20 +300,25 @@ export function useTournament() {
       setTournament((prev) => ({
         ...prev,
         entries: prev.entries.filter((e) => e.id !== id),
-        groupSchedule: [],
+        // Strip the entry from the group assignment — keep other groups intact.
+        groupAssignment: prev.groupAssignment.map((g) =>
+          g.filter((eid) => eid !== id),
+        ),
+        // Drop matches involving this entry, keep the rest.
+        groupSchedule: prev.groupSchedule.filter(
+          (m) => m.entryA !== id && m.entryB !== id,
+        ),
+        // Bracket is rebuilt structurally on next render, but score for matches
+        // referencing a removed entry would mislead — clear it.
         bracket: [],
       })),
     [],
   )
 
+  /** Reorder for display only — group assignment & schedules stay intact. */
   const setEntriesOrder = useCallback(
     (entries: Entry[]) =>
-      setTournament((prev) => ({
-        ...prev,
-        entries,
-        groupSchedule: [],
-        bracket: [],
-      })),
+      setTournament((prev) => ({ ...prev, entries })),
     [],
   )
 
@@ -277,9 +329,36 @@ export function useTournament() {
         entries: prev.entries
           .slice()
           .sort((a, b) => a.name.localeCompare(b.name, 'de')),
-        groupSchedule: [],
-        bracket: [],
       })),
+    [],
+  )
+
+  /** Default snake-allocate the current entries into groupCount groups. */
+  const initGroupAssignment = useCallback(
+    () =>
+      setTournament((prev) => {
+        if (prev.groupAssignment.length === prev.groupCount) return prev
+        const { groups } = assignGroups(prev.entries, prev.groupCount)
+        return {
+          ...prev,
+          groupAssignment: groups.map((g) => g.map((e) => e.id)),
+        }
+      }),
+    [],
+  )
+
+  /** Re-shuffle group assignment using snake allocation; clears scores. */
+  const reshuffleGroups = useCallback(
+    () =>
+      setTournament((prev) => {
+        const { groups } = assignGroups(prev.entries, prev.groupCount)
+        return {
+          ...prev,
+          groupAssignment: groups.map((g) => g.map((e) => e.id)),
+          groupSchedule: [],
+          bracket: [],
+        }
+      }),
     [],
   )
 
@@ -355,8 +434,28 @@ export function useTournament() {
 
   const reset = useCallback(() => setTournament(defaultTournament()), [])
 
+  const setThirdPlaceMatch = useCallback(
+    (thirdPlaceMatch: boolean) =>
+      setTournament((prev) => ({
+        ...prev,
+        thirdPlaceMatch,
+        // Bracket structure changes -> rebuild
+        bracket: [],
+      })),
+    [],
+  )
+
+  /** Replace the entire tournament, e.g. after import. */
+  const replaceTournament = useCallback(
+    (next: Tournament) => setTournament(next),
+    [],
+  )
+
   return {
     tournament,
+    snapshot,
+    undo,
+    canUndo: undoDepth > 0,
     setSchedule,
     addPlayer,
     updatePlayer,
@@ -377,11 +476,15 @@ export function useTournament() {
     removeEntry,
     setEntriesOrder,
     sortEntriesByName,
+    initGroupAssignment,
+    reshuffleGroups,
     setMatchScore,
     setGroupSchedule,
     setGroupScore,
     setBracket,
     setBracketScore,
+    setThirdPlaceMatch,
+    replaceTournament,
     reset,
   }
 }

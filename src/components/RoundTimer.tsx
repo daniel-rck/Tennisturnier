@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ringBell, unlockAudio } from '../bell'
+import { parsePositiveInt } from '../utils/parseScore'
 
 interface Props {
   minutes: number
@@ -19,9 +20,12 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
   const endAtRef = useRef<number | null>(null)
   const rangRef = useRef(false)
 
+  // Only sync remaining to minutes when minutes change while not running
+  // (don't reset on every running-toggle — that would erase the pause).
   useEffect(() => {
     if (!running) setRemaining(minutes * 60)
-  }, [minutes, running])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minutes])
 
   useEffect(() => {
     if (!running) return
@@ -123,7 +127,12 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
             value={minutes}
             disabled={running}
             onChange={(e) =>
-              onMinutesChange(Math.max(1, Math.min(120, Number(e.target.value))))
+              onMinutesChange(
+                Math.max(
+                  1,
+                  Math.min(120, parsePositiveInt(e.target.value, minutes)),
+                ),
+              )
             }
             className="w-16 rounded-md border border-slate-300 px-2 py-1 disabled:bg-slate-100"
           />

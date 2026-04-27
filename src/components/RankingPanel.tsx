@@ -1,7 +1,18 @@
 import { useCallback, useMemo } from 'react'
-import type { Player, Round, Tournament } from '../types'
-import { assignGroups, groupStandings } from '../groupScheduler'
+import type { Entry, Player, Round, Tournament } from '../types'
+import {
+  assignGroups,
+  groupStandings,
+  resolveGroupAssignment,
+} from '../groupScheduler'
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
+
+function groupsFor(t: Tournament): Entry[][] {
+  if (t.groupAssignment.length === t.groupCount) {
+    return resolveGroupAssignment(t.entries, t.groupAssignment)
+  }
+  return assignGroups(t.entries, t.groupCount).groups
+}
 
 interface Props {
   tournament: Tournament
@@ -83,11 +94,7 @@ function RotationRanking({ tournament }: Props) {
 // ========== Groups =======================================================
 
 function GroupsRanking({ tournament }: Props) {
-  const groups = useMemo(
-    () =>
-      assignGroups(tournament.entries, tournament.groupCount).groups,
-    [tournament.entries, tournament.groupCount],
-  )
+  const groups = useMemo(() => groupsFor(tournament), [tournament])
   if (tournament.entries.length === 0)
     return (
       <p className="text-slate-500 text-sm italic">
@@ -153,10 +160,7 @@ function KnockoutRanking({ tournament }: Props) {
 // ========== Groups + KO ==================================================
 
 function GroupsKoRanking({ tournament }: Props) {
-  const groups = useMemo(
-    () => assignGroups(tournament.entries, tournament.groupCount).groups,
-    [tournament.entries, tournament.groupCount],
-  )
+  const groups = useMemo(() => groupsFor(tournament), [tournament])
   const groupWinnerMap = useMemo(() => {
     const map = new Map<string, string>()
     groups.forEach((g, gi) => {
@@ -242,7 +246,8 @@ function BracketSummary({
         Noch kein Bracket erzeugt.
       </p>
     )
-  const final = resolved[resolved.length - 1]
+  const final = resolved.find((m) => m.matchId === 'F') ?? resolved[resolved.length - 1]
+  const thirdPlaceMatch = resolved.find((m) => m.matchId === '3P')
   const semis = resolved.filter((m) => m.round === final.round - 1)
   const champion = final.winner ? entryName(final.winner) : null
   const runnerUp = final.winner
@@ -254,14 +259,18 @@ function BracketSummary({
         ? entryName(final.entryA)
         : null
     : null
-  // Third place: semifinal losers (no third-place match, sorted alpha).
+  // Third place: prefer dedicated 3rd-place match if present and decided.
   const thirds: string[] = []
-  for (const sf of semis) {
-    if (sf.winner == null || sf.entryA == null || sf.entryB == null) continue
-    const loser = sf.winner === sf.entryA ? sf.entryB : sf.entryA
-    thirds.push(entryName(loser))
+  if (thirdPlaceMatch?.winner) {
+    thirds.push(entryName(thirdPlaceMatch.winner))
+  } else {
+    for (const sf of semis) {
+      if (sf.winner == null || sf.entryA == null || sf.entryB == null) continue
+      const loser = sf.winner === sf.entryA ? sf.entryB : sf.entryA
+      thirds.push(entryName(loser))
+    }
+    thirds.sort((a, b) => a.localeCompare(b, 'de'))
   }
-  thirds.sort((a, b) => a.localeCompare(b, 'de'))
 
   return (
     <div className="space-y-4">

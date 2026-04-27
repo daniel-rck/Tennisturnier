@@ -4,6 +4,7 @@ import {
   FORMAT_LABELS,
   MODE_LABELS,
 } from '../types'
+import { parsePositiveInt } from '../utils/parseScore'
 
 interface Props {
   name: string
@@ -14,6 +15,7 @@ interface Props {
   mode: Mode
   groupCount: number
   advancePerGroup: number
+  thirdPlaceMatch: boolean
   onName: (s: string) => void
   onFormat: (f: Format) => void
   onEntryFormat: (f: EntryFormat) => void
@@ -22,7 +24,10 @@ interface Props {
   onMode: (m: Mode) => void
   onGroupCount: (n: number) => void
   onAdvancePerGroup: (n: number) => void
+  onThirdPlaceMatch: (b: boolean) => void
   onReset: () => void
+  onExport: () => void
+  onImport: (f: File) => void
 }
 
 export function SetupPanel({
@@ -34,6 +39,7 @@ export function SetupPanel({
   mode,
   groupCount,
   advancePerGroup,
+  thirdPlaceMatch,
   onName,
   onFormat,
   onEntryFormat,
@@ -42,7 +48,10 @@ export function SetupPanel({
   onMode,
   onGroupCount,
   onAdvancePerGroup,
+  onThirdPlaceMatch,
   onReset,
+  onExport,
+  onImport,
 }: Props) {
   return (
     <div className="space-y-6">
@@ -101,7 +110,7 @@ export function SetupPanel({
             min={1}
             max={20}
             value={courts}
-            onChange={(e) => onCourts(Number(e.target.value))}
+            onChange={(e) => onCourts(parsePositiveInt(e.target.value, courts))}
             className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
           />
         </div>
@@ -116,7 +125,7 @@ export function SetupPanel({
               min={1}
               max={50}
               value={rounds}
-              onChange={(e) => onRounds(Number(e.target.value))}
+              onChange={(e) => onRounds(parsePositiveInt(e.target.value, rounds))}
               className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
             />
           </div>
@@ -184,7 +193,9 @@ export function SetupPanel({
               min={1}
               max={8}
               value={groupCount}
-              onChange={(e) => onGroupCount(Number(e.target.value))}
+              onChange={(e) =>
+                onGroupCount(parsePositiveInt(e.target.value, groupCount))
+              }
               className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
             />
           </div>
@@ -198,7 +209,11 @@ export function SetupPanel({
                 min={1}
                 max={4}
                 value={advancePerGroup}
-                onChange={(e) => onAdvancePerGroup(Number(e.target.value))}
+                onChange={(e) =>
+                  onAdvancePerGroup(
+                    parsePositiveInt(e.target.value, advancePerGroup),
+                  )
+                }
                 className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
               />
             </div>
@@ -206,7 +221,46 @@ export function SetupPanel({
         </div>
       )}
 
-      <div className="pt-4 border-t border-slate-200">
+      {(format === 'knockout' || format === 'groups-ko') && (
+        <div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={thirdPlaceMatch}
+              onChange={(e) => onThirdPlaceMatch(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            Spiel um Platz 3 austragen
+          </label>
+          <p className="text-xs text-slate-500 mt-1 ml-6">
+            Halbfinal-Verlierer spielen den dritten Platz aus.
+          </p>
+        </div>
+      )}
+
+      <div className="pt-4 border-t border-slate-200 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onExport}
+            className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:border-emerald-400"
+          >
+            Exportieren (JSON)
+          </button>
+          <label className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:border-emerald-400 cursor-pointer">
+            Importieren
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) onImport(f)
+                e.target.value = ''
+              }}
+            />
+          </label>
+        </div>
         <button
           type="button"
           onClick={() => {
