@@ -1,31 +1,19 @@
 name = "tennisturnier"
-main = "worker/index.ts"
-compatibility_date = "2025-01-01"
+main = "./worker/index.ts"
+compatibility_date = "2024-12-30"
 
-# Build the SPA before deploy (used by `wrangler dev` and `wrangler deploy`).
-# Workers Builds (CI) uses the build command configured in the dashboard,
-# but having this also here keeps local dev consistent.
-[build]
-command = "npm ci --legacy-peer-deps && npm run build"
-
-# Static assets (Vite output) — served by the runtime when no API route matches.
-# `not_found_handling = "single-page-application"` makes deep-links fall back to index.html.
+# Static SPA from Vite — served when no API route matches.
+# `single-page-application` falls back to index.html for unmatched paths.
 [assets]
 directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# KV namespace binding for live-sync snapshots is configured in the
-# Cloudflare dashboard (Worker → Settings → Bindings → Add → KV namespace,
-# variable name `TOURNAMENTS`). It is intentionally NOT declared here so
-# the first deploy can succeed before the namespace exists.
+# KV namespace binding for live-sync is configured in the Cloudflare dashboard
+# (Worker → Settings → Bindings → KV namespace, variable name `TOURNAMENTS`).
+# Intentionally not declared here so the first deploy succeeds without it.
 #
-# Once the binding is set in the dashboard, deploys keep it automatically.
-# Alternatively you may pin it here after running:
-#   npx wrangler kv namespace create TOURNAMENTS
-#   npx wrangler kv namespace create TOURNAMENTS --preview
-# Then add (and commit) the IDs:
-#
+# Once you've created the namespace, you may also pin it here:
 # [[kv_namespaces]]
 # binding = "TOURNAMENTS"
 # id = "<production-id>"
