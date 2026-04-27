@@ -34,7 +34,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Live-sync API must hit the network — never serve cached snapshots.
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkOnly',
+            options: { cacheName: 'sync-api-no-cache' },
+          },
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
             handler: 'CacheFirst',

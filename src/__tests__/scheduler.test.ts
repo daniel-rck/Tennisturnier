@@ -26,6 +26,7 @@ const baseTournament = (overrides: Partial<Tournament> = {}): Tournament => ({
   groupAssignment: [],
   thirdPlaceMatch: false,
   perGenderRanking: false,
+  reveal: { active: false, steps: { overall: 0, women: 0, men: 0 } },
   ...overrides,
 })
 

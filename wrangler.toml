@@ -1,0 +1,8 @@
+name = "tennisturnier"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "TOURNAMENTS"
+id = "PLACEHOLDER_PRODUCTION_NAMESPACE_ID"
+preview_id = "PLACEHOLDER_PREVIEW_NAMESPACE_ID"

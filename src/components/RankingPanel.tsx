@@ -1,11 +1,19 @@
 import { useCallback, useMemo } from 'react'
-import type { Entry, Player, Round, Tournament } from '../types'
+import type {
+  Entry,
+  Player,
+  RevealCategory,
+  RevealStep,
+  Round,
+  Tournament,
+} from '../types'
 import {
   assignGroups,
   groupStandings,
   resolveGroupAssignment,
 } from '../groupScheduler'
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
+import { RevealPanel } from './RevealPanel'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -16,15 +24,52 @@ function groupsFor(t: Tournament): Entry[][] {
 
 interface Props {
   tournament: Tournament
+  isOwner?: boolean
+  onSetRevealActive?: (b: boolean) => void
+  onSetRevealStep?: (cat: RevealCategory, step: RevealStep) => void
+  onResetReveal?: () => void
 }
 
-export function RankingPanel({ tournament }: Props) {
+export function RankingPanel({
+  tournament,
+  isOwner = true,
+  onSetRevealActive,
+  onSetRevealStep,
+  onResetReveal,
+}: Props) {
   const f = tournament.format
 
-  if (f === 'rotation') return <RotationRanking tournament={tournament} />
-  if (f === 'groups') return <GroupsRanking tournament={tournament} />
-  if (f === 'knockout') return <KnockoutRanking tournament={tournament} />
-  return <GroupsKoRanking tournament={tournament} />
+  if (tournament.reveal.active && onSetRevealActive && onSetRevealStep && onResetReveal) {
+    return (
+      <RevealPanel
+        tournament={tournament}
+        isOwner={isOwner}
+        onStep={onSetRevealStep}
+        onReset={onResetReveal}
+        onClose={() => onSetRevealActive(false)}
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {f === 'rotation' && isOwner && onSetRevealActive && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => onSetRevealActive(true)}
+            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white font-medium hover:bg-emerald-700"
+          >
+            🎉 Siegerehrung-Show starten
+          </button>
+        </div>
+      )}
+      {f === 'rotation' && <RotationRanking tournament={tournament} />}
+      {f === 'groups' && <GroupsRanking tournament={tournament} />}
+      {f === 'knockout' && <KnockoutRanking tournament={tournament} />}
+      {f === 'groups-ko' && <GroupsKoRanking tournament={tournament} />}
+    </div>
+  )
 }
 
 // ========== Rotation =====================================================
