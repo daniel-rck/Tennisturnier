@@ -38,7 +38,7 @@ Alles läuft serverless im Browser – keine Anmeldung, keine Daten verlassen de
 | Build | Vite 8, Tailwind CSS 4 |
 | PWA | `vite-plugin-pwa` mit Workbox |
 | Drag-and-Drop | `@dnd-kit/core` + `@dnd-kit/sortable` |
-| Hosting | Cloudflare Pages (Git-Integration) + Pages Functions + KV |
+| Hosting | Cloudflare Workers (Workers Builds, Git-Integration) mit Static Assets + KV |
 | Speicher | `localStorage` |
 | Sound | Web Audio API (synthetisierte Glocke) |
 
@@ -52,33 +52,28 @@ npm run lint
 npm run test
 ```
 
-Wenn du das Sync-Backend lokal mittesten willst (Pages Functions + KV-Mock):
+Wenn du das Sync-Backend lokal mittesten willst (Worker + Static Assets + KV-Mock):
 
 ```bash
-npm run build
-npx wrangler pages dev dist --kv TOURNAMENTS
-# bedient SPA + Functions auf http://localhost:8788
+npx wrangler dev
+# bedient SPA + API auf http://localhost:8787
+# führt vorher automatisch `npm run build` aus (siehe wrangler.toml [build])
 ```
 
-## Deployment (Cloudflare Pages mit Git-Integration)
+## Deployment (Cloudflare Workers mit Git-Integration)
 
-Cloudflare Pages baut und deployt bei jedem Push automatisch — kein eigener Workflow nötig. Einmaliges Setup:
+Workers Builds baut und deployt bei jedem Push automatisch — kein eigener Workflow nötig. Einmaliges Setup:
 
-1. **Pages-Projekt anlegen**: [Cloudflare Dashboard](https://dash.cloudflare.com/) → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → dieses Repo auswählen.
-2. **Build-Konfiguration**:
-   - Framework preset: `None` (Vite wird via `wrangler.toml` erkannt)
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Root directory: *(leer)*
-3. **KV-Namespace anlegen** (für Live-Sync):
+1. **Worker-Projekt anlegen**: [Cloudflare Dashboard](https://dash.cloudflare.com/) → *Workers & Pages* → *Create* → *Import a repository* → dieses Repo auswählen. Cloudflare erkennt `wrangler.toml` automatisch und nutzt den dort definierten `[build]`-Command.
+2. **KV-Namespace anlegen** (für Live-Sync):
    ```bash
    npx wrangler kv:namespace create TOURNAMENTS
    npx wrangler kv:namespace create TOURNAMENTS --preview
    ```
-   Die zurückgegebenen IDs in `wrangler.toml` eintragen (`id` und `preview_id` ersetzen die Platzhalter). Alternativ im Dashboard unter *Settings → Functions → KV namespace bindings* das Binding `TOURNAMENTS` auf den angelegten Namespace setzen.
-4. **Custom Domain** (optional): *Pages-Projekt → Custom Domains → Set up a custom domain* — Cloudflare verwaltet DNS automatisch, falls die Domain bereits dort liegt.
+   Die zurückgegebenen IDs in `wrangler.toml` eintragen (`id` und `preview_id` ersetzen die Platzhalter) und committen. Beim nächsten Push erkennt Workers Builds das Binding und deployt es mit.
+3. **Custom Domain** (optional): *Worker → Settings → Domains & Routes → Add* — Cloudflare verwaltet DNS automatisch, falls die Domain bereits dort liegt.
 
-Jeder Push auf `main` wird zur Production deployt; jeder Branch / PR bekommt automatisch eine Preview-URL `<branch>.<projekt>.pages.dev`.
+Jeder Push auf `main` wird zur Production deployt; jeder Branch / PR bekommt automatisch eine Preview-Deployment-URL.
 
 PR-CI (Lint + Tests + Build) läuft als GitHub Action `.github/workflows/ci.yml` — unabhängig von Cloudflare als zusätzliche Sicherung.
 

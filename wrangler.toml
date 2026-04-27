@@ -1,7 +1,22 @@
 name = "tennisturnier"
+main = "worker/index.ts"
 compatibility_date = "2025-01-01"
-pages_build_output_dir = "dist"
 
+# Cloudflare Workers Builds uses this command before deploy.
+[build]
+command = "npm ci --legacy-peer-deps && npm run build"
+
+# Static assets (Vite output) — served by the runtime when no API route matches.
+# `not_found_handling = "single-page-application"` makes deep-links fall back to index.html.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# KV namespace for live-sync snapshots. Run
+#   npx wrangler kv:namespace create TOURNAMENTS
+#   npx wrangler kv:namespace create TOURNAMENTS --preview
+# and replace the placeholder IDs below with the values printed.
 [[kv_namespaces]]
 binding = "TOURNAMENTS"
 id = "PLACEHOLDER_PRODUCTION_NAMESPACE_ID"
