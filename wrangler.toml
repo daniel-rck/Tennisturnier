@@ -2,7 +2,9 @@ name = "tennisturnier"
 main = "worker/index.ts"
 compatibility_date = "2025-01-01"
 
-# Cloudflare Workers Builds uses this command before deploy.
+# Build the SPA before deploy (used by `wrangler dev` and `wrangler deploy`).
+# Workers Builds (CI) uses the build command configured in the dashboard,
+# but having this also here keeps local dev consistent.
 [build]
 command = "npm ci --legacy-peer-deps && npm run build"
 
@@ -13,11 +15,18 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# KV namespace for live-sync snapshots. Run
-#   npx wrangler kv:namespace create TOURNAMENTS
-#   npx wrangler kv:namespace create TOURNAMENTS --preview
-# and replace the placeholder IDs below with the values printed.
-[[kv_namespaces]]
-binding = "TOURNAMENTS"
-id = "PLACEHOLDER_PRODUCTION_NAMESPACE_ID"
-preview_id = "PLACEHOLDER_PREVIEW_NAMESPACE_ID"
+# KV namespace binding for live-sync snapshots is configured in the
+# Cloudflare dashboard (Worker → Settings → Bindings → Add → KV namespace,
+# variable name `TOURNAMENTS`). It is intentionally NOT declared here so
+# the first deploy can succeed before the namespace exists.
+#
+# Once the binding is set in the dashboard, deploys keep it automatically.
+# Alternatively you may pin it here after running:
+#   npx wrangler kv namespace create TOURNAMENTS
+#   npx wrangler kv namespace create TOURNAMENTS --preview
+# Then add (and commit) the IDs:
+#
+# [[kv_namespaces]]
+# binding = "TOURNAMENTS"
+# id = "<production-id>"
+# preview_id = "<preview-id>"

@@ -64,14 +64,22 @@ npx wrangler dev
 
 Workers Builds baut und deployt bei jedem Push automatisch — kein eigener Workflow nötig. Einmaliges Setup:
 
-1. **Worker-Projekt anlegen**: [Cloudflare Dashboard](https://dash.cloudflare.com/) → *Workers & Pages* → *Create* → *Import a repository* → dieses Repo auswählen. Cloudflare erkennt `wrangler.toml` automatisch und nutzt den dort definierten `[build]`-Command.
-2. **KV-Namespace anlegen** (für Live-Sync):
+1. **Worker-Projekt anlegen**: [Cloudflare Dashboard](https://dash.cloudflare.com/) → *Workers & Pages* → *Create* → *Import a repository* → dieses Repo auswählen. Cloudflare erkennt `wrangler.toml` automatisch.
+2. **Erste Deploys laufen ohne Sync** durch — die App wird statisch ausgeliefert, der Sync-Button bleibt deaktiviert (es fehlt das KV-Binding).
+3. **KV-Namespace anlegen und binden** (aktiviert Live-Sync):
+
+   **Variante A — im Dashboard** (einfacher):
+   - *Worker → Storage & Databases → KV → Create a namespace* → Name z. B. `tennisturnier-tournaments`.
+   - *Worker → Settings → Bindings → Add → KV namespace* → Variable `TOURNAMENTS` → den eben angelegten Namespace wählen → speichern. Beim nächsten Deploy ist das Binding aktiv.
+
+   **Variante B — über `wrangler.toml`** (deklarativ, im Repo nachvollziehbar):
    ```bash
-   npx wrangler kv:namespace create TOURNAMENTS
-   npx wrangler kv:namespace create TOURNAMENTS --preview
+   npx wrangler kv namespace create TOURNAMENTS
+   npx wrangler kv namespace create TOURNAMENTS --preview
    ```
-   Die zurückgegebenen IDs in `wrangler.toml` eintragen (`id` und `preview_id` ersetzen die Platzhalter) und committen. Beim nächsten Push erkennt Workers Builds das Binding und deployt es mit.
-3. **Custom Domain** (optional): *Worker → Settings → Domains & Routes → Add* — Cloudflare verwaltet DNS automatisch, falls die Domain bereits dort liegt.
+   Den auskommentierten `[[kv_namespaces]]`-Block am Ende von `wrangler.toml` aktivieren und die zurückgegebenen IDs einsetzen, dann committen.
+
+4. **Custom Domain** (optional): *Worker → Settings → Domains & Routes → Add* — Cloudflare verwaltet DNS automatisch, falls die Domain bereits dort liegt.
 
 Jeder Push auf `main` wird zur Production deployt; jeder Branch / PR bekommt automatisch eine Preview-Deployment-URL.
 
