@@ -178,6 +178,7 @@ function App() {
               groupCount={t.tournament.groupCount}
               advancePerGroup={t.tournament.advancePerGroup}
               thirdPlaceMatch={t.tournament.thirdPlaceMatch}
+              perGenderRanking={t.tournament.perGenderRanking}
               onName={t.setName}
               onFormat={t.setFormat}
               onEntryFormat={t.setEntryFormat}
@@ -187,6 +188,7 @@ function App() {
               onGroupCount={t.setGroupCount}
               onAdvancePerGroup={t.setAdvancePerGroup}
               onThirdPlaceMatch={t.setThirdPlaceMatch}
+              onPerGenderRanking={t.setPerGenderRanking}
               onReset={handleReset}
               onExport={handleExport}
               onImport={handleImport}

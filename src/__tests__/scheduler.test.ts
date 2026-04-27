@@ -25,6 +25,7 @@ const baseTournament = (overrides: Partial<Tournament> = {}): Tournament => ({
   bracket: [],
   groupAssignment: [],
   thirdPlaceMatch: false,
+  perGenderRanking: false,
   ...overrides,
 })
 

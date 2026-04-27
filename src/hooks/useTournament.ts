@@ -445,6 +445,12 @@ export function useTournament() {
     [],
   )
 
+  const setPerGenderRanking = useCallback(
+    (perGenderRanking: boolean) =>
+      setTournament((prev) => ({ ...prev, perGenderRanking })),
+    [],
+  )
+
   /** Replace the entire tournament, e.g. after import. */
   const replaceTournament = useCallback(
     (next: Tournament) => setTournament(next),
@@ -484,6 +490,7 @@ export function useTournament() {
     setBracket,
     setBracketScore,
     setThirdPlaceMatch,
+    setPerGenderRanking,
     replaceTournament,
     reset,
   }

@@ -85,6 +85,8 @@ export interface Tournament {
   groupAssignment: string[][]
   /** Whether the bracket includes a 3rd-place match. */
   thirdPlaceMatch: boolean
+  /** In Mixed-Rotation: also show separate Damen / Herren rankings. */
+  perGenderRanking: boolean
 }
 
 export const MODE_LABELS: Record<Mode, string> = {

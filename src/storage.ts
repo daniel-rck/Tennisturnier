@@ -20,6 +20,7 @@ export const defaultTournament = (): Tournament => ({
   bracket: [],
   groupAssignment: [],
   thirdPlaceMatch: false,
+  perGenderRanking: false,
 })
 
 /** Migrate a partial / older tournament shape onto current defaults. Defensive — never throws. */
@@ -57,6 +58,7 @@ export function migrate(parsed: unknown): Tournament {
     bracket: Array.isArray(p.bracket) ? p.bracket : [],
     groupAssignment: Array.isArray(p.groupAssignment) ? p.groupAssignment : [],
     thirdPlaceMatch: typeof p.thirdPlaceMatch === 'boolean' ? p.thirdPlaceMatch : false,
+    perGenderRanking: typeof p.perGenderRanking === 'boolean' ? p.perGenderRanking : false,
   }
 }
 
