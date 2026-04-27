@@ -6,7 +6,12 @@ import {
   groupAdvanceSlots,
   resolveBracket,
 } from '../knockoutScheduler'
-import { assignGroups, groupStandings } from '../groupScheduler'
+import {
+  assignGroups,
+  groupStandings,
+  resolveGroupAssignment,
+} from '../groupScheduler'
+import { parseScore } from '../utils/parseScore'
 
 interface Props {
   tournament: Tournament
@@ -21,7 +26,13 @@ interface Props {
 export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
   const groupWinners = useMemo(() => {
     if (tournament.format !== 'groups-ko') return undefined
-    const { groups } = assignGroups(tournament.entries, tournament.groupCount)
+    const groups =
+      tournament.groupAssignment.length === tournament.groupCount
+        ? resolveGroupAssignment(
+            tournament.entries,
+            tournament.groupAssignment,
+          )
+        : assignGroups(tournament.entries, tournament.groupCount).groups
     const map = new Map<string, string>()
     groups.forEach((g, gi) => {
       const standings = groupStandings(
@@ -37,16 +48,22 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     tournament.format,
     tournament.entries,
     tournament.groupCount,
+    tournament.groupAssignment,
     tournament.groupSchedule,
   ])
 
   const desired = useMemo(() => {
+    const opts = { thirdPlaceMatch: tournament.thirdPlaceMatch }
     if (tournament.format === 'knockout') {
-      return buildBracket(entrySlots(tournament.entries.map((e) => e.id)))
+      return buildBracket(
+        entrySlots(tournament.entries.map((e) => e.id)),
+        opts,
+      )
     }
     if (tournament.format === 'groups-ko') {
       return buildBracket(
         groupAdvanceSlots(tournament.groupCount, tournament.advancePerGroup),
+        opts,
       )
     }
     return []
@@ -55,6 +72,7 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     tournament.entries,
     tournament.groupCount,
     tournament.advancePerGroup,
+    tournament.thirdPlaceMatch,
   ])
 
   // Sync bracket structure when entry / format / advancePerGroup changes
@@ -160,7 +178,7 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
 }
 
 function roundLabel(round: number, last: number, matchCount: number) {
-  if (round === last) return 'Finale'
+  if (round === last) return matchCount === 2 ? 'Finale + Spiel um Platz 3' : 'Finale'
   if (round === last - 1) return 'Halbfinale'
   if (round === last - 2) return 'Viertelfinale'
   if (round === last - 3) return 'Achtelfinale'
@@ -174,18 +192,18 @@ function BracketCard({
   m: ReturnType<typeof resolveBracket>[number]
   onScore: Props['onScore']
 }) {
-  const parse = (v: string): number | undefined => {
-    if (v === '') return undefined
-    const n = Number(v)
-    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined
-  }
   const aWinning = m.winner != null && m.winner === m.entryA
   const bWinning = m.winner != null && m.winner === m.entryB
+  const isTie =
+    !m.isByeMatch &&
+    m.scoreA != null &&
+    m.scoreB != null &&
+    m.scoreA === m.scoreB
 
   return (
     <div className="rounded-md border border-slate-200 bg-white p-2 text-sm">
       <div className="text-xs text-slate-500 mb-1">
-        {m.matchId}
+        {m.matchId === '3P' ? 'Spiel um Platz 3' : m.matchId}
         {m.isByeMatch && ' · Freilos'}
       </div>
       <SlotRow
@@ -193,15 +211,23 @@ function BracketCard({
         score={m.scoreA}
         editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
         winning={aWinning}
-        onChange={(v) => onScore(m.matchId, parse(v), m.scoreB)}
+        onChange={(v) => onScore(m.matchId, parseScore(v), m.scoreB)}
       />
       <SlotRow
         label={m.pendingB}
         score={m.scoreB}
         editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
         winning={bWinning}
-        onChange={(v) => onScore(m.matchId, m.scoreA, parse(v))}
+        onChange={(v) => onScore(m.matchId, m.scoreA, parseScore(v))}
       />
+      {isTie && (
+        <p
+          role="alert"
+          className="mt-1 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded px-2 py-1"
+        >
+          Unentschieden im KO – bitte korrigieren, sonst kommt niemand weiter.
+        </p>
+      )}
     </div>
   )
 }

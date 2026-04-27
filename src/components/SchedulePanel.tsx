@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { Match, Player, Round, Tournament } from '../types'
 import { MODE_LABELS } from '../types'
 import { RoundTimer } from './RoundTimer'
+import { parseScore } from '../utils/parseScore'
 
 interface Props {
   tournament: Tournament
@@ -56,13 +57,16 @@ export function SchedulePanel({
       </div>
 
       {tournament.players.length < 4 && (
-        <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+        <div
+          role="status"
+          className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800"
+        >
           Mindestens 4 Spieler:innen werden benötigt.
         </div>
       )}
 
       {warnings.length > 0 && (
-        <ul className="space-y-1">
+        <ul role="status" aria-live="polite" className="space-y-1">
           {warnings.map((w, i) => (
             <li
               key={i}
@@ -164,11 +168,6 @@ function MatchCard({
   byId: Map<string, Player>
   onScore: (a: number | undefined, b: number | undefined) => void
 }) {
-  const parse = (v: string): number | undefined => {
-    if (v === '') return undefined
-    const n = Number(v)
-    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined
-  }
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
       <div className="text-xs font-medium text-slate-500 mb-1">
@@ -189,7 +188,7 @@ function MatchCard({
           max={99}
           placeholder="–"
           value={match.scoreA ?? ''}
-          onChange={(e) => onScore(parse(e.target.value), match.scoreB)}
+          onChange={(e) => onScore(parseScore(e.target.value), match.scoreB)}
           className="w-12 rounded border border-slate-300 px-2 py-0.5 text-center text-sm"
           aria-label="Spiele Team A"
         />
@@ -201,7 +200,7 @@ function MatchCard({
           max={99}
           placeholder="–"
           value={match.scoreB ?? ''}
-          onChange={(e) => onScore(match.scoreA, parse(e.target.value))}
+          onChange={(e) => onScore(match.scoreA, parseScore(e.target.value))}
           className="w-12 ml-auto rounded border border-slate-300 px-2 py-0.5 text-center text-sm"
           aria-label="Spiele Team B"
         />

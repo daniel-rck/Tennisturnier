@@ -2,10 +2,12 @@ import { useEffect, useMemo } from 'react'
 import type { Entry, GroupMatch, Tournament } from '../types'
 import {
   assignGroups,
-  buildGroupSchedule,
   groupStandings,
+  resolveGroupAssignment,
+  roundRobin,
 } from '../groupScheduler'
 import { groupLetter } from '../knockoutScheduler'
+import { parsePositiveInt, parseScore } from '../utils/parseScore'
 
 interface Props {
   tournament: Tournament
@@ -17,6 +19,8 @@ interface Props {
     b: number | undefined,
   ) => void
   onSetGroupCount: (n: number) => void
+  onInitGroupAssignment: () => void
+  onReshuffle: () => void
 }
 
 export function GroupsPanel({
@@ -24,19 +28,49 @@ export function GroupsPanel({
   onSetGroupSchedule,
   onScore,
   onSetGroupCount,
+  onInitGroupAssignment,
+  onReshuffle,
 }: Props) {
-  const { groups, warnings } = useMemo(
+  // Initialize group assignment lazily on first visit when there are entries.
+  useEffect(() => {
+    if (
+      tournament.entries.length >= 2 &&
+      tournament.groupAssignment.length !== tournament.groupCount
+    ) {
+      onInitGroupAssignment()
+    }
+  }, [
+    tournament.entries.length,
+    tournament.groupCount,
+    tournament.groupAssignment.length,
+    onInitGroupAssignment,
+  ])
+
+  const groups = useMemo(() => {
+    if (tournament.groupAssignment.length !== tournament.groupCount) {
+      // Fall back to ad-hoc snake until persistence is initialized.
+      return assignGroups(tournament.entries, tournament.groupCount).groups
+    }
+    return resolveGroupAssignment(tournament.entries, tournament.groupAssignment)
+  }, [
+    tournament.entries,
+    tournament.groupCount,
+    tournament.groupAssignment,
+  ])
+
+  const { warnings } = useMemo(
     () => assignGroups(tournament.entries, tournament.groupCount),
     [tournament.entries, tournament.groupCount],
   )
 
-  // Auto-(re)build schedule when entries / group count change
+  // Auto-(re)build schedule when groups change. Preserves scores for unchanged matchups.
   useEffect(() => {
     if (tournament.entries.length < 2) {
       if (tournament.groupSchedule.length > 0) onSetGroupSchedule([])
       return
     }
-    const expected = buildGroupSchedule(tournament.entries, tournament.groupCount).schedule
+    const expected: GroupMatch[] = []
+    groups.forEach((g, idx) => expected.push(...roundRobin(g, idx + 1)))
     const sameSize = expected.length === tournament.groupSchedule.length
     const sameMatches =
       sameSize &&
@@ -51,7 +85,6 @@ export function GroupsPanel({
         )
       })
     if (!sameMatches) {
-      // preserve scores by matching by (group, entryA, entryB)
       const scoreMap = new Map<string, { a?: number; b?: number }>()
       for (const m of tournament.groupSchedule) {
         const k = key(m.group, m.entryA, m.entryB)
@@ -64,8 +97,8 @@ export function GroupsPanel({
       onSetGroupSchedule(merged)
     }
   }, [
-    tournament.entries,
-    tournament.groupCount,
+    groups,
+    tournament.entries.length,
     tournament.groupSchedule,
     onSetGroupSchedule,
   ])
@@ -88,7 +121,11 @@ export function GroupsPanel({
             min={1}
             max={8}
             value={tournament.groupCount}
-            onChange={(e) => onSetGroupCount(Number(e.target.value))}
+            onChange={(e) =>
+              onSetGroupCount(
+                parsePositiveInt(e.target.value, tournament.groupCount),
+              )
+            }
             className="w-16 rounded-md border border-slate-300 px-2 py-1"
           />
         </label>
@@ -96,11 +133,32 @@ export function GroupsPanel({
           {tournament.entries.length} Teilnehmer · auf {tournament.groupCount}{' '}
           Gruppen verteilt
         </span>
+        <button
+          type="button"
+          onClick={() => {
+            const hasScores = tournament.groupSchedule.some(
+              (m) => m.scoreA != null || m.scoreB != null,
+            )
+            if (
+              !hasScores ||
+              confirm(
+                'Gruppen neu auslosen? Alle bisher eingetragenen Ergebnisse gehen verloren.',
+              )
+            ) {
+              onReshuffle()
+            }
+          }}
+          className="rounded border border-slate-300 px-2 py-1 text-sm hover:border-emerald-400"
+        >
+          Gruppen neu auslosen
+        </button>
       </div>
 
       {warnings.map((w, i) => (
         <div
           key={i}
+          role="status"
+          aria-live="polite"
           className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800"
         >
           {w}
@@ -198,11 +256,6 @@ function GroupMatchRow({
   const byId = new Map(entries.map((e) => [e.id, e]))
   const a = byId.get(match.entryA)?.name ?? '?'
   const b = byId.get(match.entryB)?.name ?? '?'
-  const parse = (v: string): number | undefined => {
-    if (v === '') return undefined
-    const n = Number(v)
-    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined
-  }
   return (
     <div className="grid grid-cols-[1fr_auto_auto_auto_1fr] items-center gap-2 text-sm bg-slate-50 px-2 py-1 rounded">
       <span className="truncate">{a}</span>
@@ -214,7 +267,7 @@ function GroupMatchRow({
         placeholder="–"
         value={match.scoreA ?? ''}
         onChange={(e) =>
-          onScore(match.group, match.matchIndex, parse(e.target.value), match.scoreB)
+          onScore(match.group, match.matchIndex, parseScore(e.target.value), match.scoreB)
         }
         className="w-12 rounded border border-slate-300 px-1 py-0.5 text-center"
       />
@@ -227,7 +280,7 @@ function GroupMatchRow({
         placeholder="–"
         value={match.scoreB ?? ''}
         onChange={(e) =>
-          onScore(match.group, match.matchIndex, match.scoreA, parse(e.target.value))
+          onScore(match.group, match.matchIndex, match.scoreA, parseScore(e.target.value))
         }
         className="w-12 rounded border border-slate-300 px-1 py-0.5 text-center"
       />

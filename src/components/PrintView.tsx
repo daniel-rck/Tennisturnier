@@ -1,7 +1,18 @@
-import type { Tournament } from '../types'
+import type { Entry, Tournament } from '../types'
 import { FORMAT_LABELS, MODE_LABELS } from '../types'
-import { assignGroups, groupStandings } from '../groupScheduler'
+import {
+  assignGroups,
+  groupStandings,
+  resolveGroupAssignment,
+} from '../groupScheduler'
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
+
+function groupsFor(t: Tournament): Entry[][] {
+  if (t.groupAssignment.length === t.groupCount) {
+    return resolveGroupAssignment(t.entries, t.groupAssignment)
+  }
+  return assignGroups(t.entries, t.groupCount).groups
+}
 
 interface Props {
   tournament: Tournament
@@ -121,7 +132,7 @@ function RotationPrint({ t }: { t: Tournament }) {
 }
 
 function GroupsPrint({ t }: { t: Tournament }) {
-  const { groups } = assignGroups(t.entries, t.groupCount)
+  const groups = groupsFor(t)
   const byId = new Map(t.entries.map((e) => [e.id, e]))
   return (
     <>
@@ -220,7 +231,7 @@ function BracketPrint({ t }: { t: Tournament }) {
     t.entries.find((e) => e.id === id)?.name ?? '?'
   let groupWinners: ((g: number, r: number) => string | undefined) | undefined
   if (t.format === 'groups-ko') {
-    const { groups } = assignGroups(t.entries, t.groupCount)
+    const groups = groupsFor(t)
     const map = new Map<string, string>()
     groups.forEach((g, gi) => {
       const standings = groupStandings(

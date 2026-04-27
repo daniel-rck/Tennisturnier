@@ -29,7 +29,10 @@ function seedOrder(size: number): number[] {
 
 /** Build a single-elimination bracket from given slot seeds (length = nEntries).
  *  Pads with byes to next power of 2 and gives byes to top seeds. */
-export function buildBracket(slots: BracketSlot[]): BracketMatch[] {
+export function buildBracket(
+  slots: BracketSlot[],
+  options: { thirdPlaceMatch?: boolean } = {},
+): BracketMatch[] {
   const n = slots.length
   if (n < 2) return []
   const size = nextPow2(n)
@@ -58,6 +61,7 @@ export function buildBracket(slots: BracketSlot[]): BracketMatch[] {
   // Subsequent rounds
   let prev = round1Ids
   let round = 2
+  let semiIds: string[] = []
   while (prev.length > 1) {
     const next: string[] = []
     const matchesInRound = prev.length / 2
@@ -72,8 +76,22 @@ export function buildBracket(slots: BracketSlot[]): BracketMatch[] {
         slotB: { kind: 'feeder', matchId: prev[2 * i + 1] },
       })
     }
+    if (matchesInRound === 1) semiIds = prev
     prev = next
     round++
+  }
+
+  // Optional 3rd-place match: only meaningful if a final exists with two semis.
+  if (options.thirdPlaceMatch && semiIds.length === 2) {
+    const finalIdx = matches.findIndex((m) => m.matchId === 'F')
+    const finalRound = matches[finalIdx].round
+    matches.splice(finalIdx, 0, {
+      matchId: '3P',
+      round: finalRound,
+      position: 0,
+      slotA: { kind: 'feeder', matchId: semiIds[0], loser: true },
+      slotB: { kind: 'feeder', matchId: semiIds[1], loser: true },
+    })
   }
   return matches
 }
@@ -104,6 +122,7 @@ export function resolveBracket(
   groupWinner?: (group: number, rank: number) => string | undefined,
 ): ResolvedBracketMatch[] {
   const winners = new Map<string, string | null>()
+  const losers = new Map<string, string | null>()
 
   const resolveCtx: ResolveContext = {
     resolveSlot: (s) => {
@@ -111,9 +130,11 @@ export function resolveBracket(
         case 'entry':
           return { entryId: s.entryId, label: entryName(s.entryId) }
         case 'feeder': {
-          const w = winners.get(s.matchId)
+          const map = s.loser ? losers : winners
+          const w = map.get(s.matchId)
+          const labelPrefix = s.loser ? 'Verlierer' : 'Sieger'
           if (w === undefined)
-            return { entryId: null, label: `Sieger ${s.matchId}` }
+            return { entryId: null, label: `${labelPrefix} ${s.matchId}` }
           if (w === null) return { entryId: null, label: '—' }
           return { entryId: w, label: entryName(w) }
         }
@@ -134,11 +155,12 @@ export function resolveBracket(
     },
   }
 
-  // Process in topological order (round ascending)
+  // Process in topological order (round ascending). Within the same round,
+  // 3rd-place match (position 0) before final (position 1).
   const sorted = bracket.slice().sort((a, b) =>
     a.round !== b.round ? a.round - b.round : a.position - b.position,
   )
-  const final = sorted[sorted.length - 1]
+  const final = sorted.find((m) => m.matchId === 'F') ?? sorted[sorted.length - 1]
   const result: ResolvedBracketMatch[] = []
 
   for (const m of sorted) {
@@ -149,13 +171,17 @@ export function resolveBracket(
       (m.slotB.kind === 'bye' && m.slotA.kind !== 'bye')
 
     let winner: string | null = null
+    let loser: string | null = null
     if (isByeMatch) {
       winner = a.entryId ?? b.entryId ?? null
     } else if (m.scoreA != null && m.scoreB != null && m.scoreA !== m.scoreB) {
-      if (a.entryId && b.entryId)
+      if (a.entryId && b.entryId) {
         winner = m.scoreA > m.scoreB ? a.entryId : b.entryId
+        loser = m.scoreA > m.scoreB ? b.entryId : a.entryId
+      }
     }
     winners.set(m.matchId, winner)
+    losers.set(m.matchId, loser)
     result.push({
       matchId: m.matchId,
       round: m.round,

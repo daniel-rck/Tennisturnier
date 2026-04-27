@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
 import { generateSchedule } from './scheduler'
+import { migrate } from './storage'
 import { SetupPanel } from './components/SetupPanel'
 import { PlayersPanel } from './components/PlayersPanel'
 import { SchedulePanel } from './components/SchedulePanel'
@@ -26,9 +27,55 @@ function App() {
   const [warnings, setWarnings] = useState<string[]>([])
 
   const handleGenerate = () => {
+    t.snapshot()
     const result = generateSchedule(t.tournament)
     t.setSchedule(result.rounds)
     setWarnings(result.warnings)
+  }
+
+  const handleReset = () => {
+    t.snapshot()
+    t.reset()
+  }
+
+  const handleReshuffle = () => {
+    t.snapshot()
+    t.reshuffleGroups()
+  }
+
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(t.tournament, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const safeName = (t.tournament.name || 'turnier')
+      .replace(/[^a-z0-9-_]+/gi, '_')
+      .toLowerCase()
+    a.href = url
+    a.download = `${safeName}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = async (file: File) => {
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+      const next = migrate(parsed)
+      if (
+        confirm(
+          `Turnier „${next.name}" laden? Das aktuelle Turnier wird überschrieben.`,
+        )
+      ) {
+        t.snapshot()
+        t.replaceTournament(next)
+      }
+    } catch {
+      alert('Datei konnte nicht gelesen werden — gültige JSON-Datei erwartet.')
+    }
   }
 
   const tabs: { id: Tab; label: string }[] = (() => {
@@ -56,6 +103,22 @@ function App() {
     if (!tabs.some((tt) => tt.id === tab)) setTab('setup')
   }, [tabs, tab])
 
+  // Keyboard shortcut: Ctrl/Cmd+Z triggers undo (when not editing form fields)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        const target = e.target as HTMLElement | null
+        if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
+        if (t.canUndo) {
+          e.preventDefault()
+          t.undo()
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [t])
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="no-print bg-emerald-700 text-white">
@@ -71,6 +134,17 @@ function App() {
               {t.tournament.name || 'Vereinsturnier'}
             </p>
           </div>
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={t.undo}
+            disabled={!t.canUndo}
+            title="Rückgängig (Strg/Cmd+Z)"
+            aria-label="Rückgängig"
+            className="text-emerald-100 hover:text-white disabled:text-emerald-300 disabled:cursor-not-allowed text-sm px-2 py-1"
+          >
+            ↶ Rückgängig
+          </button>
         </div>
         <nav className="max-w-3xl mx-auto px-4 flex gap-1 overflow-x-auto">
           {tabs.map((tt) => (
@@ -103,6 +177,7 @@ function App() {
               mode={t.tournament.mode}
               groupCount={t.tournament.groupCount}
               advancePerGroup={t.tournament.advancePerGroup}
+              thirdPlaceMatch={t.tournament.thirdPlaceMatch}
               onName={t.setName}
               onFormat={t.setFormat}
               onEntryFormat={t.setEntryFormat}
@@ -111,7 +186,10 @@ function App() {
               onMode={t.setMode}
               onGroupCount={t.setGroupCount}
               onAdvancePerGroup={t.setAdvancePerGroup}
-              onReset={t.reset}
+              onThirdPlaceMatch={t.setThirdPlaceMatch}
+              onReset={handleReset}
+              onExport={handleExport}
+              onImport={handleImport}
             />
           )}
           {tab === 'players' && (
@@ -150,6 +228,8 @@ function App() {
               onSetGroupSchedule={t.setGroupSchedule}
               onScore={t.setGroupScore}
               onSetGroupCount={t.setGroupCount}
+              onInitGroupAssignment={t.initGroupAssignment}
+              onReshuffle={handleReshuffle}
             />
           )}
           {tab === 'bracket' && (

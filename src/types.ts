@@ -45,7 +45,7 @@ export interface GroupMatch {
 
 export type BracketSlot =
   | { kind: 'entry'; entryId: string }
-  | { kind: 'feeder'; matchId: string }
+  | { kind: 'feeder'; matchId: string; loser?: boolean }
   | { kind: 'group-rank'; group: number; rank: number }
   | { kind: 'bye' }
   | { kind: 'empty' }
@@ -81,6 +81,10 @@ export interface Tournament {
   advancePerGroup: number
   groupSchedule: GroupMatch[]
   bracket: BracketMatch[]
+  /** Persisted assignment of entry IDs into groups. Empty until first build. */
+  groupAssignment: string[][]
+  /** Whether the bracket includes a 3rd-place match. */
+  thirdPlaceMatch: boolean
 }
 
 export const MODE_LABELS: Record<Mode, string> = {

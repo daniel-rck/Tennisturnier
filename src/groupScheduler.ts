@@ -28,6 +28,17 @@ export function assignGroups(
   return { groups, warnings }
 }
 
+/** Resolve a persisted assignment (entry IDs per group) into Entry[][]. */
+export function resolveGroupAssignment(
+  entries: Entry[],
+  assignment: string[][],
+): Entry[][] {
+  const byId = new Map(entries.map((e) => [e.id, e]))
+  return assignment.map((g) =>
+    g.map((id) => byId.get(id)).filter((e): e is Entry => e !== undefined),
+  )
+}
+
 /** Round-robin matches within a single group using the circle method. */
 export function roundRobin(group: Entry[], groupNumber: number): GroupMatch[] {
   const matches: GroupMatch[] = []
@@ -116,6 +127,25 @@ export function groupStandings(
     if (a.gamesFor !== b.gamesFor) return b.gamesFor - a.gamesFor
     return a.name.localeCompare(b.name, 'de')
   })
+
+  // Head-to-head tiebreaker: within clusters of equal wins/diff/gamesFor,
+  // re-order by direct match outcome (winner ahead). Only applies cleanly to
+  // pairs; for larger ties, head-to-head wins inside the cluster decide.
+  const h2h = (aId: string, bId: string): number => {
+    const m = matches.find(
+      (m) =>
+        ((m.entryA === aId && m.entryB === bId) ||
+          (m.entryA === bId && m.entryB === aId)) &&
+        m.scoreA != null &&
+        m.scoreB != null,
+    )
+    if (!m) return 0
+    const aFor = m.entryA === aId ? m.scoreA! : m.scoreB!
+    const bFor = m.entryA === bId ? m.scoreA! : m.scoreB!
+    if (aFor === bFor) return 0
+    return aFor > bFor ? -1 : 1
+  }
+
   let i = 0
   while (i < rows.length) {
     let j = i + 1
@@ -126,6 +156,15 @@ export function groupStandings(
       rows[j].gamesFor === rows[i].gamesFor
     )
       j++
+    if (j - i >= 2) {
+      const cluster = rows.slice(i, j)
+      cluster.sort((a, b) => {
+        const r = h2h(a.entryId, b.entryId)
+        if (r !== 0) return r
+        return a.name.localeCompare(b.name, 'de')
+      })
+      for (let k = 0; k < cluster.length; k++) rows[i + k] = cluster[k]
+    }
     for (let k = i; k < j; k++) rows[k].rank = i + 1
     i = j
   }
