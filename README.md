@@ -7,7 +7,7 @@
 <p align="center">
   Kostenlose, browserbasierte Web-App zum Planen kleiner Tennisturniere – Spielplan, Rundentimer mit Glocke, Ergebnis-Eingabe und Siegerehrung.
   <br/>
-  <a href="https://daniel-rck.github.io/Tennisturnier/"><strong>Live öffnen →</strong></a>
+  <em>Live-URL wird vom Cloudflare-Pages-Projekt nach dem ersten Deploy gesetzt.</em>
 </p>
 
 ---
@@ -38,7 +38,7 @@ Alles läuft serverless im Browser – keine Anmeldung, keine Daten verlassen de
 | Build | Vite 8, Tailwind CSS 4 |
 | PWA | `vite-plugin-pwa` mit Workbox |
 | Drag-and-Drop | `@dnd-kit/core` + `@dnd-kit/sortable` |
-| Hosting | GitHub Pages, Deploy via GitHub Actions |
+| Hosting | Cloudflare Pages (Git-Integration) + Pages Functions + KV |
 | Speicher | `localStorage` |
 | Sound | Web Audio API (synthetisierte Glocke) |
 
@@ -46,14 +46,43 @@ Alles läuft serverless im Browser – keine Anmeldung, keine Daten verlassen de
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173/Tennisturnier/
+npm run dev      # http://localhost:5173/   (Vite Dev Server, ohne Sync-Backend)
 npm run build    # baut nach dist/
 npm run lint
+npm run test
 ```
 
-## Deployment
+Wenn du das Sync-Backend lokal mittesten willst (Pages Functions + KV-Mock):
 
-Push auf `main` → die Action `.github/workflows/deploy.yml` baut und deployt automatisch nach GitHub Pages. In den Repo-Einstellungen muss **Pages → Source = „GitHub Actions“** gesetzt sein.
+```bash
+npm run build
+npx wrangler pages dev dist --kv TOURNAMENTS
+# bedient SPA + Functions auf http://localhost:8788
+```
+
+## Deployment (Cloudflare Pages mit Git-Integration)
+
+Cloudflare Pages baut und deployt bei jedem Push automatisch — kein eigener Workflow nötig. Einmaliges Setup:
+
+1. **Pages-Projekt anlegen**: [Cloudflare Dashboard](https://dash.cloudflare.com/) → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → dieses Repo auswählen.
+2. **Build-Konfiguration**:
+   - Framework preset: `None` (Vite wird via `wrangler.toml` erkannt)
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+   - Root directory: *(leer)*
+3. **KV-Namespace anlegen** (für Live-Sync):
+   ```bash
+   npx wrangler kv:namespace create TOURNAMENTS
+   npx wrangler kv:namespace create TOURNAMENTS --preview
+   ```
+   Die zurückgegebenen IDs in `wrangler.toml` eintragen (`id` und `preview_id` ersetzen die Platzhalter). Alternativ im Dashboard unter *Settings → Functions → KV namespace bindings* das Binding `TOURNAMENTS` auf den angelegten Namespace setzen.
+4. **Custom Domain** (optional): *Pages-Projekt → Custom Domains → Set up a custom domain* — Cloudflare verwaltet DNS automatisch, falls die Domain bereits dort liegt.
+
+Jeder Push auf `main` wird zur Production deployt; jeder Branch / PR bekommt automatisch eine Preview-URL `<branch>.<projekt>.pages.dev`.
+
+PR-CI (Lint + Tests + Build) läuft als GitHub Action `.github/workflows/ci.yml` — unabhängig von Cloudflare als zusätzliche Sicherung.
+
+> **Hinweis bei Migration von GitHub Pages:** Wer die App vorher unter `daniel-rck.github.io/Tennisturnier/` installiert hatte, muss den alten Service Worker einmal manuell entfernen (DevTools → Application → Service Workers → Unregister) bzw. die App neu installieren — der PWA-Scope hat sich von `/Tennisturnier/` auf `/` geändert.
 
 ## Logo austauschen
 
