@@ -5,6 +5,7 @@ import {
   hashToken,
   isValidCode,
   jsonResponse,
+  kvBindingMissingResponse,
 } from '../../_shared/kv'
 import type { StoredTournament, SyncEnv } from '../../_shared/kv'
 
@@ -29,6 +30,7 @@ export const onRequestGet: PagesFunction<SyncEnv, 'code'> = async ({
   env,
   params,
 }) => {
+  if (!env.TOURNAMENTS) return kvBindingMissingResponse()
   const { code } = params as unknown as PathParams
   if (!isValidCode(code)) return jsonResponse({ error: 'invalid_code' }, { status: 400 })
 
@@ -66,6 +68,7 @@ export const onRequestPut: PagesFunction<SyncEnv, 'code'> = async ({
   env,
   params,
 }) => {
+  if (!env.TOURNAMENTS) return kvBindingMissingResponse()
   const { code } = params as unknown as PathParams
   if (!isValidCode(code)) return jsonResponse({ error: 'invalid_code' }, { status: 400 })
 
@@ -122,6 +125,7 @@ export const onRequestDelete: PagesFunction<SyncEnv, 'code'> = async ({
   env,
   params,
 }) => {
+  if (!env.TOURNAMENTS) return kvBindingMissingResponse()
   const { code } = params as unknown as PathParams
   if (!isValidCode(code)) return jsonResponse({ error: 'invalid_code' }, { status: 400 })
   const token = extractBearer(request)

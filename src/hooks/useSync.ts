@@ -242,7 +242,7 @@ export function useSync({
     })
     if (!res.ok) {
       setStatus('error')
-      setError(`HTTP ${res.status}`)
+      setError(await readErrorMessage(res))
       throw new Error(`create_failed_${res.status}`)
     }
     const body = (await res.json()) as CreateResponse
@@ -267,7 +267,7 @@ export function useSync({
       }
       if (!res.ok) {
         setStatus('error')
-        setError(`HTTP ${res.status}`)
+        setError(await readErrorMessage(res))
         throw new Error(`join_failed_${res.status}`)
       }
       const body = (await res.json()) as ReadResponse
@@ -295,6 +295,18 @@ export function useSync({
     joinSession,
     leaveSession,
   }
+}
+
+/** Reads `{message}` or `{error}` from a JSON error body, falling back to HTTP status. */
+async function readErrorMessage(res: Response): Promise<string> {
+  try {
+    const body = (await res.clone().json()) as { message?: string; error?: string }
+    if (body?.message) return body.message
+    if (body?.error) return body.error
+  } catch {
+    // Non-JSON body — fall through.
+  }
+  return `HTTP ${res.status}`
 }
 
 /** Returns a tournament copy with `sync` stripped — never sent to server. */

@@ -4,6 +4,7 @@ import {
   generateToken,
   hashToken,
   jsonResponse,
+  kvBindingMissingResponse,
 } from '../../_shared/kv'
 import type { StoredTournament, SyncEnv } from '../../_shared/kv'
 
@@ -19,6 +20,8 @@ interface CreateBody {
  * Generates a new share code, owner token, stores the initial snapshot.
  */
 export const onRequestPost: PagesFunction<SyncEnv> = async ({ request, env }) => {
+  if (!env.TOURNAMENTS) return kvBindingMissingResponse()
+
   let body: CreateBody
   try {
     body = (await request.json()) as CreateBody

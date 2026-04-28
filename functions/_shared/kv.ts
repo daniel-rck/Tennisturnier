@@ -80,3 +80,20 @@ export function jsonResponse(
     },
   })
 }
+
+/**
+ * Returns a clear 503 if the TOURNAMENTS KV binding isn't wired to the Worker.
+ * Without this guard, calling `.get` on `undefined` throws and Cloudflare
+ * surfaces an opaque 500 — which is what the user sees today before the
+ * namespace is created in the dashboard.
+ */
+export function kvBindingMissingResponse(): Response {
+  return jsonResponse(
+    {
+      error: 'sync_not_configured',
+      message:
+        'Live-Sync ist nicht eingerichtet. Bitte im Cloudflare-Dashboard eine KV-Namespace-Bindung mit dem Variablennamen "TOURNAMENTS" anlegen.',
+    },
+    { status: 503 },
+  )
+}

@@ -72,6 +72,69 @@ describe('helpers', () => {
   })
 })
 
+describe('missing KV binding', () => {
+  // Regression: production would surface a bare 500 because handlers called
+  // env.TOURNAMENTS.get(...) without checking the binding existed. They now
+  // return a JSON 503 with a clear `sync_not_configured` error instead.
+  const noKvCtx = (request: Request, params: Record<string, string> = {}) =>
+    ({
+      request,
+      env: {} as ReturnType<typeof makeEnv>,
+      params,
+    }) as unknown as Parameters<typeof readTournament>[0]
+
+  it('POST /api/sync returns 503 sync_not_configured', async () => {
+    const res = await createTournament(
+      noKvCtx(
+        new Request('https://example.com/api/sync', {
+          method: 'POST',
+          body: JSON.stringify({ tournament: {} }),
+        }),
+      ),
+    )
+    expect(res.status).toBe(503)
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toBe('sync_not_configured')
+  })
+
+  it('GET /api/sync/:code returns 503 sync_not_configured', async () => {
+    const code = generateCode()
+    const res = await readTournament(
+      noKvCtx(new Request(`https://example.com/api/sync/${code}`), { code }),
+    )
+    expect(res.status).toBe(503)
+  })
+
+  it('PUT /api/sync/:code returns 503 sync_not_configured', async () => {
+    const code = generateCode()
+    const res = await writeTournament(
+      noKvCtx(
+        new Request(`https://example.com/api/sync/${code}`, {
+          method: 'PUT',
+          headers: { Authorization: 'Bearer ' + 'a'.repeat(64) },
+          body: JSON.stringify({ tournament: {} }),
+        }),
+        { code },
+      ),
+    )
+    expect(res.status).toBe(503)
+  })
+
+  it('DELETE /api/sync/:code returns 503 sync_not_configured', async () => {
+    const code = generateCode()
+    const res = await deleteTournament(
+      noKvCtx(
+        new Request(`https://example.com/api/sync/${code}`, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + 'a'.repeat(64) },
+        }),
+        { code },
+      ),
+    )
+    expect(res.status).toBe(503)
+  })
+})
+
 describe('POST /api/sync', () => {
   it('creates a tournament and returns code + ownerToken', async () => {
     const env = makeEnv()
