@@ -16,7 +16,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import type { Gender, Player } from '../types'
+import { useConfirm } from '../hooks/useConfirm'
+import { EmptyState } from './EmptyState'
 
 interface Props {
   players: Player[]
@@ -34,6 +37,7 @@ interface RowProps {
 }
 
 function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
+  const confirm = useConfirm()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: player.id })
   const style = {
@@ -45,11 +49,11 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 rounded-md border border-slate-200 bg-white p-2"
+      className="flex items-center gap-2 rounded-md border border-border bg-surface p-2"
     >
       <button
         type="button"
-        className="cursor-grab touch-none px-1 text-slate-400 hover:text-slate-700"
+        className="cursor-grab touch-none px-1 text-fg-subtle hover:text-fg"
         aria-label="Verschieben"
         {...attributes}
         {...listeners}
@@ -60,9 +64,9 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
         type="text"
         value={player.name}
         onChange={(e) => onUpdate(player.id, { name: e.target.value })}
-        className="flex-1 rounded-md border border-transparent px-2 py-1 hover:border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+        className="flex-1 rounded-md border border-transparent px-2 py-1 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none"
       />
-      <div className="flex rounded-md border border-slate-300 overflow-hidden text-xs">
+      <div className="flex rounded-md border border-border-strong overflow-hidden text-xs">
         <button
           type="button"
           onClick={() => onUpdate(player.id, { gender: 'F' })}
@@ -70,7 +74,7 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
             'px-3 py-1 ' +
             (player.gender === 'F'
               ? 'bg-pink-100 text-pink-800 font-medium'
-              : 'bg-white text-slate-600 hover:bg-slate-50')
+              : 'bg-surface text-fg-muted hover:bg-surface-muted')
           }
         >
           Dame
@@ -79,10 +83,10 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
           type="button"
           onClick={() => onUpdate(player.id, { gender: 'M' })}
           className={
-            'px-3 py-1 border-l border-slate-300 ' +
+            'px-3 py-1 border-l border-border-strong ' +
             (player.gender === 'M'
               ? 'bg-sky-100 text-sky-800 font-medium'
-              : 'bg-white text-slate-600 hover:bg-slate-50')
+              : 'bg-surface text-fg-muted hover:bg-surface-muted')
           }
         >
           Herr
@@ -90,10 +94,15 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
       </div>
       <button
         type="button"
-        onClick={() => {
-          if (confirm(`„${player.name}" entfernen?`)) onRemove(player.id)
+        onClick={async () => {
+          const ok = await confirm({
+            title: `„${player.name}" entfernen?`,
+            confirmLabel: 'Entfernen',
+            destructive: true,
+          })
+          if (ok) onRemove(player.id)
         }}
-        className="text-slate-400 hover:text-rose-600 px-2"
+        className="text-fg-subtle hover:text-danger-fg px-2"
         aria-label="Entfernen"
       >
         ✕
@@ -138,6 +147,8 @@ export function PlayersPanel({
     M: players.filter((p) => p.gender === 'M').length,
   }
 
+  const [listRef] = useAutoAnimate<HTMLDivElement>()
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -147,9 +158,9 @@ export function PlayersPanel({
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="flex-1 min-w-[12rem] rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+          className="flex-1 min-w-[12rem] rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
         />
-        <div className="flex rounded-md border border-slate-300 overflow-hidden">
+        <div className="flex rounded-md border border-border-strong overflow-hidden">
           <button
             type="button"
             onClick={() => setDraftGender('F')}
@@ -157,7 +168,7 @@ export function PlayersPanel({
               'px-3 py-2 text-sm ' +
               (draftGender === 'F'
                 ? 'bg-pink-100 text-pink-800 font-medium'
-                : 'bg-white text-slate-600 hover:bg-slate-50')
+                : 'bg-surface text-fg-muted hover:bg-surface-muted')
             }
           >
             Dame
@@ -166,10 +177,10 @@ export function PlayersPanel({
             type="button"
             onClick={() => setDraftGender('M')}
             className={
-              'px-3 py-2 text-sm border-l border-slate-300 ' +
+              'px-3 py-2 text-sm border-l border-border-strong ' +
               (draftGender === 'M'
                 ? 'bg-sky-100 text-sky-800 font-medium'
-                : 'bg-white text-slate-600 hover:bg-slate-50')
+                : 'bg-surface text-fg-muted hover:bg-surface-muted')
             }
           >
             Herr
@@ -178,13 +189,13 @@ export function PlayersPanel({
         <button
           type="button"
           onClick={submit}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-white text-sm font-medium hover:bg-emerald-700"
+          className="rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover"
         >
           Hinzufügen
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
         <span>
           {players.length} Spieler:innen ({counts.F} Damen, {counts.M} Herren)
         </span>
@@ -192,30 +203,32 @@ export function PlayersPanel({
         <button
           type="button"
           onClick={() => onSort('name')}
-          className="rounded border border-slate-300 px-2 py-1 hover:border-emerald-400"
+          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
         >
           Sortieren A→Z
         </button>
         <button
           type="button"
           onClick={() => onSort('women-first')}
-          className="rounded border border-slate-300 px-2 py-1 hover:border-emerald-400"
+          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
         >
           Damen zuerst
         </button>
         <button
           type="button"
           onClick={() => onSort('men-first')}
-          className="rounded border border-slate-300 px-2 py-1 hover:border-emerald-400"
+          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
         >
           Herren zuerst
         </button>
       </div>
 
       {players.length === 0 ? (
-        <p className="text-slate-500 text-sm italic">
-          Noch keine Spieler:innen hinzugefügt.
-        </p>
+        <EmptyState
+          icon="🎾"
+          title="Noch keine Spieler:innen"
+          description={'Tippe oben einen Namen ein und wähle Dame/Herr — dann „Hinzufügen".'}
+        />
       ) : (
         <DndContext
           sensors={sensors}
@@ -226,7 +239,7 @@ export function PlayersPanel({
             items={players.map((p) => p.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-2">
+            <div ref={listRef} className="space-y-2">
               {players.map((p) => (
                 <PlayerRow
                   key={p.id}

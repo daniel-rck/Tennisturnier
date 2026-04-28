@@ -34,26 +34,26 @@ export function PrintView({ tournament }: Props) {
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-white text-sm font-medium hover:bg-emerald-700"
+          className="rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover"
           disabled={!hasContent}
         >
           Drucken
         </button>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-fg-muted">
           Tipp: Im Druck-Dialog „Hintergrundgrafiken“ aktivieren, falls
           gewünscht.
         </p>
       </div>
 
       {!hasContent ? (
-        <p className="text-slate-500 text-sm italic">
+        <p className="text-fg-muted text-sm italic">
           Noch nichts zum Drucken — zuerst Spielplan / Bracket erzeugen.
         </p>
       ) : (
-        <div className="bg-white p-6 rounded-md border border-slate-200">
-          <header className="mb-4 border-b border-slate-300 pb-3">
+        <div className="bg-surface p-6 rounded-md border border-border">
+          <header className="mb-4 border-b border-border-strong pb-3">
             <h1 className="text-2xl font-bold">{tournament.name}</h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-fg-muted">
               {FORMAT_LABELS[f]}
               {f === 'rotation' && ` · ${MODE_LABELS[tournament.mode]}`}
               {' · '}
@@ -93,30 +93,30 @@ function RotationPrint({ t }: { t: Tournament }) {
           <h2 className="text-lg font-semibold mb-2">Runde {round.index}</h2>
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="bg-slate-100 text-left">
-                <th className="border border-slate-300 px-2 py-1 w-16">Platz</th>
-                <th className="border border-slate-300 px-2 py-1">Team A</th>
-                <th className="border border-slate-300 px-2 py-1 w-20 text-center">
+              <tr className="bg-surface-sunken text-left">
+                <th className="border border-border-strong px-2 py-1 w-16">Platz</th>
+                <th className="border border-border-strong px-2 py-1">Team A</th>
+                <th className="border border-border-strong px-2 py-1 w-20 text-center">
                   Ergebnis
                 </th>
-                <th className="border border-slate-300 px-2 py-1">Team B</th>
+                <th className="border border-border-strong px-2 py-1">Team B</th>
               </tr>
             </thead>
             <tbody>
               {round.matches.map((m) => (
                 <tr key={m.court}>
-                  <td className="border border-slate-300 px-2 py-1 font-medium">
+                  <td className="border border-border-strong px-2 py-1 font-medium">
                     {m.court}
                   </td>
-                  <td className="border border-slate-300 px-2 py-1">
+                  <td className="border border-border-strong px-2 py-1">
                     {m.teamA.players.map(name).join(' & ')}
                   </td>
-                  <td className="border border-slate-300 px-2 py-1 text-center tabular-nums">
+                  <td className="border border-border-strong px-2 py-1 text-center tabular-nums">
                     {m.scoreA != null && m.scoreB != null
                       ? `${m.scoreA} : ${m.scoreB}`
                       : '___ : ___'}
                   </td>
-                  <td className="border border-slate-300 px-2 py-1">
+                  <td className="border border-border-strong px-2 py-1">
                     {m.teamB.players.map(name).join(' & ')}
                   </td>
                 </tr>
@@ -124,7 +124,7 @@ function RotationPrint({ t }: { t: Tournament }) {
             </tbody>
           </table>
           {round.resting.length > 0 && (
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="mt-1 text-xs text-fg-muted">
               Pause: {round.resting.map(name).join(', ')}
             </p>
           )}
@@ -151,19 +151,19 @@ function GroupsPrint({ t }: { t: Tournament }) {
             </h3>
             <table className="w-full text-xs border-collapse mb-2">
               <thead>
-                <tr className="bg-slate-100 text-left">
-                  <th className="border border-slate-300 px-1 py-1 w-8">#</th>
-                  <th className="border border-slate-300 px-1 py-1">Name</th>
-                  <th className="border border-slate-300 px-1 py-1 text-right">
+                <tr className="bg-surface-sunken text-left">
+                  <th className="border border-border-strong px-1 py-1 w-8">#</th>
+                  <th className="border border-border-strong px-1 py-1">Name</th>
+                  <th className="border border-border-strong px-1 py-1 text-right">
                     Sp
                   </th>
-                  <th className="border border-slate-300 px-1 py-1 text-right">
+                  <th className="border border-border-strong px-1 py-1 text-right">
                     S
                   </th>
-                  <th className="border border-slate-300 px-1 py-1 text-right">
+                  <th className="border border-border-strong px-1 py-1 text-right">
                     Spiele
                   </th>
-                  <th className="border border-slate-300 px-1 py-1 text-right">
+                  <th className="border border-border-strong px-1 py-1 text-right">
                     Diff
                   </th>
                 </tr>
@@ -171,22 +171,22 @@ function GroupsPrint({ t }: { t: Tournament }) {
               <tbody>
                 {standings.map((s) => (
                   <tr key={s.entryId}>
-                    <td className="border border-slate-300 px-1 py-1 font-semibold">
+                    <td className="border border-border-strong px-1 py-1 font-semibold">
                       {s.rank}.
                     </td>
-                    <td className="border border-slate-300 px-1 py-1">
+                    <td className="border border-border-strong px-1 py-1">
                       {s.name}
                     </td>
-                    <td className="border border-slate-300 px-1 py-1 text-right">
+                    <td className="border border-border-strong px-1 py-1 text-right">
                       {s.played}
                     </td>
-                    <td className="border border-slate-300 px-1 py-1 text-right">
+                    <td className="border border-border-strong px-1 py-1 text-right">
                       {s.wins}
                     </td>
-                    <td className="border border-slate-300 px-1 py-1 text-right tabular-nums">
+                    <td className="border border-border-strong px-1 py-1 text-right tabular-nums">
                       {s.gamesFor}:{s.gamesAgainst}
                     </td>
-                    <td className="border border-slate-300 px-1 py-1 text-right tabular-nums">
+                    <td className="border border-border-strong px-1 py-1 text-right tabular-nums">
                       {s.diff > 0 ? '+' : ''}
                       {s.diff}
                     </td>
@@ -196,26 +196,26 @@ function GroupsPrint({ t }: { t: Tournament }) {
             </table>
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-left">
-                  <th className="border border-slate-300 px-1 py-1">Team A</th>
-                  <th className="border border-slate-300 px-1 py-1 w-20 text-center">
+                <tr className="bg-surface-sunken text-left">
+                  <th className="border border-border-strong px-1 py-1">Team A</th>
+                  <th className="border border-border-strong px-1 py-1 w-20 text-center">
                     Ergebnis
                   </th>
-                  <th className="border border-slate-300 px-1 py-1">Team B</th>
+                  <th className="border border-border-strong px-1 py-1">Team B</th>
                 </tr>
               </thead>
               <tbody>
                 {matches.map((m) => (
                   <tr key={m.matchIndex}>
-                    <td className="border border-slate-300 px-1 py-1">
+                    <td className="border border-border-strong px-1 py-1">
                       {byId.get(m.entryA)?.name}
                     </td>
-                    <td className="border border-slate-300 px-1 py-1 text-center tabular-nums">
+                    <td className="border border-border-strong px-1 py-1 text-center tabular-nums">
                       {m.scoreA != null && m.scoreB != null
                         ? `${m.scoreA} : ${m.scoreB}`
                         : '___ : ___'}
                     </td>
-                    <td className="border border-slate-300 px-1 py-1">
+                    <td className="border border-border-strong px-1 py-1">
                       {byId.get(m.entryB)?.name}
                     </td>
                   </tr>
@@ -259,33 +259,33 @@ function BracketPrint({ t }: { t: Tournament }) {
       <h2 className="text-lg font-semibold mb-2 mt-4">Bracket</h2>
       <table className="w-full text-xs border-collapse">
         <thead>
-          <tr className="bg-slate-100 text-left">
-            <th className="border border-slate-300 px-1 py-1 w-24">Runde</th>
-            <th className="border border-slate-300 px-1 py-1">Team A</th>
-            <th className="border border-slate-300 px-1 py-1 w-20 text-center">
+          <tr className="bg-surface-sunken text-left">
+            <th className="border border-border-strong px-1 py-1 w-24">Runde</th>
+            <th className="border border-border-strong px-1 py-1">Team A</th>
+            <th className="border border-border-strong px-1 py-1 w-20 text-center">
               Ergebnis
             </th>
-            <th className="border border-slate-300 px-1 py-1">Team B</th>
+            <th className="border border-border-strong px-1 py-1">Team B</th>
           </tr>
         </thead>
         <tbody>
           {roundNumbers.map((rn) =>
             rounds.get(rn)!.map((m) => (
               <tr key={m.matchId}>
-                <td className="border border-slate-300 px-1 py-1">
+                <td className="border border-border-strong px-1 py-1">
                   {bracketRoundLabel(rn, last)} ({m.matchId})
                 </td>
-                <td className="border border-slate-300 px-1 py-1">
+                <td className="border border-border-strong px-1 py-1">
                   {m.pendingA}
                 </td>
-                <td className="border border-slate-300 px-1 py-1 text-center tabular-nums">
+                <td className="border border-border-strong px-1 py-1 text-center tabular-nums">
                   {m.isByeMatch
                     ? 'Freilos'
                     : m.scoreA != null && m.scoreB != null
                       ? `${m.scoreA} : ${m.scoreB}`
                       : '___ : ___'}
                 </td>
-                <td className="border border-slate-300 px-1 py-1">
+                <td className="border border-border-strong px-1 py-1">
                   {m.pendingB}
                 </td>
               </tr>
@@ -326,25 +326,25 @@ function RotationRankingPrint({ t }: { t: Tournament }) {
       <h2 className="text-lg font-semibold mb-2">Endstand</h2>
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="bg-slate-100 text-left">
-            <th className="border border-slate-300 px-2 py-1 w-12">#</th>
-            <th className="border border-slate-300 px-2 py-1">Spieler:in</th>
-            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+          <tr className="bg-surface-sunken text-left">
+            <th className="border border-border-strong px-2 py-1 w-12">#</th>
+            <th className="border border-border-strong px-2 py-1">Spieler:in</th>
+            <th className="border border-border-strong px-2 py-1 w-12 text-right">
               Sp
             </th>
-            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+            <th className="border border-border-strong px-2 py-1 w-12 text-right">
               S
             </th>
-            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+            <th className="border border-border-strong px-2 py-1 w-12 text-right">
               U
             </th>
-            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+            <th className="border border-border-strong px-2 py-1 w-12 text-right">
               N
             </th>
-            <th className="border border-slate-300 px-2 py-1 w-20 text-right">
+            <th className="border border-border-strong px-2 py-1 w-20 text-right">
               Spiele
             </th>
-            <th className="border border-slate-300 px-2 py-1 w-14 text-right">
+            <th className="border border-border-strong px-2 py-1 w-14 text-right">
               Diff
             </th>
           </tr>
@@ -352,26 +352,26 @@ function RotationRankingPrint({ t }: { t: Tournament }) {
         <tbody>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td className="border border-slate-300 px-2 py-1 font-semibold">
+              <td className="border border-border-strong px-2 py-1 font-semibold">
                 {medalForPrint(r.rank)} {r.rank}.
               </td>
-              <td className="border border-slate-300 px-2 py-1">{r.name}</td>
-              <td className="border border-slate-300 px-2 py-1 text-right">
+              <td className="border border-border-strong px-2 py-1">{r.name}</td>
+              <td className="border border-border-strong px-2 py-1 text-right">
                 {r.played}
               </td>
-              <td className="border border-slate-300 px-2 py-1 text-right">
+              <td className="border border-border-strong px-2 py-1 text-right">
                 {r.wins}
               </td>
-              <td className="border border-slate-300 px-2 py-1 text-right">
+              <td className="border border-border-strong px-2 py-1 text-right">
                 {r.draws}
               </td>
-              <td className="border border-slate-300 px-2 py-1 text-right">
+              <td className="border border-border-strong px-2 py-1 text-right">
                 {r.losses}
               </td>
-              <td className="border border-slate-300 px-2 py-1 text-right tabular-nums">
+              <td className="border border-border-strong px-2 py-1 text-right tabular-nums">
                 {r.gamesFor}:{r.gamesAgainst}
               </td>
-              <td className="border border-slate-300 px-2 py-1 text-right tabular-nums">
+              <td className="border border-border-strong px-2 py-1 text-right tabular-nums">
                 {r.diff > 0 ? '+' : ''}
                 {r.diff}
               </td>
@@ -405,18 +405,18 @@ function GroupsRankingPrint({ t }: { t: Tournament }) {
       <h2 className="text-lg font-semibold mb-2">Gruppensieger</h2>
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="bg-slate-100 text-left">
-            <th className="border border-slate-300 px-2 py-1 w-24">Gruppe</th>
-            <th className="border border-slate-300 px-2 py-1">Sieger</th>
+          <tr className="bg-surface-sunken text-left">
+            <th className="border border-border-strong px-2 py-1 w-24">Gruppe</th>
+            <th className="border border-border-strong px-2 py-1">Sieger</th>
           </tr>
         </thead>
         <tbody>
           {winners.map((w) => (
             <tr key={w.group}>
-              <td className="border border-slate-300 px-2 py-1 font-medium">
+              <td className="border border-border-strong px-2 py-1 font-medium">
                 Gruppe {groupLetter(w.group)}
               </td>
-              <td className="border border-slate-300 px-2 py-1">{w.name}</td>
+              <td className="border border-border-strong px-2 py-1">{w.name}</td>
             </tr>
           ))}
         </tbody>
@@ -450,29 +450,29 @@ function KnockoutRankingPrint({ t }: { t: Tournament }) {
       <table className="w-full text-sm border-collapse">
         <tbody>
           <tr>
-            <td className="border border-slate-300 px-2 py-1 w-32 font-semibold bg-slate-100">
+            <td className="border border-border-strong px-2 py-1 w-32 font-semibold bg-surface-sunken">
               🥇 Sieger
             </td>
-            <td className="border border-slate-300 px-2 py-1 font-semibold">
+            <td className="border border-border-strong px-2 py-1 font-semibold">
               {podium.champion}
             </td>
           </tr>
           {podium.runnerUp && (
             <tr>
-              <td className="border border-slate-300 px-2 py-1 font-semibold bg-slate-100">
+              <td className="border border-border-strong px-2 py-1 font-semibold bg-surface-sunken">
                 🥈 Finalist:in
               </td>
-              <td className="border border-slate-300 px-2 py-1">
+              <td className="border border-border-strong px-2 py-1">
                 {podium.runnerUp}
               </td>
             </tr>
           )}
           {podium.thirds.length > 0 && (
             <tr>
-              <td className="border border-slate-300 px-2 py-1 font-semibold bg-slate-100">
+              <td className="border border-border-strong px-2 py-1 font-semibold bg-surface-sunken">
                 🥉 Platz 3
               </td>
-              <td className="border border-slate-300 px-2 py-1">
+              <td className="border border-border-strong px-2 py-1">
                 {podium.thirds.join(', ')}
               </td>
             </tr>

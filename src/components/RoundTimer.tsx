@@ -67,12 +67,12 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
   const expired = remaining <= 0 && !running
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-3">
+    <div className="rounded-md border border-border bg-surface p-3">
       <div className="flex flex-wrap items-center gap-3">
         <div
           className={
             'font-mono text-3xl tabular-nums ' +
-            (expired ? 'text-rose-600' : 'text-slate-800')
+            (expired ? 'text-danger-fg' : 'text-fg')
           }
           aria-live="polite"
         >
@@ -83,7 +83,7 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
             <button
               type="button"
               onClick={start}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white font-medium hover:bg-emerald-700"
+              className="rounded-md bg-brand px-3 py-1.5 text-sm text-white font-medium hover:bg-brand-hover"
             >
               {remaining > 0 && remaining < minutes * 60
                 ? 'Weiter'
@@ -101,7 +101,7 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
           <button
             type="button"
             onClick={reset}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:border-slate-500"
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
           >
             Reset
           </button>
@@ -111,14 +111,14 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
               unlockAudio()
               void ringBell(1)
             }}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:border-slate-500"
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
             title="Glocke testen"
           >
             🔔
           </button>
         </div>
         <div className="flex-1" />
-        <label className="text-sm text-slate-600 flex items-center gap-2">
+        <label className="text-sm text-fg-muted flex items-center gap-2">
           Spielzeit
           <input
             type="number"
@@ -134,13 +134,13 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
                 ),
               )
             }
-            className="w-16 rounded-md border border-slate-300 px-2 py-1 disabled:bg-slate-100"
+            className="w-16 rounded-md border border-border-strong px-2 py-1 disabled:bg-surface-sunken"
           />
           min
         </label>
       </div>
       {expired && (
-        <p className="mt-2 text-sm text-rose-700">
+        <p className="mt-2 text-sm text-danger-fg">
           Zeit abgelaufen – Glocke geklingelt. „Reset“ für die nächste Runde.
         </p>
       )}

@@ -16,7 +16,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import type { Entry, EntryFormat } from '../types'
+import { useConfirm } from '../hooks/useConfirm'
+import { EmptyState } from './EmptyState'
 
 interface Props {
   entries: Entry[]
@@ -39,6 +42,7 @@ function EntryRow({
   onUpdate: Props['onUpdate']
   onRemove: Props['onRemove']
 }) {
+  const confirm = useConfirm()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: entry.id })
   const style = {
@@ -51,11 +55,11 @@ function EntryRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-2"
+      className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface p-2"
     >
       <button
         type="button"
-        className="cursor-grab touch-none px-1 text-slate-400 hover:text-slate-700"
+        className="cursor-grab touch-none px-1 text-fg-subtle hover:text-fg"
         aria-label="Verschieben"
         {...attributes}
         {...listeners}
@@ -74,15 +78,20 @@ function EntryRow({
             next[i] = e.target.value
             onUpdate(entry.id, { members: next.slice(0, memberCount) })
           }}
-          className="flex-1 min-w-[8rem] rounded-md border border-transparent px-2 py-1 hover:border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+          className="flex-1 min-w-[8rem] rounded-md border border-transparent px-2 py-1 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none"
         />
       ))}
       <button
         type="button"
-        onClick={() => {
-          if (confirm(`„${entry.name}“ entfernen?`)) onRemove(entry.id)
+        onClick={async () => {
+          const ok = await confirm({
+            title: `„${entry.name}" entfernen?`,
+            confirmLabel: 'Entfernen',
+            destructive: true,
+          })
+          if (ok) onRemove(entry.id)
         }}
-        className="text-slate-400 hover:text-rose-600 px-2"
+        className="text-fg-subtle hover:text-danger-fg px-2"
         aria-label="Entfernen"
       >
         ✕
@@ -134,9 +143,11 @@ export function EntriesPanel({
     )
   }, [memberCount])
 
+  const [listRef] = useAutoAnimate<HTMLDivElement>()
+
   return (
     <div className="space-y-4">
-      <div className="text-sm text-slate-600">
+      <div className="text-sm text-fg-muted">
         {entryFormat === 'doubles' ? (
           <>
             Lege fixe Doppel-Paare an. Reihenfolge = Setzliste (1. = stärkstes
@@ -167,35 +178,36 @@ export function EntriesPanel({
               setDrafts(next)
             }}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
-            className="flex-1 min-w-[8rem] rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+            className="flex-1 min-w-[8rem] rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
           />
         ))}
         <button
           type="button"
           onClick={submit}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-white text-sm font-medium hover:bg-emerald-700"
+          className="rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover"
         >
           Hinzufügen
         </button>
       </div>
 
-      <div className="flex items-center gap-2 text-sm text-slate-600">
+      <div className="flex items-center gap-2 text-sm text-fg-muted">
         <span>{entries.length} {entryFormat === 'doubles' ? 'Paare' : 'Spieler:innen'}</span>
         <div className="flex-1" />
         <button
           type="button"
           onClick={onSortByName}
-          className="rounded border border-slate-300 px-2 py-1 hover:border-emerald-400"
+          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
         >
           Sortieren A→Z
         </button>
       </div>
 
       {entries.length === 0 ? (
-        <p className="text-slate-500 text-sm italic">
-          Noch keine {entryFormat === 'doubles' ? 'Paare' : 'Spieler:innen'}{' '}
-          angelegt.
-        </p>
+        <EmptyState
+          icon="👥"
+          title={`Noch keine ${entryFormat === 'doubles' ? 'Paare' : 'Teilnehmer:innen'} angelegt`}
+          description={'Trage oben die Namen ein und klicke auf „Hinzufügen".'}
+        />
       ) : (
         <DndContext
           sensors={sensors}
@@ -206,10 +218,10 @@ export function EntriesPanel({
             items={entries.map((e) => e.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-2">
+            <div ref={listRef} className="space-y-2">
               {entries.map((e, i) => (
                 <div key={e.id} className="flex items-center gap-2">
-                  <span className="w-6 text-right text-xs text-slate-400 tabular-nums">
+                  <span className="w-6 text-right text-xs text-fg-subtle tabular-nums">
                     {i + 1}.
                   </span>
                   <div className="flex-1">

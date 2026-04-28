@@ -43,17 +43,17 @@ Alles läuft im Browser. Daten bleiben standardmäßig auf deinem Gerät (`local
 ## Lokal entwickeln
 
 ```bash
-npm install
-npm run dev      # http://localhost:5173/  (Vite, ohne Sync-Backend)
-npm run build
-npm run lint
-npm run test
+bun install
+bun run dev      # http://localhost:5173/  (Vite, ohne Sync-Backend)
+bun run build
+bun run lint
+bun test
 ```
 
 Sync-Backend lokal mittesten (Worker + Static Assets + KV-Mock):
 
 ```bash
-npx wrangler dev   # http://localhost:8787  (SPA + API)
+bunx wrangler dev   # http://localhost:8787  (SPA + API)
 ```
 
 ## Deployment

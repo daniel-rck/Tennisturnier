@@ -12,6 +12,12 @@ import { EntriesPanel } from './components/EntriesPanel'
 import { GroupsPanel } from './components/GroupsPanel'
 import { BracketPanel } from './components/BracketPanel'
 import { SyncPanel } from './components/SyncPanel'
+import { ThemeToggle } from './components/ThemeToggle'
+import { InstallPrompt } from './components/InstallPrompt'
+import { UpdatePrompt } from './components/UpdatePrompt'
+import { OfflineBanner } from './components/OfflineBanner'
+import { useConfirm } from './hooks/useConfirm'
+import { useToast } from './hooks/useToast'
 
 type Tab =
   | 'setup'
@@ -32,7 +38,10 @@ function App() {
   })
   const [tab, setTab] = useState<Tab>('setup')
   const [warnings, setWarnings] = useState<string[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
   const isOwner = sync.role !== 'viewer'
+  const confirm = useConfirm()
+  const { toast } = useToast()
 
   // Auto-join via ?join=<code> URL param — runs once on first mount.
   const joinedRef = useRef(false)
@@ -57,10 +66,33 @@ function App() {
   }, [])
 
   const handleGenerate = () => {
-    t.snapshot()
-    const result = generateSchedule(t.tournament)
-    t.setSchedule(result.rounds)
-    setWarnings(result.warnings)
+    setIsGenerating(true)
+    // Yield to paint so the spinner shows before blocking compute kicks in.
+    window.setTimeout(() => {
+      try {
+        t.snapshot()
+        const result = generateSchedule(t.tournament)
+        t.setSchedule(result.rounds)
+        setWarnings(result.warnings)
+        if (result.warnings.length === 0) {
+          toast({ variant: 'success', title: 'Spielplan erstellt' })
+        } else {
+          toast({
+            variant: 'info',
+            title: 'Spielplan erstellt',
+            description: `${result.warnings.length} Hinweis${result.warnings.length === 1 ? '' : 'e'} – siehe Liste.`,
+          })
+        }
+      } catch (err) {
+        toast({
+          variant: 'error',
+          title: 'Spielplan konnte nicht erstellt werden',
+          description: err instanceof Error ? err.message : undefined,
+        })
+      } finally {
+        setIsGenerating(false)
+      }
+    }, 0)
   }
 
   const handleReset = () => {
@@ -95,20 +127,29 @@ function App() {
   }
 
   const handleImport = async (file: File) => {
+    let next
     try {
       const text = await file.text()
       const parsed = JSON.parse(text)
-      const next = migrate(parsed)
-      if (
-        confirm(
-          `Turnier „${next.name}" laden? Das aktuelle Turnier wird überschrieben.`,
-        )
-      ) {
-        t.snapshot()
-        t.replaceTournament(next)
-      }
+      next = migrate(parsed)
     } catch {
-      alert('Datei konnte nicht gelesen werden — gültige JSON-Datei erwartet.')
+      toast({
+        variant: 'error',
+        title: 'Import fehlgeschlagen',
+        description: 'Datei konnte nicht gelesen werden — gültige JSON-Datei erwartet.',
+      })
+      return
+    }
+    const ok = await confirm({
+      title: 'Turnier laden?',
+      description: `„${next.name}" laden — das aktuelle Turnier wird überschrieben.`,
+      confirmLabel: 'Laden',
+      destructive: true,
+    })
+    if (ok) {
+      t.snapshot()
+      t.replaceTournament(next)
+      toast({ variant: 'success', title: 'Turnier geladen' })
     }
   }
 
@@ -155,6 +196,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <OfflineBanner />
       <header className="no-print bg-emerald-700 text-white">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
           <span className="text-2xl" aria-hidden>
@@ -173,17 +215,19 @@ function App() {
             <span
               title={sync.error ?? sync.status}
               className={
-                'text-xs px-2 py-0.5 rounded-full font-medium mr-2 ' +
+                'text-xs px-2 py-0.5 rounded-full font-medium mr-2 transition-colors duration-300 ' +
                 (sync.status === 'live'
-                  ? 'bg-emerald-500 text-white'
+                  ? 'bg-brand text-white'
                   : sync.status === 'connecting'
-                    ? 'bg-amber-300 text-amber-900'
-                    : 'bg-rose-300 text-rose-900')
+                    ? 'bg-warn-bg text-warn-fg animate-pulse'
+                    : 'bg-danger-bg text-danger-fg')
               }
             >
               ● {sync.role === 'owner' ? 'sync' : 'viewer'}
             </span>
           )}
+          <InstallPrompt />
+          <ThemeToggle />
           <button
             type="button"
             onClick={t.undo}
@@ -215,7 +259,7 @@ function App() {
       </header>
 
       <main className="flex-1">
-        <div className="max-w-3xl mx-auto px-4 py-6">
+        <div key={tab} className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
           {tab === 'setup' && (
             <div className="space-y-6">
               <SyncPanel
@@ -284,6 +328,7 @@ function App() {
               onTimerMinutes={t.setTimerMinutes}
               onScore={t.setMatchScore}
               warnings={warnings}
+              isGenerating={isGenerating}
             />
           )}
           {tab === 'groups' && (
@@ -316,9 +361,10 @@ function App() {
         </div>
       </main>
 
-      <footer className="no-print text-center text-xs text-slate-500 py-4">
+      <footer className="no-print text-center text-xs text-fg-muted py-4">
         Lokal im Browser gespeichert · keine Daten verlassen dein Gerät
       </footer>
+      <UpdatePrompt />
     </div>
   )
 }
