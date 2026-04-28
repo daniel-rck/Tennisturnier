@@ -60,6 +60,12 @@ export function useSync({
   const lastPushedRef = useRef<string>('')
   const pushTimerRef = useRef<number | null>(null)
   const pushInFlightRef = useRef<boolean>(false)
+  // Holds the latest tournament so window-level event listeners (e.g. `online`)
+  // can read it without being re-registered on every render.
+  const tournamentRef = useRef<Tournament>(tournament)
+  useEffect(() => {
+    tournamentRef.current = tournament
+  }, [tournament])
 
   useEffect(() => {
     if (role !== 'owner' || !sync) return
@@ -78,6 +84,29 @@ export function useSync({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournament, role, sync?.shareCode, sync?.ownerToken])
+
+  // Retry push as soon as the browser reports the connection is back, so that
+  // edits made while offline don't sit in localStorage forever waiting for the
+  // next change to trigger a sync.
+  useEffect(() => {
+    if (role !== 'owner' || !sync) return
+    const flushPending = () => {
+      const payload = stripSync(tournamentRef.current)
+      const json = JSON.stringify(payload)
+      if (json === lastPushedRef.current) return
+      if (pushInFlightRef.current) return
+      if (pushTimerRef.current != null) {
+        window.clearTimeout(pushTimerRef.current)
+        pushTimerRef.current = null
+      }
+      void doPush(json, payload)
+    }
+    window.addEventListener('online', flushPending)
+    return () => {
+      window.removeEventListener('online', flushPending)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, sync?.shareCode, sync?.ownerToken])
 
   const doPush = async (
     json: string,
@@ -172,12 +201,20 @@ export function useSync({
         void poll()
       }
     }
+    const onOnline = () => {
+      if (cancelled) return
+      backoff = POLL_INTERVAL_MS
+      if (timeoutId != null) window.clearTimeout(timeoutId)
+      void poll()
+    }
     document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('online', onOnline)
     void poll()
     return () => {
       cancelled = true
       if (timeoutId != null) window.clearTimeout(timeoutId)
       document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('online', onOnline)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, sync?.shareCode])
