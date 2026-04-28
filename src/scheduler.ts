@@ -359,12 +359,33 @@ export function generateSchedule(t: Tournament): ScheduleResult {
 
   const state = initState(t.players)
   const rounds: Round[] = []
+  let partialWarned = false
+
+  const targetTotal = t.allowPartialFinalRound
+    ? targetTotalMatches(t.mode, women, men, t.players, t.rounds, courtsPossible)
+    : t.rounds * courtsPossible
+
+  let matchesGenerated = 0
 
   for (let r = 0; r < t.rounds; r++) {
+    const remaining = targetTotal - matchesGenerated
+    if (remaining <= 0) break
+    const effectiveCourts = Math.min(courtsPossible, remaining)
+    if (
+      t.allowPartialFinalRound &&
+      effectiveCourts < courtsPossible &&
+      !partialWarned
+    ) {
+      warnings.push(
+        'Letzte Runde nur teilweise besetzt, damit alle Spieler:innen gleich oft spielen.',
+      )
+      partialWarned = true
+    }
+
     const playing: Player[] = []
     if (t.mode === 'mixed') {
-      const wPick = pickPlaying(state, women, courtsPossible * 2, manualOrder)
-      const mPick = pickPlaying(state, men, courtsPossible * 2, manualOrder)
+      const wPick = pickPlaying(state, women, effectiveCourts * 2, manualOrder)
+      const mPick = pickPlaying(state, men, effectiveCourts * 2, manualOrder)
       playing.push(...wPick, ...mPick)
       const pairs = bestBipartiteMatching(wPick, mPick, state)
       const courts = assignToCourts(pairs, state)
@@ -383,10 +404,11 @@ export function generateSchedule(t: Tournament): ScheduleResult {
           .filter((p) => !playedSet.has(p.id))
           .map((p) => p.id),
       })
+      matchesGenerated += matches.length
     } else {
       const pool =
         t.mode === 'women' ? women : t.mode === 'men' ? men : t.players
-      const pick = pickPlaying(state, pool, courtsPossible * 4, manualOrder)
+      const pick = pickPlaying(state, pool, effectiveCourts * 4, manualOrder)
       // ensure even count for pairing
       const usable = pick.length - (pick.length % 2)
       const pickEven = pick.slice(0, usable)
@@ -411,10 +433,43 @@ export function generateSchedule(t: Tournament): ScheduleResult {
           .filter((p) => !playedSet.has(p.id))
           .map((p) => p.id),
       })
+      matchesGenerated += matches.length
     }
   }
 
   return { rounds, warnings }
+}
+
+/** Largest total match count ≤ R*C such that every player in the relevant
+ *  pool plays an equal number of games. Falls back to R*C when no such
+ *  value exists (best-effort). */
+function targetTotalMatches(
+  mode: Mode,
+  women: Player[],
+  men: Player[],
+  allPlayers: Player[],
+  R: number,
+  C: number,
+): number {
+  const fallback = R * C
+  if (mode === 'mixed') {
+    const W = women.length
+    const M = men.length
+    if (W < 2 || M < 2) return fallback
+    const cap = Math.min(R * C, Math.floor((R * W) / 2), Math.floor((R * M) / 2))
+    for (let T = cap; T >= 1; T--) {
+      if ((2 * T) % W === 0 && (2 * T) % M === 0) return T
+    }
+    return fallback
+  }
+  const pool = mode === 'women' ? women : mode === 'men' ? men : allPlayers
+  const P = pool.length
+  if (P < 4) return fallback
+  const cap = Math.min(R * C, Math.floor((R * P) / 4))
+  for (let T = cap; T >= 1; T--) {
+    if ((4 * T) % P === 0) return T
+  }
+  return fallback
 }
 
 function labelMode(m: Mode): string {

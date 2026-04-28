@@ -234,6 +234,7 @@ function App() {
               courts={t.tournament.courts}
               rounds={t.tournament.rounds}
               mode={t.tournament.mode}
+              allowPartialFinalRound={t.tournament.allowPartialFinalRound}
               groupCount={t.tournament.groupCount}
               advancePerGroup={t.tournament.advancePerGroup}
               thirdPlaceMatch={t.tournament.thirdPlaceMatch}
@@ -244,6 +245,7 @@ function App() {
               onCourts={t.setCourts}
               onRounds={t.setRounds}
               onMode={t.setMode}
+              onAllowPartialFinalRound={t.setAllowPartialFinalRound}
               onGroupCount={t.setGroupCount}
               onAdvancePerGroup={t.setAdvancePerGroup}
               onThirdPlaceMatch={t.setThirdPlaceMatch}

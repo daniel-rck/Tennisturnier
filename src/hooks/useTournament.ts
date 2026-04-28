@@ -192,6 +192,16 @@ export function useTournament() {
     [],
   )
 
+  const setAllowPartialFinalRound = useCallback(
+    (allowPartialFinalRound: boolean) =>
+      setTournament((prev) => ({
+        ...prev,
+        allowPartialFinalRound,
+        schedule: [],
+      })),
+    [],
+  )
+
   const setGroupCount = useCallback(
     (groupCount: number) =>
       setTournament((prev) => {
@@ -515,6 +525,7 @@ export function useTournament() {
     setMode,
     setCourts,
     setRounds,
+    setAllowPartialFinalRound,
     setGroupCount,
     setAdvancePerGroup,
     setName,
