@@ -6,6 +6,7 @@ import {
   resolveGroupAssignment,
 } from '../groupScheduler'
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
+import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -64,6 +65,8 @@ export function PrintView({ tournament }: Props) {
                 : `${tournament.entries.length} Teams`}
             </p>
           </header>
+
+          <RankingPrint t={tournament} />
 
           {f === 'rotation' && <RotationPrint t={tournament} />}
           {f === 'groups' && <GroupsPrint t={tournament} />}
@@ -300,4 +303,182 @@ function bracketRoundLabel(round: number, last: number) {
   if (round === last - 2) return 'Viertelfinale'
   if (round === last - 3) return 'Achtelfinale'
   return `Runde ${round}`
+}
+
+function RankingPrint({ t }: { t: Tournament }) {
+  if (t.format === 'rotation') return <RotationRankingPrint t={t} />
+  if (t.format === 'groups') return <GroupsRankingPrint t={t} />
+  return <KnockoutRankingPrint t={t} />
+}
+
+function medalForPrint(rank: number): string {
+  if (rank === 1) return '🥇'
+  if (rank === 2) return '🥈'
+  if (rank === 3) return '🥉'
+  return ''
+}
+
+function RotationRankingPrint({ t }: { t: Tournament }) {
+  const rows = computeRotationRanking(t.schedule, t.players)
+  if (rows.length === 0) return null
+  return (
+    <section className="mb-5">
+      <h2 className="text-lg font-semibold mb-2">Endstand</h2>
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="bg-slate-100 text-left">
+            <th className="border border-slate-300 px-2 py-1 w-12">#</th>
+            <th className="border border-slate-300 px-2 py-1">Spieler:in</th>
+            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+              Sp
+            </th>
+            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+              S
+            </th>
+            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+              U
+            </th>
+            <th className="border border-slate-300 px-2 py-1 w-12 text-right">
+              N
+            </th>
+            <th className="border border-slate-300 px-2 py-1 w-20 text-right">
+              Spiele
+            </th>
+            <th className="border border-slate-300 px-2 py-1 w-14 text-right">
+              Diff
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id}>
+              <td className="border border-slate-300 px-2 py-1 font-semibold">
+                {medalForPrint(r.rank)} {r.rank}.
+              </td>
+              <td className="border border-slate-300 px-2 py-1">{r.name}</td>
+              <td className="border border-slate-300 px-2 py-1 text-right">
+                {r.played}
+              </td>
+              <td className="border border-slate-300 px-2 py-1 text-right">
+                {r.wins}
+              </td>
+              <td className="border border-slate-300 px-2 py-1 text-right">
+                {r.draws}
+              </td>
+              <td className="border border-slate-300 px-2 py-1 text-right">
+                {r.losses}
+              </td>
+              <td className="border border-slate-300 px-2 py-1 text-right tabular-nums">
+                {r.gamesFor}:{r.gamesAgainst}
+              </td>
+              <td className="border border-slate-300 px-2 py-1 text-right tabular-nums">
+                {r.diff > 0 ? '+' : ''}
+                {r.diff}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  )
+}
+
+function GroupsRankingPrint({ t }: { t: Tournament }) {
+  const groups = groupsFor(t)
+  const byId = new Map(t.entries.map((e) => [e.id, e]))
+  const winners: Array<{ group: number; name: string }> = []
+  groups.forEach((group, gi) => {
+    const matches = t.groupSchedule.filter((m) => m.group === gi + 1)
+    const hasDecidedMatch = matches.some(
+      (m) => m.scoreA != null && m.scoreB != null,
+    )
+    if (!hasDecidedMatch) return
+    const standings = groupStandings(group, matches)
+    const top = standings[0]
+    if (top && byId.has(top.entryId)) {
+      winners.push({ group: gi + 1, name: top.name })
+    }
+  })
+  if (winners.length === 0) return null
+  return (
+    <section className="mb-5">
+      <h2 className="text-lg font-semibold mb-2">Gruppensieger</h2>
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="bg-slate-100 text-left">
+            <th className="border border-slate-300 px-2 py-1 w-24">Gruppe</th>
+            <th className="border border-slate-300 px-2 py-1">Sieger</th>
+          </tr>
+        </thead>
+        <tbody>
+          {winners.map((w) => (
+            <tr key={w.group}>
+              <td className="border border-slate-300 px-2 py-1 font-medium">
+                Gruppe {groupLetter(w.group)}
+              </td>
+              <td className="border border-slate-300 px-2 py-1">{w.name}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  )
+}
+
+function KnockoutRankingPrint({ t }: { t: Tournament }) {
+  const entryName = (id: string) =>
+    t.entries.find((e) => e.id === id)?.name ?? '?'
+  let groupWinners: ((g: number, r: number) => string | undefined) | undefined
+  if (t.format === 'groups-ko') {
+    const groups = groupsFor(t)
+    const map = new Map<string, string>()
+    groups.forEach((g, gi) => {
+      const standings = groupStandings(
+        g,
+        t.groupSchedule.filter((m) => m.group === gi + 1),
+      )
+      standings.forEach((s, ri) => map.set(`${gi + 1}|${ri + 1}`, s.entryId))
+    })
+    groupWinners = (g, r) => map.get(`${g}|${r}`)
+  }
+  const resolved = resolveBracket(t.bracket, entryName, groupWinners)
+  const podium = computeKnockoutPodium(resolved, entryName)
+  if (!podium.champion) return null
+  return (
+    <section className="mb-5">
+      <h2 className="text-lg font-semibold mb-2">Endstand</h2>
+      <table className="w-full text-sm border-collapse">
+        <tbody>
+          <tr>
+            <td className="border border-slate-300 px-2 py-1 w-32 font-semibold bg-slate-100">
+              🥇 Sieger
+            </td>
+            <td className="border border-slate-300 px-2 py-1 font-semibold">
+              {podium.champion}
+            </td>
+          </tr>
+          {podium.runnerUp && (
+            <tr>
+              <td className="border border-slate-300 px-2 py-1 font-semibold bg-slate-100">
+                🥈 Finalist:in
+              </td>
+              <td className="border border-slate-300 px-2 py-1">
+                {podium.runnerUp}
+              </td>
+            </tr>
+          )}
+          {podium.thirds.length > 0 && (
+            <tr>
+              <td className="border border-slate-300 px-2 py-1 font-semibold bg-slate-100">
+                🥉 Platz 3
+              </td>
+              <td className="border border-slate-300 px-2 py-1">
+                {podium.thirds.join(', ')}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </section>
+  )
 }

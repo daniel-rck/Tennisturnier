@@ -13,6 +13,7 @@ interface Props {
   courts: number
   rounds: number
   mode: Mode
+  allowPartialFinalRound: boolean
   groupCount: number
   advancePerGroup: number
   thirdPlaceMatch: boolean
@@ -22,6 +23,7 @@ interface Props {
   onCourts: (n: number) => void
   onRounds: (n: number) => void
   onMode: (m: Mode) => void
+  onAllowPartialFinalRound: (b: boolean) => void
   onGroupCount: (n: number) => void
   onAdvancePerGroup: (n: number) => void
   onThirdPlaceMatch: (b: boolean) => void
@@ -37,6 +39,7 @@ export function SetupPanel({
   courts,
   rounds,
   mode,
+  allowPartialFinalRound,
   groupCount,
   advancePerGroup,
   thirdPlaceMatch,
@@ -46,6 +49,7 @@ export function SetupPanel({
   onCourts,
   onRounds,
   onMode,
+  onAllowPartialFinalRound,
   onGroupCount,
   onAdvancePerGroup,
   onThirdPlaceMatch,
@@ -154,6 +158,24 @@ export function SetupPanel({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {format === 'rotation' && (
+        <div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={allowPartialFinalRound}
+              onChange={(e) => onAllowPartialFinalRound(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            Letzte Runde ggf. nur teilweise füllen, damit alle gleich oft spielen
+          </label>
+          <p className="text-xs text-slate-500 mt-1 ml-6">
+            Überzählige Runden werden weggelassen, falls schon alle gleich oft
+            gespielt haben.
+          </p>
         </div>
       )}
 

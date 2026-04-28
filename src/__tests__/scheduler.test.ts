@@ -17,6 +17,7 @@ const baseTournament = (overrides: Partial<Tournament> = {}): Tournament => ({
   timerMinutes: 15,
   players: [],
   schedule: [],
+  allowPartialFinalRound: false,
   entryFormat: 'doubles',
   entries: [],
   groupCount: 2,
@@ -108,5 +109,110 @@ describe('generateSchedule — same-sex / open', () => {
     const { rounds } = generateSchedule(t)
     expect(rounds).toHaveLength(2)
     for (const r of rounds) expect(r.matches.length).toBe(2)
+  })
+})
+
+describe('generateSchedule — allowPartialFinalRound', () => {
+  it('emits a partial last round so every player plays equally often (open 9 players, 2 courts, 5 rounds)', () => {
+    const players: Player[] = Array.from({ length: 9 }, (_, i) =>
+      player(`p${i}`, `P${i}`, i % 2 === 0 ? 'F' : 'M'),
+    )
+    const t = baseTournament({
+      players,
+      courts: 2,
+      rounds: 5,
+      mode: 'open',
+      allowPartialFinalRound: true,
+    })
+    const { rounds, warnings } = generateSchedule(t)
+    // Target = 9 matches: 4 full + 1 partial (1 court).
+    expect(rounds).toHaveLength(5)
+    const matchCounts = rounds.map((r) => r.matches.length)
+    expect(matchCounts.slice(0, 4)).toEqual([2, 2, 2, 2])
+    expect(matchCounts[4]).toBe(1)
+
+    // Each of 9 players plays exactly 4 games (4 * 9 = 36 = 9 matches * 4 spots).
+    const playsById = new Map<string, number>()
+    for (const r of rounds) {
+      for (const m of r.matches) {
+        for (const id of [...m.teamA.players, ...m.teamB.players]) {
+          playsById.set(id, (playsById.get(id) ?? 0) + 1)
+        }
+      }
+    }
+    const allCounts = players.map((p) => playsById.get(p.id) ?? 0)
+    expect(Math.max(...allCounts)).toBe(4)
+    expect(Math.min(...allCounts)).toBe(4)
+    expect(
+      warnings.some((w) => /teilweise besetzt/i.test(w)),
+    ).toBe(true)
+  })
+
+  it('does not reduce when distribution is already even (8 players, 2 courts, 4 rounds, mixed)', () => {
+    const players: Player[] = [
+      player('w1', 'Anna', 'F'),
+      player('w2', 'Berta', 'F'),
+      player('w3', 'Clara', 'F'),
+      player('w4', 'Doris', 'F'),
+      player('m1', 'Erik', 'M'),
+      player('m2', 'Felix', 'M'),
+      player('m3', 'Gustav', 'M'),
+      player('m4', 'Hans', 'M'),
+    ]
+    const t = baseTournament({
+      players,
+      courts: 2,
+      rounds: 4,
+      mode: 'mixed',
+      allowPartialFinalRound: true,
+    })
+    const { rounds, warnings } = generateSchedule(t)
+    expect(rounds).toHaveLength(4)
+    for (const r of rounds) expect(r.matches.length).toBe(2)
+    expect(warnings.some((w) => /teilweise besetzt/i.test(w))).toBe(false)
+  })
+
+  it('drops surplus rounds when target total < R*C (6 players, 1 court, 4 rounds, open)', () => {
+    const players: Player[] = Array.from({ length: 6 }, (_, i) =>
+      player(`p${i}`, `P${i}`, 'M'),
+    )
+    const t = baseTournament({
+      players,
+      mode: 'open',
+      courts: 1,
+      rounds: 4,
+      allowPartialFinalRound: true,
+    })
+    const { rounds } = generateSchedule(t)
+    // P=6, R=4, C=1 → largest T ≤ 4 with 4T % 6 == 0 is T=3.
+    // Three matches × 4 player-spots = 12 spots → every player exactly 2 games.
+    // Round 4 has remaining=0 and is dropped.
+    expect(rounds).toHaveLength(3)
+    for (const r of rounds) expect(r.matches.length).toBe(1)
+    const plays = new Map<string, number>()
+    for (const r of rounds) {
+      for (const m of r.matches) {
+        for (const id of [...m.teamA.players, ...m.teamB.players]) {
+          plays.set(id, (plays.get(id) ?? 0) + 1)
+        }
+      }
+    }
+    for (const p of players) expect(plays.get(p.id) ?? 0).toBe(2)
+  })
+
+  it('flag off keeps full rounds even when distribution is uneven (5 players, 1 court, 4 rounds, open)', () => {
+    const players: Player[] = Array.from({ length: 5 }, (_, i) =>
+      player(`p${i}`, `P${i}`, 'M'),
+    )
+    const t = baseTournament({
+      players,
+      mode: 'open',
+      courts: 1,
+      rounds: 4,
+      allowPartialFinalRound: false,
+    })
+    const { rounds } = generateSchedule(t)
+    expect(rounds).toHaveLength(4)
+    for (const r of rounds) expect(r.matches.length).toBe(1)
   })
 })

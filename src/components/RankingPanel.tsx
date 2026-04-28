@@ -1,11 +1,13 @@
 import { useCallback, useMemo } from 'react'
-import type { Entry, Player, Round, Tournament } from '../types'
+import type { Entry, Tournament } from '../types'
 import {
   assignGroups,
   groupStandings,
   resolveGroupAssignment,
 } from '../groupScheduler'
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
+import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
+import type { RotationRanking } from '../ranking'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -29,18 +31,7 @@ export function RankingPanel({ tournament }: Props) {
 
 // ========== Rotation =====================================================
 
-interface RotationRow {
-  id: string
-  name: string
-  played: number
-  wins: number
-  draws: number
-  losses: number
-  gamesFor: number
-  gamesAgainst: number
-  diff: number
-  rank: number
-}
+type RotationRow = RotationRanking
 
 function RotationRanking({ tournament }: Props) {
   const rows = useMemo(
@@ -246,31 +237,7 @@ function BracketSummary({
         Noch kein Bracket erzeugt.
       </p>
     )
-  const final = resolved.find((m) => m.matchId === 'F') ?? resolved[resolved.length - 1]
-  const thirdPlaceMatch = resolved.find((m) => m.matchId === '3P')
-  const semis = resolved.filter((m) => m.round === final.round - 1)
-  const champion = final.winner ? entryName(final.winner) : null
-  const runnerUp = final.winner
-    ? final.entryA === final.winner
-      ? final.entryB
-        ? entryName(final.entryB)
-        : null
-      : final.entryA
-        ? entryName(final.entryA)
-        : null
-    : null
-  // Third place: prefer dedicated 3rd-place match if present and decided.
-  const thirds: string[] = []
-  if (thirdPlaceMatch?.winner) {
-    thirds.push(entryName(thirdPlaceMatch.winner))
-  } else {
-    for (const sf of semis) {
-      if (sf.winner == null || sf.entryA == null || sf.entryB == null) continue
-      const loser = sf.winner === sf.entryA ? sf.entryB : sf.entryA
-      thirds.push(entryName(loser))
-    }
-    thirds.sort((a, b) => a.localeCompare(b, 'de'))
-  }
+  const { champion, runnerUp, thirds } = computeKnockoutPodium(resolved, entryName)
 
   return (
     <div className="space-y-4">
@@ -422,71 +389,3 @@ function RankingTable({ rows }: { rows: TableRow[] }) {
   )
 }
 
-function computeRotationRanking(
-  schedule: Round[],
-  players: Player[],
-): RotationRow[] {
-  const stats = new Map<string, Omit<RotationRow, 'rank' | 'diff'>>()
-  for (const p of players)
-    stats.set(p.id, {
-      id: p.id,
-      name: p.name,
-      played: 0,
-      wins: 0,
-      draws: 0,
-      losses: 0,
-      gamesFor: 0,
-      gamesAgainst: 0,
-    })
-  for (const round of schedule) {
-    for (const m of round.matches) {
-      if (m.scoreA == null || m.scoreB == null) continue
-      const aWin = m.scoreA > m.scoreB
-      const bWin = m.scoreB > m.scoreA
-      const draw = m.scoreA === m.scoreB
-      for (const id of m.teamA.players) {
-        const s = stats.get(id)
-        if (!s) continue
-        s.played++
-        s.gamesFor += m.scoreA
-        s.gamesAgainst += m.scoreB
-        if (aWin) s.wins++
-        else if (draw) s.draws++
-        else if (bWin) s.losses++
-      }
-      for (const id of m.teamB.players) {
-        const s = stats.get(id)
-        if (!s) continue
-        s.played++
-        s.gamesFor += m.scoreB
-        s.gamesAgainst += m.scoreA
-        if (bWin) s.wins++
-        else if (draw) s.draws++
-        else if (aWin) s.losses++
-      }
-    }
-  }
-  const rows = Array.from(stats.values())
-    .filter((s) => s.played > 0)
-    .map((s) => ({ ...s, diff: s.gamesFor - s.gamesAgainst, rank: 0 }))
-    .sort((a, b) => {
-      if (a.wins !== b.wins) return b.wins - a.wins
-      if (a.diff !== b.diff) return b.diff - a.diff
-      if (a.gamesFor !== b.gamesFor) return b.gamesFor - a.gamesFor
-      return a.name.localeCompare(b.name, 'de')
-    })
-  let i = 0
-  while (i < rows.length) {
-    let j = i + 1
-    while (
-      j < rows.length &&
-      rows[j].wins === rows[i].wins &&
-      rows[j].diff === rows[i].diff &&
-      rows[j].gamesFor === rows[i].gamesFor
-    )
-      j++
-    for (let k = i; k < j; k++) rows[k].rank = i + 1
-    i = j
-  }
-  return rows
-}
