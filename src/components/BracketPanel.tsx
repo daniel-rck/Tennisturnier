@@ -118,14 +118,14 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     tournament.entries.length < 2
   ) {
     return (
-      <p className="text-slate-500 text-sm italic">
+      <p className="text-fg-muted text-sm italic">
         Lege zuerst Teilnehmer:innen auf der Teams-Seite an (mindestens 2).
       </p>
     )
   }
   if (tournament.format === 'groups-ko' && tournament.entries.length < 2) {
     return (
-      <p className="text-slate-500 text-sm italic">
+      <p className="text-fg-muted text-sm italic">
         Lege zuerst Teilnehmer:innen auf der Teams-Seite an.
       </p>
     )
@@ -156,7 +156,7 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
             const matches = rounds.get(rn)!
             return (
               <div key={rn} className="min-w-[16rem]">
-                <h3 className="text-sm font-semibold mb-2 text-slate-600">
+                <h3 className="text-sm font-semibold mb-2 text-fg-muted">
                   {roundLabel(rn, lastRound, matches.length)}
                 </h3>
                 <div className="space-y-2">
@@ -201,8 +201,8 @@ function BracketCard({
     m.scoreA === m.scoreB
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-2 text-sm">
-      <div className="text-xs text-slate-500 mb-1">
+    <div className="rounded-md border border-border bg-surface p-2 text-sm">
+      <div className="text-xs text-fg-muted mb-1">
         {m.matchId === '3P' ? 'Spiel um Platz 3' : m.matchId}
         {m.isByeMatch && ' · Freilos'}
       </div>
@@ -223,7 +223,7 @@ function BracketCard({
       {isTie && (
         <p
           role="alert"
-          className="mt-1 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded px-2 py-1"
+          className="mt-1 text-xs text-danger-fg bg-danger-bg border border-rose-200 rounded px-2 py-1"
         >
           Unentschieden im KO – bitte korrigieren, sonst kommt niemand weiter.
         </p>
@@ -249,7 +249,7 @@ function SlotRow({
     <div
       className={
         'flex items-center justify-between gap-2 px-2 py-1 rounded ' +
-        (winning ? 'bg-emerald-50 font-semibold' : '')
+        (winning ? 'bg-brand-soft font-semibold' : '')
       }
     >
       <span className="truncate">{label}</span>
@@ -262,7 +262,7 @@ function SlotRow({
         value={score ?? ''}
         disabled={!editable}
         onChange={(e) => onChange(e.target.value)}
-        className="w-12 rounded border border-slate-300 px-1 py-0.5 text-center disabled:bg-slate-100 disabled:text-slate-400"
+        className="w-12 rounded border border-border-strong px-1 py-0.5 text-center disabled:bg-surface-sunken disabled:text-fg-subtle"
       />
     </div>
   )

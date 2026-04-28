@@ -9,8 +9,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
+      registerType: 'prompt',
+      includeAssets: [
+        'favicon.svg',
+        'icon-192.png',
+        'icon-512.png',
+        'apple-touch-icon.png',
+      ],
       manifest: {
         name: 'Tennisturnier-Planer',
         short_name: 'Turnier',
@@ -29,6 +34,14 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
+          },
+        ],
+        shortcuts: [
+          {
+            name: 'Neues Turnier',
+            short_name: 'Neu',
+            url: '/?new=1',
+            icons: [{ src: 'icon-192.png', sizes: '192x192' }],
           },
         ],
       },

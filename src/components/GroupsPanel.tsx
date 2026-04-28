@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import type { Entry, GroupMatch, Tournament } from '../types'
 import {
   assignGroups,
@@ -8,6 +9,7 @@ import {
 } from '../groupScheduler'
 import { groupLetter } from '../knockoutScheduler'
 import { parsePositiveInt, parseScore } from '../utils/parseScore'
+import { useConfirm } from '../hooks/useConfirm'
 
 interface Props {
   tournament: Tournament
@@ -31,6 +33,7 @@ export function GroupsPanel({
   onInitGroupAssignment,
   onReshuffle,
 }: Props) {
+  const confirm = useConfirm()
   // Initialize group assignment lazily on first visit when there are entries.
   useEffect(() => {
     if (
@@ -105,7 +108,7 @@ export function GroupsPanel({
 
   if (tournament.entries.length < 2) {
     return (
-      <p className="text-slate-500 text-sm italic">
+      <p className="text-fg-muted text-sm italic">
         Lege zuerst Teilnehmer:innen auf der Teams-Seite an.
       </p>
     )
@@ -126,29 +129,32 @@ export function GroupsPanel({
                 parsePositiveInt(e.target.value, tournament.groupCount),
               )
             }
-            className="w-16 rounded-md border border-slate-300 px-2 py-1"
+            className="w-16 rounded-md border border-border-strong px-2 py-1"
           />
         </label>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-fg-muted">
           {tournament.entries.length} Teilnehmer · auf {tournament.groupCount}{' '}
           Gruppen verteilt
         </span>
         <button
           type="button"
-          onClick={() => {
+          onClick={async () => {
             const hasScores = tournament.groupSchedule.some(
               (m) => m.scoreA != null || m.scoreB != null,
             )
-            if (
-              !hasScores ||
-              confirm(
-                'Gruppen neu auslosen? Alle bisher eingetragenen Ergebnisse gehen verloren.',
-              )
-            ) {
-              onReshuffle()
+            if (hasScores) {
+              const ok = await confirm({
+                title: 'Gruppen neu auslosen?',
+                description:
+                  'Alle bisher eingetragenen Ergebnisse gehen verloren.',
+                confirmLabel: 'Neu auslosen',
+                destructive: true,
+              })
+              if (!ok) return
             }
+            onReshuffle()
           }}
-          className="rounded border border-slate-300 px-2 py-1 text-sm hover:border-emerald-400"
+          className="rounded border border-border-strong px-2 py-1 text-sm hover:border-brand-hover"
         >
           Gruppen neu auslosen
         </button>
@@ -159,7 +165,7 @@ export function GroupsPanel({
           key={i}
           role="status"
           aria-live="polite"
-          className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800"
+          className="rounded-md bg-warn-bg border border-warn-bg px-3 py-2 text-sm text-warn-fg"
         >
           {w}
         </div>
@@ -174,56 +180,16 @@ export function GroupsPanel({
         return (
           <div
             key={gi}
-            className="rounded-md border border-slate-200 bg-white p-3"
+            className="rounded-md border border-border bg-surface p-3"
           >
             <h3 className="font-semibold mb-2">
               Gruppe {groupLetter(groupNum)} ({group.length} Teams)
             </h3>
 
-            <div className="overflow-x-auto mb-3">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-slate-500 text-xs">
-                    <th className="px-1 py-1 w-10">#</th>
-                    <th className="px-1 py-1">Name</th>
-                    <th className="px-1 py-1 text-right">Sp</th>
-                    <th className="px-1 py-1 text-right">S</th>
-                    <th className="px-1 py-1 text-right">U</th>
-                    <th className="px-1 py-1 text-right">N</th>
-                    <th className="px-1 py-1 text-right">Spiele</th>
-                    <th className="px-1 py-1 text-right">Diff</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standings.map((s) => (
-                    <tr key={s.entryId} className="border-t border-slate-100">
-                      <td className="px-1 py-1 font-semibold">{s.rank}.</td>
-                      <td className="px-1 py-1">{s.name}</td>
-                      <td className="px-1 py-1 text-right">{s.played}</td>
-                      <td className="px-1 py-1 text-right text-emerald-700">
-                        {s.wins}
-                      </td>
-                      <td className="px-1 py-1 text-right text-slate-500">
-                        {s.draws}
-                      </td>
-                      <td className="px-1 py-1 text-right text-rose-700">
-                        {s.losses}
-                      </td>
-                      <td className="px-1 py-1 text-right tabular-nums">
-                        {s.gamesFor}:{s.gamesAgainst}
-                      </td>
-                      <td className="px-1 py-1 text-right tabular-nums font-medium">
-                        {s.diff > 0 ? '+' : ''}
-                        {s.diff}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandingsTable standings={standings} />
 
             <details>
-              <summary className="cursor-pointer text-sm text-slate-600 hover:text-slate-900">
+              <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">
                 {matches.length} Spiele
               </summary>
               <div className="mt-2 space-y-1">
@@ -257,7 +223,7 @@ function GroupMatchRow({
   const a = byId.get(match.entryA)?.name ?? '?'
   const b = byId.get(match.entryB)?.name ?? '?'
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto_1fr] items-center gap-2 text-sm bg-slate-50 px-2 py-1 rounded">
+    <div className="grid grid-cols-[1fr_auto_auto_auto_1fr] items-center gap-2 text-sm bg-surface-muted px-2 py-1 rounded">
       <span className="truncate">{a}</span>
       <input
         type="number"
@@ -269,9 +235,9 @@ function GroupMatchRow({
         onChange={(e) =>
           onScore(match.group, match.matchIndex, parseScore(e.target.value), match.scoreB)
         }
-        className="w-12 rounded border border-slate-300 px-1 py-0.5 text-center"
+        className="w-12 rounded border border-border-strong px-1 py-0.5 text-center"
       />
-      <span className="text-slate-400 text-xs">:</span>
+      <span className="text-fg-subtle text-xs">:</span>
       <input
         type="number"
         inputMode="numeric"
@@ -282,7 +248,7 @@ function GroupMatchRow({
         onChange={(e) =>
           onScore(match.group, match.matchIndex, match.scoreA, parseScore(e.target.value))
         }
-        className="w-12 rounded border border-slate-300 px-1 py-0.5 text-center"
+        className="w-12 rounded border border-border-strong px-1 py-0.5 text-center"
       />
       <span className="truncate text-right">{b}</span>
     </div>
@@ -291,4 +257,58 @@ function GroupMatchRow({
 
 function key(group: number, a: string, b: string) {
   return `${group}|${a}|${b}`
+}
+
+interface Standing {
+  entryId: string
+  name: string
+  rank: number
+  played: number
+  wins: number
+  draws: number
+  losses: number
+  gamesFor: number
+  gamesAgainst: number
+  diff: number
+}
+
+function StandingsTable({ standings }: { standings: Standing[] }) {
+  const [bodyRef] = useAutoAnimate<HTMLTableSectionElement>()
+  return (
+    <div className="overflow-x-auto mb-3">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-fg-muted text-xs">
+            <th className="px-1 py-1 w-10">#</th>
+            <th className="px-1 py-1">Name</th>
+            <th className="px-1 py-1 text-right">Sp</th>
+            <th className="px-1 py-1 text-right">S</th>
+            <th className="px-1 py-1 text-right">U</th>
+            <th className="px-1 py-1 text-right">N</th>
+            <th className="px-1 py-1 text-right">Spiele</th>
+            <th className="px-1 py-1 text-right">Diff</th>
+          </tr>
+        </thead>
+        <tbody ref={bodyRef}>
+          {standings.map((s) => (
+            <tr key={s.entryId} className="border-t border-border">
+              <td className="px-1 py-1 font-semibold">{s.rank}.</td>
+              <td className="px-1 py-1">{s.name}</td>
+              <td className="px-1 py-1 text-right">{s.played}</td>
+              <td className="px-1 py-1 text-right text-brand">{s.wins}</td>
+              <td className="px-1 py-1 text-right text-fg-muted">{s.draws}</td>
+              <td className="px-1 py-1 text-right text-danger-fg">{s.losses}</td>
+              <td className="px-1 py-1 text-right tabular-nums">
+                {s.gamesFor}:{s.gamesAgainst}
+              </td>
+              <td className="px-1 py-1 text-right tabular-nums font-medium">
+                {s.diff > 0 ? '+' : ''}
+                {s.diff}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }

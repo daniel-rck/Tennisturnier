@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import type { Tournament } from '../types'
 import type { SyncRole, SyncStatus } from '../hooks/useSync'
+import { Spinner } from './Spinner'
 
 interface Props {
   tournament: Tournament
@@ -63,7 +64,7 @@ export function SyncPanel({
   }
 
   return (
-    <section className="rounded-md border border-slate-200 bg-white p-4 space-y-4">
+    <section className="rounded-md border border-border bg-surface p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">Live-Sync (Multi-Device)</h2>
         <StatusBadge status={status} />
@@ -71,7 +72,7 @@ export function SyncPanel({
 
       {role === 'none' && (
         <div className="space-y-3 text-sm">
-          <p className="text-slate-600">
+          <p className="text-fg-muted">
             Teile dein Turnier zwischen mehreren Geräten — z.B. Eingabe auf
             dem Handy, Anzeige auf dem TV. Daten landen für 7 Tage in
             Cloudflare KV und werden danach gelöscht.
@@ -81,13 +82,14 @@ export function SyncPanel({
               type="button"
               onClick={handleCreate}
               disabled={busy}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white font-medium hover:bg-emerald-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-md bg-brand px-3 py-1.5 text-sm text-white font-medium hover:bg-brand-hover disabled:opacity-50"
             >
-              Sync für dieses Turnier starten
+              {busy && <Spinner />}
+              {busy ? 'Wird erstellt…' : 'Sync für dieses Turnier starten'}
             </button>
           </div>
-          <div className="pt-2 border-t border-slate-200">
-            <label className="block text-xs text-slate-500 mb-1">
+          <div className="pt-2 border-t border-border">
+            <label className="block text-xs text-fg-muted mb-1">
               ...oder als Anzeige einem bestehenden Code beitreten:
             </label>
             <div className="flex gap-2">
@@ -97,15 +99,16 @@ export function SyncPanel({
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 placeholder="z.B. K7P3MN"
                 maxLength={6}
-                className="flex-1 rounded-md border border-slate-300 px-3 py-2 font-mono uppercase tracking-widest"
+                className="flex-1 rounded-md border border-border-strong px-3 py-2 font-mono uppercase tracking-widest"
               />
               <button
                 type="button"
                 onClick={handleJoin}
                 disabled={busy || joinCode.length !== 6}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:border-emerald-400 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-brand-hover disabled:opacity-50"
               >
-                Verbinden
+                {busy && <Spinner />}
+                {busy ? 'Verbinde…' : 'Verbinden'}
               </button>
             </div>
           </div>
@@ -114,17 +117,17 @@ export function SyncPanel({
 
       {role === 'owner' && sync && (
         <div className="space-y-3">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-fg-muted">
             Code an Anzeige-Geräte weitergeben oder QR scannen lassen.
           </p>
           <div className="flex items-center gap-4">
-            <div className="font-mono text-3xl font-bold tracking-widest bg-emerald-50 border border-emerald-200 rounded px-4 py-2">
+            <div className="font-mono text-3xl font-bold tracking-widest bg-brand-soft border border-brand-soft rounded px-4 py-2">
               {sync.shareCode}
             </div>
             <button
               type="button"
               onClick={() => navigator.clipboard?.writeText(sync.shareCode)}
-              className="text-xs text-slate-500 hover:text-slate-800 underline"
+              className="text-xs text-fg-muted hover:text-fg underline"
             >
               Code kopieren
             </button>
@@ -134,30 +137,30 @@ export function SyncPanel({
               <img
                 src={qrDataUrl}
                 alt="QR-Code zum Beitreten"
-                className="rounded border border-slate-200 bg-white"
+                className="rounded border border-border bg-surface"
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-fg-muted">
                 Scan auf dem Anzeige-Gerät — öffnet die App im
                 Nur-Lese-Modus.
               </p>
             </div>
           )}
-          <details className="text-xs text-slate-500">
-            <summary className="cursor-pointer hover:text-slate-800">
+          <details className="text-xs text-fg-muted">
+            <summary className="cursor-pointer hover:text-fg">
               Owner-Token (für Backup)
             </summary>
             <p className="mt-1">
               Wird auf diesem Gerät gespeichert. Geht es verloren, kann
               niemand mehr schreiben — dann neuen Code erzeugen.
             </p>
-            <code className="mt-1 block break-all bg-slate-50 p-2 rounded text-[10px] text-slate-700">
+            <code className="mt-1 block break-all bg-surface-muted p-2 rounded text-[10px] text-fg">
               {sync.ownerToken}
             </code>
           </details>
           <button
             type="button"
             onClick={onLeave}
-            className="text-sm text-rose-700 hover:text-rose-900 underline"
+            className="text-sm text-danger-fg hover:text-danger-fg underline"
           >
             Sync beenden (Code wird ungültig)
           </button>
@@ -174,7 +177,7 @@ export function SyncPanel({
           <button
             type="button"
             onClick={onLeave}
-            className="text-sm text-slate-500 hover:text-slate-800 underline"
+            className="text-sm text-fg-muted hover:text-fg underline"
           >
             Verbindung trennen
           </button>
@@ -182,7 +185,7 @@ export function SyncPanel({
       )}
 
       {error && (
-        <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded px-2 py-1">
+        <p className="text-xs text-danger-fg bg-danger-bg border border-danger-fg/30 rounded px-2 py-1">
           {error}
         </p>
       )}
@@ -192,15 +195,17 @@ export function SyncPanel({
 
 function StatusBadge({ status }: { status: SyncStatus }) {
   const map: Record<SyncStatus, { label: string; cls: string }> = {
-    disabled: { label: 'aus', cls: 'bg-slate-100 text-slate-600' },
-    connecting: { label: 'verbinde…', cls: 'bg-amber-100 text-amber-800' },
-    live: { label: 'live', cls: 'bg-emerald-100 text-emerald-800' },
+    disabled: { label: 'aus', cls: 'bg-surface-sunken text-fg-muted' },
+    connecting: { label: 'verbinde…', cls: 'bg-warn-bg text-warn-fg animate-pulse' },
+    live: { label: 'live', cls: 'bg-brand-soft text-brand-soft-fg' },
     offline: { label: 'offline', cls: 'bg-orange-100 text-orange-800' },
-    error: { label: 'fehler', cls: 'bg-rose-100 text-rose-800' },
+    error: { label: 'fehler', cls: 'bg-danger-bg text-danger-fg' },
   }
   const { label, cls } = map[status]
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>
+    <span
+      className={`text-xs px-2 py-0.5 rounded-full font-medium transition-colors duration-300 ${cls}`}
+    >
       ● {label}
     </span>
   )

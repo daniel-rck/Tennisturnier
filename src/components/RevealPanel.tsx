@@ -33,13 +33,13 @@ export function RevealPanel({
 }: Props) {
   if (tournament.format !== 'rotation') {
     return (
-      <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-md border border-warn-bg bg-warn-bg p-4 text-sm text-warn-fg">
         Reveal-Modus ist aktuell nur für Wechselturniere verfügbar.
         <div className="mt-3">
           <button
             type="button"
             onClick={onClose}
-            className="rounded border border-amber-400 px-3 py-1 hover:bg-amber-100"
+            className="rounded border border-amber-400 px-3 py-1 hover:bg-warn-bg"
           >
             Reveal-Modus beenden
           </button>
@@ -117,7 +117,7 @@ function RevealStage({
           <button
             type="button"
             onClick={onClose}
-            className="text-xs text-slate-500 hover:text-slate-800 underline"
+            className="text-xs text-fg-muted hover:text-fg underline"
           >
             Reveal-Modus beenden
           </button>
@@ -125,7 +125,7 @@ function RevealStage({
       </div>
 
       {showCategories && (
-        <div className="flex gap-1 border-b border-slate-200">
+        <div className="flex gap-1 border-b border-border">
           {tabs.map((tt) => (
             <button
               key={tt.id}
@@ -134,8 +134,8 @@ function RevealStage({
               className={
                 'px-3 py-1.5 text-sm border-b-2 -mb-px transition ' +
                 (tab === tt.id
-                  ? 'border-emerald-600 font-semibold text-emerald-800'
-                  : 'border-transparent text-slate-500 hover:text-slate-800')
+                  ? 'border-brand font-semibold text-brand-soft-fg'
+                  : 'border-transparent text-fg-muted hover:text-fg')
               }
             >
               {tt.label}
@@ -145,7 +145,7 @@ function RevealStage({
       )}
 
       {podium.length < 3 ? (
-        <p className="text-slate-500 text-sm italic">
+        <p className="text-fg-muted text-sm italic">
           Noch nicht genug Spieler:innen mit Ergebnissen für ein Podium.
         </p>
       ) : (
@@ -198,7 +198,7 @@ function PodiumStage({
         entry={podium[0]}
         visible={isVisible(step, 1)}
         height="h-44"
-        tone="bg-amber-300"
+        tone="bg-warn-bg"
         medal="🥇"
       />
       <PodiumColumn
@@ -241,13 +241,13 @@ function PodiumColumn({
       <div className="font-semibold text-center text-base min-h-[1.5rem]">
         {visible ? entry.name : ' '}
       </div>
-      <div className="text-xs text-slate-600 min-h-[1rem]">
+      <div className="text-xs text-fg-muted min-h-[1rem]">
         {visible
           ? `${entry.wins} Siege · ${entry.diff > 0 ? '+' : ''}${entry.diff}`
           : ' '}
       </div>
       <div
-        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-2xl text-slate-800 shadow`}
+        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-2xl text-fg shadow`}
       >
         {place}
       </div>
@@ -271,8 +271,8 @@ function RevealController({
   ]
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-3 space-y-2">
-      <p className="text-xs text-slate-500">
+    <div className="rounded-md border border-border bg-surface p-3 space-y-2">
+      <p className="text-xs text-fg-muted">
         Steuere den Reveal — die Anzeige aktualisiert sich auf allen verbundenen
         Geräten.
       </p>
@@ -286,8 +286,8 @@ function RevealController({
             className={
               'rounded-md px-3 py-2 text-sm font-medium transition ' +
               (b.enabled
-                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed')
+                ? 'bg-brand text-white hover:bg-brand-hover'
+                : 'bg-surface-sunken text-fg-subtle cursor-not-allowed')
             }
           >
             {b.label}
@@ -297,7 +297,7 @@ function RevealController({
       <button
         type="button"
         onClick={onReset}
-        className="text-xs text-slate-500 hover:text-slate-800 underline"
+        className="text-xs text-fg-muted hover:text-fg underline"
       >
         Show neu starten (alle Kategorien)
       </button>

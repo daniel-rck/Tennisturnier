@@ -5,6 +5,7 @@ import {
   MODE_LABELS,
 } from '../types'
 import { parsePositiveInt } from '../utils/parseScore'
+import { useConfirm } from '../hooks/useConfirm'
 
 interface Props {
   name: string
@@ -61,22 +62,23 @@ export function SetupPanel({
   onExport,
   onImport,
 }: Props) {
+  const confirm = useConfirm()
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label className="block text-sm font-medium text-fg mb-1">
           Turniername
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => onName(e.target.value)}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+          className="w-full rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">
+        <label className="block text-sm font-medium text-fg mb-2">
           Turnierformat
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -88,15 +90,15 @@ export function SetupPanel({
               className={
                 'rounded-md border px-3 py-2 text-sm transition text-left ' +
                 (format === f
-                  ? 'border-emerald-600 bg-emerald-50 text-emerald-800 font-medium'
-                  : 'border-slate-300 hover:border-emerald-400')
+                  ? 'border-brand bg-brand-soft text-brand-soft-fg font-medium'
+                  : 'border-border-strong hover:border-brand-hover')
               }
             >
               {FORMAT_LABELS[f]}
             </button>
           ))}
         </div>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-fg-muted mt-1">
           {format === 'rotation' &&
             'Wechselturnier mit rotierenden Mixed-Doppeln. Jede Runde alle Plätze besetzt.'}
           {format === 'groups' &&
@@ -110,7 +112,7 @@ export function SetupPanel({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-fg mb-1">
             Anzahl Plätze
           </label>
           <input
@@ -119,13 +121,13 @@ export function SetupPanel({
             max={20}
             value={courts}
             onChange={(e) => onCourts(parsePositiveInt(e.target.value, courts))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+            className="w-full rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
           />
         </div>
 
         {format === 'rotation' && (
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Anzahl Runden
             </label>
             <input
@@ -134,7 +136,7 @@ export function SetupPanel({
               max={50}
               value={rounds}
               onChange={(e) => onRounds(parsePositiveInt(e.target.value, rounds))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+              className="w-full rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
             />
           </div>
         )}
@@ -142,7 +144,7 @@ export function SetupPanel({
 
       {format === 'rotation' && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-fg mb-2">
             Doppel-Modus
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -154,8 +156,8 @@ export function SetupPanel({
                 className={
                   'rounded-md border px-3 py-2 text-sm transition ' +
                   (mode === m
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 font-medium'
-                    : 'border-slate-300 hover:border-emerald-400')
+                    ? 'border-brand bg-brand-soft text-brand-soft-fg font-medium'
+                    : 'border-border-strong hover:border-brand-hover')
                 }
               >
                 {MODE_LABELS[m]}
@@ -172,11 +174,11 @@ export function SetupPanel({
               type="checkbox"
               checked={allowPartialFinalRound}
               onChange={(e) => onAllowPartialFinalRound(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              className="rounded border-border-strong text-brand focus:ring-brand"
             />
             Letzte Runde ggf. nur teilweise füllen, damit alle gleich oft spielen
           </label>
-          <p className="text-xs text-slate-500 mt-1 ml-6">
+          <p className="text-xs text-fg-muted mt-1 ml-6">
             Überzählige Runden werden weggelassen, falls schon alle gleich oft
             gespielt haben.
           </p>
@@ -190,11 +192,11 @@ export function SetupPanel({
               type="checkbox"
               checked={perGenderRanking}
               onChange={(e) => onPerGenderRanking(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              className="rounded border-border-strong text-brand focus:ring-brand"
             />
             Zusätzlich Damen- und Herren-Rangliste anzeigen
           </label>
-          <p className="text-xs text-slate-500 mt-1 ml-6">
+          <p className="text-xs text-fg-muted mt-1 ml-6">
             In der Siegerehrung erscheinen neben der Gesamtwertung getrennte
             Tabellen pro Geschlecht.
           </p>
@@ -203,7 +205,7 @@ export function SetupPanel({
 
       {(format === 'groups' || format === 'knockout' || format === 'groups-ko') && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-fg mb-2">
             Teilnehmer-Format
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -215,8 +217,8 @@ export function SetupPanel({
                 className={
                   'rounded-md border px-3 py-2 text-sm transition ' +
                   (entryFormat === f
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 font-medium'
-                    : 'border-slate-300 hover:border-emerald-400')
+                    ? 'border-brand bg-brand-soft text-brand-soft-fg font-medium'
+                    : 'border-border-strong hover:border-brand-hover')
                 }
               >
                 {ENTRY_FORMAT_LABELS[f]}
@@ -229,7 +231,7 @@ export function SetupPanel({
       {(format === 'groups' || format === 'groups-ko') && (
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Anzahl Gruppen
             </label>
             <input
@@ -240,12 +242,12 @@ export function SetupPanel({
               onChange={(e) =>
                 onGroupCount(parsePositiveInt(e.target.value, groupCount))
               }
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+              className="w-full rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
             />
           </div>
           {format === 'groups-ko' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-fg mb-1">
                 Aufsteiger pro Gruppe
               </label>
               <input
@@ -258,7 +260,7 @@ export function SetupPanel({
                     parsePositiveInt(e.target.value, advancePerGroup),
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                className="w-full rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
               />
             </div>
           )}
@@ -272,26 +274,26 @@ export function SetupPanel({
               type="checkbox"
               checked={thirdPlaceMatch}
               onChange={(e) => onThirdPlaceMatch(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              className="rounded border-border-strong text-brand focus:ring-brand"
             />
             Spiel um Platz 3 austragen
           </label>
-          <p className="text-xs text-slate-500 mt-1 ml-6">
+          <p className="text-xs text-fg-muted mt-1 ml-6">
             Halbfinal-Verlierer spielen den dritten Platz aus.
           </p>
         </div>
       )}
 
-      <div className="pt-4 border-t border-slate-200 space-y-3">
+      <div className="pt-4 border-t border-border space-y-3">
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={onExport}
-            className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:border-emerald-400"
+            className="rounded border border-border-strong px-3 py-1.5 text-sm hover:border-brand-hover"
           >
             Exportieren (JSON)
           </button>
-          <label className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:border-emerald-400 cursor-pointer">
+          <label className="rounded border border-border-strong px-3 py-1.5 text-sm hover:border-brand-hover cursor-pointer">
             Importieren
             <input
               type="file"
@@ -307,15 +309,17 @@ export function SetupPanel({
         </div>
         <button
           type="button"
-          onClick={() => {
-            if (
-              confirm(
-                'Wirklich alles zurücksetzen? Spieler:innen, Teams und Spielplan gehen verloren.',
-              )
-            )
-              onReset()
+          onClick={async () => {
+            const ok = await confirm({
+              title: 'Turnier zurücksetzen?',
+              description:
+                'Spieler:innen, Teams und Spielplan gehen verloren.',
+              confirmLabel: 'Zurücksetzen',
+              destructive: true,
+            })
+            if (ok) onReset()
           }}
-          className="text-sm text-rose-700 hover:text-rose-900 underline"
+          className="text-sm text-danger-fg hover:opacity-80 underline"
         >
           Turnier zurücksetzen
         </button>

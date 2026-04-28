@@ -58,7 +58,7 @@ export function RankingPanel({
           <button
             type="button"
             onClick={() => onSetRevealActive(true)}
-            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white font-medium hover:bg-emerald-700"
+            className="rounded-md bg-brand px-3 py-1.5 text-sm text-white font-medium hover:bg-brand-hover"
           >
             🎉 Siegerehrung-Show starten
           </button>
@@ -105,13 +105,13 @@ function RotationRanking({ tournament }: Props) {
 
   if (tournament.schedule.length === 0)
     return (
-      <p className="text-slate-500 text-sm italic">
+      <p className="text-fg-muted text-sm italic">
         Noch kein Spielplan generiert.
       </p>
     )
   if (completed === 0)
     return (
-      <p className="text-slate-500 text-sm italic">
+      <p className="text-fg-muted text-sm italic">
         Noch keine Ergebnisse eingetragen.
       </p>
     )
@@ -120,13 +120,13 @@ function RotationRanking({ tournament }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="text-sm text-slate-600">
+      <div className="text-sm text-fg-muted">
         {completed} von {total} Matches erfasst
         {completed < total && ' — Tabelle aktualisiert sich live.'}
       </div>
       <section className="space-y-4">
         {showPerGender && (
-          <h3 className="text-base font-semibold text-slate-800">
+          <h3 className="text-base font-semibold text-fg">
             Gesamtwertung
           </h3>
         )}
@@ -154,7 +154,7 @@ function GenderRanking({
   const podium = rows.slice(0, 3)
   return (
     <section className="space-y-4">
-      <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+      <h3 className="text-base font-semibold text-fg">{title}</h3>
       {podium.length >= 3 && <Podium podium={podium.map(rowToPodium)} />}
       <RankingTable rows={rows.map(rowToTableRow)} />
     </section>
@@ -199,14 +199,14 @@ function GroupsRanking({ tournament }: Props) {
   const groups = useMemo(() => groupsFor(tournament), [tournament])
   if (tournament.entries.length === 0)
     return (
-      <p className="text-slate-500 text-sm italic">
+      <p className="text-fg-muted text-sm italic">
         Noch keine Teilnehmer:innen angelegt.
       </p>
     )
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-fg-muted">
         Tabelle pro Gruppe — sortiert nach Siegen, dann Spielesaldo, dann
         gewonnenen Spielen.
       </p>
@@ -219,7 +219,7 @@ function GroupsRanking({ tournament }: Props) {
         return (
           <div
             key={gi}
-            className="rounded-md border border-slate-200 bg-white p-3"
+            className="rounded-md border border-border bg-surface p-3"
           >
             <h3 className="font-semibold mb-2">
               Gruppe {groupLetter(groupNum)}
@@ -293,7 +293,7 @@ function GroupsKoRanking({ tournament }: Props) {
     <div className="space-y-6">
       <BracketSummary resolved={resolved} entryName={entryName} />
       <details>
-        <summary className="cursor-pointer text-sm text-slate-600 hover:text-slate-900">
+        <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">
           Gruppenphase-Tabellen
         </summary>
         <div className="mt-3 space-y-3">
@@ -306,7 +306,7 @@ function GroupsKoRanking({ tournament }: Props) {
             return (
               <div
                 key={gi}
-                className="rounded-md border border-slate-200 bg-white p-3"
+                className="rounded-md border border-border bg-surface p-3"
               >
                 <h3 className="font-semibold mb-2">
                   Gruppe {groupLetter(groupNum)}
@@ -344,7 +344,7 @@ function BracketSummary({
 }) {
   if (resolved.length === 0)
     return (
-      <p className="text-slate-500 text-sm italic">
+      <p className="text-fg-muted text-sm italic">
         Noch kein Bracket erzeugt.
       </p>
     )
@@ -353,27 +353,27 @@ function BracketSummary({
   return (
     <div className="space-y-4">
       {champion ? (
-        <div className="rounded-md bg-emerald-50 border border-emerald-300 p-4 text-center">
+        <div className="rounded-md bg-brand-soft border border-emerald-300 p-4 text-center">
           <div className="text-3xl mb-1">🏆</div>
-          <div className="text-xs text-emerald-700 font-medium uppercase tracking-wide">
+          <div className="text-xs text-brand font-medium uppercase tracking-wide">
             Sieger
           </div>
-          <div className="text-2xl font-bold text-emerald-900">
+          <div className="text-2xl font-bold text-brand-soft-fg">
             {champion}
           </div>
         </div>
       ) : (
-        <p className="text-slate-500 text-sm italic">
+        <p className="text-fg-muted text-sm italic">
           Finale noch nicht entschieden.
         </p>
       )}
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-md border border-slate-200 p-3">
-          <div className="text-xs text-slate-500 mb-1">🥈 Finalist:in</div>
+        <div className="rounded-md border border-border p-3">
+          <div className="text-xs text-fg-muted mb-1">🥈 Finalist:in</div>
           <div className="font-semibold">{runnerUp ?? '—'}</div>
         </div>
-        <div className="rounded-md border border-slate-200 p-3">
-          <div className="text-xs text-slate-500 mb-1">
+        <div className="rounded-md border border-border p-3">
+          <div className="text-xs text-fg-muted mb-1">
             🥉 Halbfinal-Verlierer
           </div>
           <div className="font-semibold">
@@ -399,7 +399,7 @@ function Podium({ podium }: { podium: PodiumRow[] }) {
   return (
     <div className="grid grid-cols-3 gap-2 items-end">
       <PodiumStep row={podium[1]} place={2} height="h-24" tone="bg-slate-300" />
-      <PodiumStep row={podium[0]} place={1} height="h-32" tone="bg-amber-300" />
+      <PodiumStep row={podium[0]} place={1} height="h-32" tone="bg-warn-bg" />
       <PodiumStep row={podium[2]} place={3} height="h-20" tone="bg-orange-300" />
     </div>
   )
@@ -420,12 +420,12 @@ function PodiumStep({
     <div className="flex flex-col items-center gap-1">
       <div className="text-2xl">{medal(place)}</div>
       <div className="font-semibold text-center text-sm">{row.name}</div>
-      <div className="text-xs text-slate-500">
+      <div className="text-xs text-fg-muted">
         {row.wins} S · {row.diff > 0 ? '+' : ''}
         {row.diff}
       </div>
       <div
-        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-slate-800`}
+        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-fg`}
       >
         {place}
       </div>
@@ -454,10 +454,10 @@ interface TableRow {
 
 function RankingTable({ rows }: { rows: TableRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded-md border border-border bg-surface">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-slate-100 text-slate-700 text-left">
+          <tr className="bg-surface-sunken text-fg text-left">
             <th className="px-2 py-2 w-10">#</th>
             <th className="px-2 py-2">Name</th>
             <th className="px-2 py-2 text-right">Sp</th>
@@ -470,19 +470,19 @@ function RankingTable({ rows }: { rows: TableRow[] }) {
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-t border-slate-100">
+            <tr key={i} className="border-t border-border">
               <td className="px-2 py-1.5 font-semibold">
                 {medal(r.rank)} {r.rank}.
               </td>
               <td className="px-2 py-1.5">{r.name}</td>
               <td className="px-2 py-1.5 text-right">{r.played}</td>
-              <td className="px-2 py-1.5 text-right text-emerald-700">
+              <td className="px-2 py-1.5 text-right text-brand">
                 {r.wins}
               </td>
-              <td className="px-2 py-1.5 text-right text-slate-500">
+              <td className="px-2 py-1.5 text-right text-fg-muted">
                 {r.draws}
               </td>
-              <td className="px-2 py-1.5 text-right text-rose-700">
+              <td className="px-2 py-1.5 text-right text-danger-fg">
                 {r.losses}
               </td>
               <td className="px-2 py-1.5 text-right tabular-nums">
