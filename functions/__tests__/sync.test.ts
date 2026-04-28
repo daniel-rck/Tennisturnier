@@ -335,6 +335,39 @@ describe('PUT /api/sync/:code', () => {
   })
 })
 
+describe('corrupt KV data', () => {
+  // Regression: an unguarded JSON.parse on the stored blob would throw and
+  // bubble up to the worker as a generic 500. Handlers now return a clear
+  // corrupt_data error instead.
+  function envWithCorrupt(value: string) {
+    const kv = new MemKV()
+    void kv.put('ABCDEF', value)
+    return { TOURNAMENTS: kv as unknown as KVNamespace }
+  }
+
+  it('GET returns 500 corrupt_data on unparseable JSON', async () => {
+    const env = envWithCorrupt('not json{')
+    const res = await readTournament(
+      ctx(new Request('https://example.com/api/sync/ABCDEF'), env, {
+        code: 'ABCDEF',
+      }),
+    )
+    expect(res.status).toBe(500)
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toBe('corrupt_data')
+  })
+
+  it('GET returns 500 corrupt_data on JSON missing required fields', async () => {
+    const env = envWithCorrupt(JSON.stringify({ unrelated: true }))
+    const res = await readTournament(
+      ctx(new Request('https://example.com/api/sync/ABCDEF'), env, {
+        code: 'ABCDEF',
+      }),
+    )
+    expect(res.status).toBe(500)
+  })
+})
+
 describe('DELETE /api/sync/:code', () => {
   it('deletes when authorised', async () => {
     const env = makeEnv()

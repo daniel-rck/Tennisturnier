@@ -97,3 +97,25 @@ export function kvBindingMissingResponse(): Response {
     { status: 503 },
   )
 }
+
+/**
+ * Parses a stored snapshot, or returns null if the blob is corrupt. Avoids
+ * letting an uncaught `JSON.parse` exception bubble up to a generic 500.
+ */
+export function parseStored(raw: string): StoredTournament | null {
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object') return null
+    const s = parsed as Partial<StoredTournament>
+    if (
+      typeof s.version !== 'number' ||
+      typeof s.ownerTokenHash !== 'string' ||
+      typeof s.updatedAt !== 'string'
+    ) {
+      return null
+    }
+    return s as StoredTournament
+  } catch {
+    return null
+  }
+}

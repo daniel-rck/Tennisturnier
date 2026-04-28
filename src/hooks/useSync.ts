@@ -127,7 +127,7 @@ export function useSync({
       })
       if (!res.ok) {
         setStatus('error')
-        setError(`HTTP ${res.status}`)
+        setError(await readErrorMessage(res))
         return
       }
       const body = (await res.json()) as { version: number }
@@ -280,12 +280,25 @@ export function useSync({
   )
 
   const leaveSession = useCallback(() => {
+    // Best-effort: if we're the owner, ask the server to drop the snapshot so
+    // the share code stops working immediately (matches the button's "Code
+    // wird ungültig" promise). Failure is non-fatal — the entry self-cleans
+    // after the KV TTL anyway.
+    if (sync?.shareCode && sync.ownerToken) {
+      void fetch(`/api/sync/${sync.shareCode}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sync.ownerToken}` },
+        keepalive: true,
+      }).catch(() => {
+        /* swallow — local cleanup still proceeds */
+      })
+    }
     setSync(undefined)
     setStatus('disabled')
     setError(null)
     versionRef.current = 0
     lastPushedRef.current = ''
-  }, [setSync])
+  }, [setSync, sync?.shareCode, sync?.ownerToken])
 
   return {
     status,
