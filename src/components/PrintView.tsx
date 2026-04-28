@@ -389,6 +389,10 @@ function GroupsRankingPrint({ t }: { t: Tournament }) {
   const winners: Array<{ group: number; name: string }> = []
   groups.forEach((group, gi) => {
     const matches = t.groupSchedule.filter((m) => m.group === gi + 1)
+    const hasDecidedMatch = matches.some(
+      (m) => m.scoreA != null && m.scoreB != null,
+    )
+    if (!hasDecidedMatch) return
     const standings = groupStandings(group, matches)
     const top = standings[0]
     if (top && byId.has(top.entryId)) {

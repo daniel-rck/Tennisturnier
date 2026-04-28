@@ -172,24 +172,32 @@ describe('generateSchedule — allowPartialFinalRound', () => {
     expect(warnings.some((w) => /teilweise besetzt/i.test(w))).toBe(false)
   })
 
-  it('drops surplus rounds when fairness is reached early (8 players, 2 courts, 6 rounds, open)', () => {
-    const players: Player[] = Array.from({ length: 8 }, (_, i) =>
-      player(`p${i}`, `P${i}`, i % 2 === 0 ? 'F' : 'M'),
+  it('drops surplus rounds when target total < R*C (6 players, 1 court, 4 rounds, open)', () => {
+    const players: Player[] = Array.from({ length: 6 }, (_, i) =>
+      player(`p${i}`, `P${i}`, 'M'),
     )
     const t = baseTournament({
       players,
       mode: 'open',
-      courts: 2,
-      rounds: 6,
+      courts: 1,
+      rounds: 4,
       allowPartialFinalRound: true,
     })
     const { rounds } = generateSchedule(t)
-    // With 8 players, 2 courts, every full round uses all 8 → after enough
-    // rounds every player has played the same N games. Surplus rounds where
-    // no one is "behind" are dropped — but here every round is justified
-    // because everyone moves up in lockstep, so all 6 rounds run.
-    // Sanity: every emitted round is full.
-    for (const r of rounds) expect(r.matches.length).toBe(2)
+    // P=6, R=4, C=1 → largest T ≤ 4 with 4T % 6 == 0 is T=3.
+    // Three matches × 4 player-spots = 12 spots → every player exactly 2 games.
+    // Round 4 has remaining=0 and is dropped.
+    expect(rounds).toHaveLength(3)
+    for (const r of rounds) expect(r.matches.length).toBe(1)
+    const plays = new Map<string, number>()
+    for (const r of rounds) {
+      for (const m of r.matches) {
+        for (const id of [...m.teamA.players, ...m.teamB.players]) {
+          plays.set(id, (plays.get(id) ?? 0) + 1)
+        }
+      }
+    }
+    for (const p of players) expect(plays.get(p.id) ?? 0).toBe(2)
   })
 
   it('flag off keeps full rounds even when distribution is uneven (5 players, 1 court, 4 rounds, open)', () => {
