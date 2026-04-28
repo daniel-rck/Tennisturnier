@@ -90,6 +90,7 @@ export function SchedulePanel({
                 key={round.index}
                 round={round}
                 byId={playerById}
+                expectedCourts={tournament.courts}
                 onScore={onScore}
               />
             ))}
@@ -129,16 +130,26 @@ export function SchedulePanel({
 function RoundCard({
   round,
   byId,
+  expectedCourts,
   onScore,
 }: {
   round: Round
   byId: Map<string, Player>
+  expectedCourts: number
   onScore: Props['onScore']
 }) {
+  const isPartial = round.matches.length < expectedCourts
   return (
     <div className="rounded-md border border-slate-200 bg-white p-3">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold">Runde {round.index}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold">Runde {round.index}</h3>
+          {isPartial && (
+            <span className="rounded-full bg-amber-100 text-amber-800 text-[10px] uppercase tracking-wide font-medium px-2 py-0.5">
+              Teilrunde
+            </span>
+          )}
+        </div>
         {round.resting.length > 0 && (
           <span className="text-xs text-slate-500">
             Pause: {round.resting.map((id) => byId.get(id)?.name).join(', ')}

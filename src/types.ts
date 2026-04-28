@@ -73,6 +73,9 @@ export interface Tournament {
   rounds: number
   players: Player[]
   schedule: Round[]
+  /** Allow the last round to have fewer matches (or be skipped) so every
+   *  player ends up with the same number of games. */
+  allowPartialFinalRound: boolean
 
   // Groups/KO-only
   entryFormat: EntryFormat

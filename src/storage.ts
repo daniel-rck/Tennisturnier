@@ -12,6 +12,7 @@ export const defaultTournament = (): Tournament => ({
   timerMinutes: 15,
   players: [],
   schedule: [],
+  allowPartialFinalRound: true,
   entryFormat: 'doubles',
   entries: [],
   groupCount: 2,
@@ -57,6 +58,10 @@ export function migrate(parsed: unknown): Tournament {
     bracket: Array.isArray(p.bracket) ? p.bracket : [],
     groupAssignment: Array.isArray(p.groupAssignment) ? p.groupAssignment : [],
     thirdPlaceMatch: typeof p.thirdPlaceMatch === 'boolean' ? p.thirdPlaceMatch : false,
+    allowPartialFinalRound:
+      typeof p.allowPartialFinalRound === 'boolean'
+        ? p.allowPartialFinalRound
+        : base.allowPartialFinalRound,
   }
 }
 
