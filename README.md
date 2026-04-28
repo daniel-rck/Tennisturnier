@@ -5,76 +5,70 @@
 <h1 align="center">Tennisturnier-Planer</h1>
 
 <p align="center">
-  Kostenlose, browserbasierte Web-App zum Planen kleiner Tennisturniere – Spielplan, Rundentimer mit Glocke, Ergebnis-Eingabe und Siegerehrung.
-  <br/>
-  <a href="https://daniel-rck.github.io/Tennisturnier/"><strong>Live öffnen →</strong></a>
+  Browserbasierte Web-App für kleine Tennisturniere – Spielplan, Rundentimer, Ergebnis-Eingabe, Siegerehrung. Keine Anmeldung, offlinefähig.
 </p>
 
 ---
 
 ## Was das ist
 
-Eine schlanke Progressive Web App für den Vereins-Alltag: Du gibst Plätze, Spieler:innen und Modus an und bekommst einen Spielplan, in dem in jeder Runde alle Plätze besetzt sind und möglichst niemand zweimal mit derselben Person gespielt hat. Während der Runde läuft optional ein Timer, der mit einer Glocke das Ende ankündigt. Nach den Spielen trägst du die gewonnenen Spiele ein, und die App rechnet daraus eine Siegerehrung mit Podium.
+Du gibst Plätze, Spieler:innen und Modus an und bekommst einen Spielplan, in dem in jeder Runde alle Plätze besetzt sind und möglichst niemand zweimal mit derselben Person gespielt hat. Während der Runde läuft optional ein Timer, der mit einer Glocke das Ende ankündigt. Nach den Spielen trägst du Ergebnisse ein, und die App rechnet eine Siegerehrung mit Podium.
 
-Alles läuft serverless im Browser – keine Anmeldung, keine Daten verlassen dein Gerät, offlinefähig nach dem ersten Aufruf.
+Alles läuft im Browser. Daten bleiben standardmäßig auf deinem Gerät (`localStorage`). Optional kann ein Turnier per Share-Code zwischen Geräten live synchronisiert werden — z. B. Eingabe am Handy, Anzeige auf dem Vereinsheim-TV.
 
 ## Features
 
-- **Spielmodi:** Gemischtes Doppel, Damen-Doppel, Herren-Doppel, Freies Doppel
-- **Spielplan-Generator:** füllt jede Runde alle Plätze, minimiert Partner- und Gegner-Wiederholungen, verteilt Pausen fair
-- **Drag-and-Drop-Sortierung** der Spielerliste plus Auto-Sortierung (A→Z, Damen zuerst, Herren zuerst)
-- **Rundentimer mit Glocke:** Spielzeit pro Runde einstellen, Start / Pause / Reset, akustisches Signal am Ende (Web Audio, kein Asset-Download)
-- **Ergebnis-Eingabe** direkt am Match (Spiele Team A : Team B)
-- **Siegerehrung** mit Podium 🥇🥈🥉 und Tabelle (Siege → Spielesaldo → gewonnene Spiele → Name)
-- **Druckansicht** für Aushang am Schwarzen Brett – inklusive leerer Ergebnis-Zeilen, falls noch keine eingetragen sind
-- **PWA / Offline:** installierbar auf Handy und Desktop, Service-Worker cached alles
-- **Persistenz** in `localStorage` – Reload, Browser-Schließen, alles bleibt erhalten
+- **Formate:** Wechselturnier (Mixed, Damen, Herren, Frei), Gruppen, KO, Gruppen + KO
+- **Spielplan-Generator:** füllt jede Runde alle Plätze, minimiert Partner- und Gegner-Wiederholungen, verteilt Pausen fair, optional Teilrunde damit alle gleich oft spielen
+- **Drag-and-Drop-Sortierung** der Spielerliste, Auto-Sortierung (A→Z, Damen/Herren zuerst)
+- **Rundentimer** mit synthetisierter Glocke (Web Audio, kein Asset-Download)
+- **Ergebnis-Eingabe** direkt am Match
+- **Siegerehrung** mit Podium 🥇🥈🥉, optional getrennt nach Damen/Herren beim Mixed-Turnier; Reveal-Modus mit Konfetti & Fanfare für die Show im Vereinsheim
+- **Live-Sync** zwischen Geräten per 6-stelligem Code (opt-in, ~3 s Latenz, QR-Code zum Beitreten)
+- **Druckansicht** für Aushang am Schwarzen Brett
+- **PWA / Offline:** installierbar auf Handy und Desktop
+
+---
 
 ## Tech-Stack
 
 | | |
 |---|---|
 | Framework | React 19 + TypeScript |
-| Build | Vite 8, Tailwind CSS 4 |
+| Build | Vite 7, Tailwind CSS 4 |
 | PWA | `vite-plugin-pwa` mit Workbox |
-| Drag-and-Drop | `@dnd-kit/core` + `@dnd-kit/sortable` |
-| Hosting | GitHub Pages, Deploy via GitHub Actions |
-| Speicher | `localStorage` |
-| Sound | Web Audio API (synthetisierte Glocke) |
+| Hosting | Cloudflare Workers (Workers Builds, Git-Integration) mit Static Assets + KV |
+| Speicher | `localStorage` (lokal), Cloudflare KV (optional, für Live-Sync) |
 
 ## Lokal entwickeln
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173/Tennisturnier/
-npm run build    # baut nach dist/
+npm run dev      # http://localhost:5173/  (Vite, ohne Sync-Backend)
+npm run build
 npm run lint
+npm run test
+```
+
+Sync-Backend lokal mittesten (Worker + Static Assets + KV-Mock):
+
+```bash
+npx wrangler dev   # http://localhost:8787  (SPA + API)
 ```
 
 ## Deployment
 
-Push auf `main` → die Action `.github/workflows/deploy.yml` baut und deployt automatisch nach GitHub Pages. In den Repo-Einstellungen muss **Pages → Source = „GitHub Actions“** gesetzt sein.
+Cloudflare Workers Builds baut und deployt bei jedem Push automatisch via Git-Integration:
 
-## Logo austauschen
+1. *Workers & Pages → Create → Import a repository* → Repo wählen. Cloudflare erkennt `wrangler.toml` automatisch.
+2. *Worker → Storage → KV → Create namespace*, dann *Settings → Bindings → Add → KV*, Variable `TOURNAMENTS` auf den Namespace setzen. (Ohne dieses Binding läuft die App statisch ohne Live-Sync.)
+3. Optional: *Settings → Domains & Routes* für eine Custom Domain.
 
-Das Logo liegt unter [`public/logo.svg`](public/logo.svg) als generischer Tennis-Ball-Platzhalter. Um dein eigenes Gemini-generiertes Logo zu verwenden:
-
-1. Lade das Bild herunter und schneide den weißen Rand ab (z. B. mit [remove.bg](https://www.remove.bg/), Photoshop, GIMP oder einem Browser-Tool).
-2. Speichere es als `public/logo.png` (oder ersetze `public/logo.svg`).
-3. Falls du den Dateinamen änderst, passe den Pfad oben in der README sowie in `public/favicon.svg` und `vite.config.ts` (Manifest-Icons) an.
-
-> **Hinweis:** Während der Erstellung dieser App war der Sandbox-Proxy auf `lh3.googleusercontent.com` blockiert, daher konnte das ursprünglich verlinkte Gemini-Logo nicht direkt eingebaut werden. Der SVG-Platzhalter passt aber farblich zur App.
+Jeder Push auf `main` deployt zur Production; Branches/PRs bekommen Preview-URLs. PR-CI (Lint + Tests + Build) läuft separat als GitHub Action.
 
 ## Algorithmus (kurz)
 
-Der Spielplan-Generator (`src/scheduler.ts`) arbeitet greedy pro Runde:
-
-1. Wähle die Spieler:innen, die spielen, nach `(meist gepaust ↓, am wenigsten gespielt ↓, manuelle Reihenfolge ↑)`.
-2. Bilde Paare per **bipartitem Matching** (Damen × Herren bei Mixed) bzw. **Perfect Matching** (gleichgeschlechtlich / frei). Brute-Force bis 8 pro Geschlecht (~40k Permutationen), darüber Greedy.
-3. Verteile die Paare auf Plätze, sodass die Summe der bisher schon gespielten Gegner-Begegnungen minimal wird.
-4. Update der Counter und ab in die nächste Runde.
-
-Im Test mit 4 Damen + 4 Herren, 2 Plätzen, 4 Runden Mixed: **0 Partner-Wiederholungen** über alle Runden, jede Frau spielt mit jedem Mann genau einmal.
+Der Spielplan-Generator (`src/scheduler.ts`) arbeitet greedy pro Runde: Spieler:innen-Auswahl nach Pausen-Saldo → Paarbildung per bipartitem Matching (Mixed) bzw. Perfect Matching → Court-Verteilung minimiert wiederholte Gegner-Begegnungen. Im Test mit 4F + 4M, 2 Plätzen, 4 Runden Mixed: 0 Partner-Wiederholungen, jede Frau spielt mit jedem Mann genau einmal.
 
 ## Lizenz
 

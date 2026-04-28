@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
+import { useSync } from './hooks/useSync'
 import { generateSchedule } from './scheduler'
 import { migrate } from './storage'
 import { SetupPanel } from './components/SetupPanel'
@@ -10,6 +11,7 @@ import { PrintView } from './components/PrintView'
 import { EntriesPanel } from './components/EntriesPanel'
 import { GroupsPanel } from './components/GroupsPanel'
 import { BracketPanel } from './components/BracketPanel'
+import { SyncPanel } from './components/SyncPanel'
 
 type Tab =
   | 'setup'
@@ -23,8 +25,36 @@ type Tab =
 
 function App() {
   const t = useTournament()
+  const sync = useSync({
+    tournament: t.tournament,
+    setSync: t.setSync,
+    applyRemote: t.replaceTournament,
+  })
   const [tab, setTab] = useState<Tab>('setup')
   const [warnings, setWarnings] = useState<string[]>([])
+  const isOwner = sync.role !== 'viewer'
+
+  // Auto-join via ?join=<code> URL param — runs once on first mount.
+  const joinedRef = useRef(false)
+  useEffect(() => {
+    if (joinedRef.current) return
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('join')
+    if (!code) return
+    joinedRef.current = true
+    sync
+      .joinSession(code)
+      .catch(() => {})
+      .finally(() => {
+        // Strip ?join= from the URL so a refresh doesn't re-join over local state.
+        params.delete('join')
+        const next = `${window.location.pathname}${
+          params.toString() ? '?' + params.toString() : ''
+        }`
+        window.history.replaceState({}, '', next)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleGenerate = () => {
     t.snapshot()
@@ -44,7 +74,11 @@ function App() {
   }
 
   const handleExport = () => {
-    const blob = new Blob([JSON.stringify(t.tournament, null, 2)], {
+    // Strip ownerToken from export — it's device-bound and would let the recipient hijack the sync.
+    const exportable = t.tournament.sync
+      ? { ...t.tournament, sync: { ...t.tournament.sync, ownerToken: undefined } }
+      : t.tournament
+    const blob = new Blob([JSON.stringify(exportable, null, 2)], {
       type: 'application/json',
     })
     const url = URL.createObjectURL(blob)
@@ -135,11 +169,26 @@ function App() {
             </p>
           </div>
           <div className="flex-1" />
+          {sync.role !== 'none' && (
+            <span
+              title={sync.error ?? sync.status}
+              className={
+                'text-xs px-2 py-0.5 rounded-full font-medium mr-2 ' +
+                (sync.status === 'live'
+                  ? 'bg-emerald-500 text-white'
+                  : sync.status === 'connecting'
+                    ? 'bg-amber-300 text-amber-900'
+                    : 'bg-rose-300 text-rose-900')
+              }
+            >
+              ● {sync.role === 'owner' ? 'sync' : 'viewer'}
+            </span>
+          )}
           <button
             type="button"
             onClick={t.undo}
-            disabled={!t.canUndo}
-            title="Rückgängig (Strg/Cmd+Z)"
+            disabled={!t.canUndo || !isOwner}
+            title={isOwner ? 'Rückgängig (Strg/Cmd+Z)' : 'Im Viewer-Modus deaktiviert'}
             aria-label="Rückgängig"
             className="text-emerald-100 hover:text-white disabled:text-emerald-300 disabled:cursor-not-allowed text-sm px-2 py-1"
           >
@@ -168,7 +217,17 @@ function App() {
       <main className="flex-1">
         <div className="max-w-3xl mx-auto px-4 py-6">
           {tab === 'setup' && (
-            <SetupPanel
+            <div className="space-y-6">
+              <SyncPanel
+                tournament={t.tournament}
+                status={sync.status}
+                role={sync.role}
+                error={sync.error}
+                onCreate={sync.createSession}
+                onJoin={sync.joinSession}
+                onLeave={sync.leaveSession}
+              />
+              <SetupPanel
               name={t.tournament.name}
               format={t.tournament.format}
               entryFormat={t.tournament.entryFormat}
@@ -179,6 +238,7 @@ function App() {
               groupCount={t.tournament.groupCount}
               advancePerGroup={t.tournament.advancePerGroup}
               thirdPlaceMatch={t.tournament.thirdPlaceMatch}
+              perGenderRanking={t.tournament.perGenderRanking}
               onName={t.setName}
               onFormat={t.setFormat}
               onEntryFormat={t.setEntryFormat}
@@ -189,10 +249,12 @@ function App() {
               onGroupCount={t.setGroupCount}
               onAdvancePerGroup={t.setAdvancePerGroup}
               onThirdPlaceMatch={t.setThirdPlaceMatch}
+              onPerGenderRanking={t.setPerGenderRanking}
               onReset={handleReset}
               onExport={handleExport}
               onImport={handleImport}
-            />
+              />
+            </div>
           )}
           {tab === 'players' && (
             <PlayersPanel
@@ -241,7 +303,15 @@ function App() {
               onScore={t.setBracketScore}
             />
           )}
-          {tab === 'ranking' && <RankingPanel tournament={t.tournament} />}
+          {tab === 'ranking' && (
+            <RankingPanel
+              tournament={t.tournament}
+              isOwner={isOwner}
+              onSetRevealActive={t.setRevealActive}
+              onSetRevealStep={t.setRevealStep}
+              onResetReveal={t.resetReveal}
+            />
+          )}
           {tab === 'print' && <PrintView tournament={t.tournament} />}
         </div>
       </main>

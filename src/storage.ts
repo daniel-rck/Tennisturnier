@@ -1,7 +1,12 @@
-import type { Entry, Tournament } from './types'
+import type { Entry, RevealState, Tournament } from './types'
 
 const KEY_V1 = 'tennisturnier:v1'
 const KEY = 'tennisturnier:v2'
+
+export const defaultReveal = (): RevealState => ({
+  active: false,
+  steps: { overall: 0, women: 0, men: 0 },
+})
 
 export const defaultTournament = (): Tournament => ({
   name: 'Vereinsturnier',
@@ -21,6 +26,8 @@ export const defaultTournament = (): Tournament => ({
   bracket: [],
   groupAssignment: [],
   thirdPlaceMatch: false,
+  perGenderRanking: false,
+  reveal: defaultReveal(),
 })
 
 /** Migrate a partial / older tournament shape onto current defaults. Defensive — never throws. */
@@ -58,10 +65,48 @@ export function migrate(parsed: unknown): Tournament {
     bracket: Array.isArray(p.bracket) ? p.bracket : [],
     groupAssignment: Array.isArray(p.groupAssignment) ? p.groupAssignment : [],
     thirdPlaceMatch: typeof p.thirdPlaceMatch === 'boolean' ? p.thirdPlaceMatch : false,
+    perGenderRanking: typeof p.perGenderRanking === 'boolean' ? p.perGenderRanking : false,
     allowPartialFinalRound:
       typeof p.allowPartialFinalRound === 'boolean'
         ? p.allowPartialFinalRound
         : base.allowPartialFinalRound,
+    reveal: sanitizeReveal(p.reveal),
+    sync: sanitizeSync(p.sync),
+  }
+}
+
+function sanitizeReveal(input: unknown): RevealState {
+  const base = defaultReveal()
+  if (!input || typeof input !== 'object') return base
+  const r = input as Partial<RevealState>
+  const stepIn =
+    r.steps && typeof r.steps === 'object'
+      ? (r.steps as Record<string, unknown>)
+      : {}
+  const clamp = (v: unknown): 0 | 1 | 2 | 3 => {
+    const n = typeof v === 'number' ? Math.round(v) : 0
+    return n === 1 || n === 2 || n === 3 ? n : 0
+  }
+  return {
+    active: typeof r.active === 'boolean' ? r.active : false,
+    steps: {
+      overall: clamp(stepIn.overall),
+      women: clamp(stepIn.women),
+      men: clamp(stepIn.men),
+    },
+  }
+}
+
+function sanitizeSync(
+  input: unknown,
+): Tournament['sync'] {
+  if (!input || typeof input !== 'object') return undefined
+  const s = input as { shareCode?: unknown; ownerToken?: unknown; enabled?: unknown }
+  if (typeof s.shareCode !== 'string' || s.shareCode.length === 0) return undefined
+  return {
+    shareCode: s.shareCode,
+    ownerToken: typeof s.ownerToken === 'string' ? s.ownerToken : undefined,
+    enabled: typeof s.enabled === 'boolean' ? s.enabled : false,
   }
 }
 

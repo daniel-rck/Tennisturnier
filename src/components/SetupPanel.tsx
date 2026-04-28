@@ -17,6 +17,7 @@ interface Props {
   groupCount: number
   advancePerGroup: number
   thirdPlaceMatch: boolean
+  perGenderRanking: boolean
   onName: (s: string) => void
   onFormat: (f: Format) => void
   onEntryFormat: (f: EntryFormat) => void
@@ -27,6 +28,7 @@ interface Props {
   onGroupCount: (n: number) => void
   onAdvancePerGroup: (n: number) => void
   onThirdPlaceMatch: (b: boolean) => void
+  onPerGenderRanking: (b: boolean) => void
   onReset: () => void
   onExport: () => void
   onImport: (f: File) => void
@@ -43,6 +45,7 @@ export function SetupPanel({
   groupCount,
   advancePerGroup,
   thirdPlaceMatch,
+  perGenderRanking,
   onName,
   onFormat,
   onEntryFormat,
@@ -53,6 +56,7 @@ export function SetupPanel({
   onGroupCount,
   onAdvancePerGroup,
   onThirdPlaceMatch,
+  onPerGenderRanking,
   onReset,
   onExport,
   onImport,
@@ -175,6 +179,24 @@ export function SetupPanel({
           <p className="text-xs text-slate-500 mt-1 ml-6">
             Überzählige Runden werden weggelassen, falls schon alle gleich oft
             gespielt haben.
+          </p>
+        </div>
+      )}
+
+      {format === 'rotation' && mode === 'mixed' && (
+        <div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={perGenderRanking}
+              onChange={(e) => onPerGenderRanking(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            Zusätzlich Damen- und Herren-Rangliste anzeigen
+          </label>
+          <p className="text-xs text-slate-500 mt-1 ml-6">
+            In der Siegerehrung erscheinen neben der Gesamtwertung getrennte
+            Tabellen pro Geschlecht.
           </p>
         </div>
       )}

@@ -14,7 +14,10 @@ import type {
   GroupMatch,
   Mode,
   Player,
+  RevealCategory,
+  RevealStep,
   Round,
+  SyncConfig,
   Tournament,
 } from '../types'
 
@@ -455,6 +458,51 @@ export function useTournament() {
     [],
   )
 
+  const setPerGenderRanking = useCallback(
+    (perGenderRanking: boolean) =>
+      setTournament((prev) => ({ ...prev, perGenderRanking })),
+    [],
+  )
+
+  const setRevealActive = useCallback(
+    (active: boolean) =>
+      setTournament((prev) => ({
+        ...prev,
+        reveal: { ...prev.reveal, active },
+      })),
+    [],
+  )
+
+  const setRevealStep = useCallback(
+    (category: RevealCategory, step: RevealStep) =>
+      setTournament((prev) => ({
+        ...prev,
+        reveal: {
+          ...prev.reveal,
+          steps: { ...prev.reveal.steps, [category]: step },
+        },
+      })),
+    [],
+  )
+
+  const resetReveal = useCallback(
+    () =>
+      setTournament((prev) => ({
+        ...prev,
+        reveal: {
+          ...prev.reveal,
+          steps: { overall: 0, women: 0, men: 0 },
+        },
+      })),
+    [],
+  )
+
+  const setSync = useCallback(
+    (sync: SyncConfig | undefined) =>
+      setTournament((prev) => ({ ...prev, sync })),
+    [],
+  )
+
   /** Replace the entire tournament, e.g. after import. */
   const replaceTournament = useCallback(
     (next: Tournament) => setTournament(next),
@@ -495,6 +543,11 @@ export function useTournament() {
     setBracket,
     setBracketScore,
     setThirdPlaceMatch,
+    setPerGenderRanking,
+    setRevealActive,
+    setRevealStep,
+    resetReveal,
+    setSync,
     replaceTournament,
     reset,
   }

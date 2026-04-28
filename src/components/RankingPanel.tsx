@@ -1,5 +1,10 @@
 import { useCallback, useMemo } from 'react'
-import type { Entry, Tournament } from '../types'
+import type {
+  Entry,
+  RevealCategory,
+  RevealStep,
+  Tournament,
+} from '../types'
 import {
   assignGroups,
   groupStandings,
@@ -8,6 +13,7 @@ import {
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
 import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
 import type { RotationRanking } from '../ranking'
+import { RevealPanel } from './RevealPanel'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -18,15 +24,52 @@ function groupsFor(t: Tournament): Entry[][] {
 
 interface Props {
   tournament: Tournament
+  isOwner?: boolean
+  onSetRevealActive?: (b: boolean) => void
+  onSetRevealStep?: (cat: RevealCategory, step: RevealStep) => void
+  onResetReveal?: () => void
 }
 
-export function RankingPanel({ tournament }: Props) {
+export function RankingPanel({
+  tournament,
+  isOwner = true,
+  onSetRevealActive,
+  onSetRevealStep,
+  onResetReveal,
+}: Props) {
   const f = tournament.format
 
-  if (f === 'rotation') return <RotationRanking tournament={tournament} />
-  if (f === 'groups') return <GroupsRanking tournament={tournament} />
-  if (f === 'knockout') return <KnockoutRanking tournament={tournament} />
-  return <GroupsKoRanking tournament={tournament} />
+  if (tournament.reveal.active && onSetRevealActive && onSetRevealStep && onResetReveal) {
+    return (
+      <RevealPanel
+        tournament={tournament}
+        isOwner={isOwner}
+        onStep={onSetRevealStep}
+        onReset={onResetReveal}
+        onClose={() => onSetRevealActive(false)}
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {f === 'rotation' && isOwner && onSetRevealActive && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => onSetRevealActive(true)}
+            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white font-medium hover:bg-emerald-700"
+          >
+            🎉 Siegerehrung-Show starten
+          </button>
+        </div>
+      )}
+      {f === 'rotation' && <RotationRanking tournament={tournament} />}
+      {f === 'groups' && <GroupsRanking tournament={tournament} />}
+      {f === 'knockout' && <KnockoutRanking tournament={tournament} />}
+      {f === 'groups-ko' && <GroupsKoRanking tournament={tournament} />}
+    </div>
+  )
 }
 
 // ========== Rotation =====================================================
@@ -42,6 +85,23 @@ function RotationRanking({ tournament }: Props) {
     (m) => m.scoreA != null && m.scoreB != null,
   ).length
   const total = tournament.schedule.flatMap((r) => r.matches).length
+
+  const showPerGender =
+    tournament.mode === 'mixed' && tournament.perGenderRanking
+  const playerGender = useMemo(
+    () => new Map(tournament.players.map((p) => [p.id, p.gender])),
+    [tournament.players],
+  )
+  const womenRows = useMemo(
+    () =>
+      showPerGender ? rerank(rows.filter((r) => playerGender.get(r.id) === 'F')) : [],
+    [rows, playerGender, showPerGender],
+  )
+  const menRows = useMemo(
+    () =>
+      showPerGender ? rerank(rows.filter((r) => playerGender.get(r.id) === 'M')) : [],
+    [rows, playerGender, showPerGender],
+  )
 
   if (tournament.schedule.length === 0)
     return (
@@ -64,22 +124,73 @@ function RotationRanking({ tournament }: Props) {
         {completed} von {total} Matches erfasst
         {completed < total && ' — Tabelle aktualisiert sich live.'}
       </div>
-      {podium.length >= 3 && <Podium podium={podium.map(rowToPodium)} />}
-      <RankingTable
-        rows={rows.map((r) => ({
-          rank: r.rank,
-          name: r.name,
-          played: r.played,
-          wins: r.wins,
-          draws: r.draws,
-          losses: r.losses,
-          for: r.gamesFor,
-          against: r.gamesAgainst,
-          diff: r.diff,
-        }))}
-      />
+      <section className="space-y-4">
+        {showPerGender && (
+          <h3 className="text-base font-semibold text-slate-800">
+            Gesamtwertung
+          </h3>
+        )}
+        {podium.length >= 3 && <Podium podium={podium.map(rowToPodium)} />}
+        <RankingTable rows={rows.map(rowToTableRow)} />
+      </section>
+      {showPerGender && (
+        <GenderRanking title="Damen" rows={womenRows} />
+      )}
+      {showPerGender && (
+        <GenderRanking title="Herren" rows={menRows} />
+      )}
     </div>
   )
+}
+
+function GenderRanking({
+  title,
+  rows,
+}: {
+  title: string
+  rows: RotationRow[]
+}) {
+  if (rows.length === 0) return null
+  const podium = rows.slice(0, 3)
+  return (
+    <section className="space-y-4">
+      <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+      {podium.length >= 3 && <Podium podium={podium.map(rowToPodium)} />}
+      <RankingTable rows={rows.map(rowToTableRow)} />
+    </section>
+  )
+}
+
+function rowToTableRow(r: RotationRow): TableRow {
+  return {
+    rank: r.rank,
+    name: r.name,
+    played: r.played,
+    wins: r.wins,
+    draws: r.draws,
+    losses: r.losses,
+    for: r.gamesFor,
+    against: r.gamesAgainst,
+    diff: r.diff,
+  }
+}
+
+function rerank(rows: RotationRow[]): RotationRow[] {
+  const next = rows.map((r) => ({ ...r }))
+  let i = 0
+  while (i < next.length) {
+    let j = i + 1
+    while (
+      j < next.length &&
+      next[j].wins === next[i].wins &&
+      next[j].diff === next[i].diff &&
+      next[j].gamesFor === next[i].gamesFor
+    )
+      j++
+    for (let k = i; k < j; k++) next[k].rank = i + 1
+    i = j
+  }
+  return next
 }
 
 // ========== Groups =======================================================

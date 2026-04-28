@@ -1,0 +1,20 @@
+name = "tennisturnier"
+main = "./worker/index.ts"
+compatibility_date = "2024-12-30"
+
+# Static SPA from Vite — served when no API route matches.
+# `single-page-application` falls back to index.html for unmatched paths.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# KV namespace binding for live-sync is configured in the Cloudflare dashboard
+# (Worker → Settings → Bindings → KV namespace, variable name `TOURNAMENTS`).
+# Intentionally not declared here so the first deploy succeeds without it.
+#
+# Once you've created the namespace, you may also pin it here:
+# [[kv_namespaces]]
+# binding = "TOURNAMENTS"
+# id = "<production-id>"
+# preview_id = "<preview-id>"
