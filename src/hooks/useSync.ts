@@ -31,7 +31,11 @@ interface UseSyncResult {
   createSession: () => Promise<string>
   /** Viewer side — connects to an existing code (no write access). */
   joinSession: (code: string) => Promise<void>
-  /** Drops the local session info; remote snapshot stays in KV until TTL. */
+  /**
+   * Drops the local session info. If the user was the owner, this also
+   * fires a best-effort DELETE to invalidate the share code immediately;
+   * viewers just disconnect locally and the snapshot self-cleans on TTL.
+   */
   leaveSession: () => void
 }
 
@@ -127,7 +131,7 @@ export function useSync({
       })
       if (!res.ok) {
         setStatus('error')
-        setError(`HTTP ${res.status}`)
+        setError(await readErrorMessage(res))
         return
       }
       const body = (await res.json()) as { version: number }
@@ -242,7 +246,7 @@ export function useSync({
     })
     if (!res.ok) {
       setStatus('error')
-      setError(`HTTP ${res.status}`)
+      setError(await readErrorMessage(res))
       throw new Error(`create_failed_${res.status}`)
     }
     const body = (await res.json()) as CreateResponse
@@ -267,7 +271,7 @@ export function useSync({
       }
       if (!res.ok) {
         setStatus('error')
-        setError(`HTTP ${res.status}`)
+        setError(await readErrorMessage(res))
         throw new Error(`join_failed_${res.status}`)
       }
       const body = (await res.json()) as ReadResponse
@@ -280,12 +284,25 @@ export function useSync({
   )
 
   const leaveSession = useCallback(() => {
+    // Best-effort: if we're the owner, ask the server to drop the snapshot so
+    // the share code stops working immediately (matches the button's "Code
+    // wird ungültig" promise). Failure is non-fatal — the entry self-cleans
+    // after the KV TTL anyway.
+    if (sync?.shareCode && sync.ownerToken) {
+      void fetch(`/api/sync/${sync.shareCode}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sync.ownerToken}` },
+        keepalive: true,
+      }).catch(() => {
+        /* swallow — local cleanup still proceeds */
+      })
+    }
     setSync(undefined)
     setStatus('disabled')
     setError(null)
     versionRef.current = 0
     lastPushedRef.current = ''
-  }, [setSync])
+  }, [setSync, sync?.shareCode, sync?.ownerToken])
 
   return {
     status,
@@ -295,6 +312,18 @@ export function useSync({
     joinSession,
     leaveSession,
   }
+}
+
+/** Reads `{message}` or `{error}` from a JSON error body, falling back to HTTP status. */
+async function readErrorMessage(res: Response): Promise<string> {
+  try {
+    const body = (await res.clone().json()) as { message?: string; error?: string }
+    if (body?.message) return body.message
+    if (body?.error) return body.error
+  } catch {
+    // Non-JSON body — fall through.
+  }
+  return `HTTP ${res.status}`
 }
 
 /** Returns a tournament copy with `sync` stripped — never sent to server. */

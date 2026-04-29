@@ -80,3 +80,45 @@ export function jsonResponse(
     },
   })
 }
+
+/**
+ * Returns a clear 503 if the TOURNAMENTS KV binding isn't wired to the Worker.
+ * Without this guard, calling `.get` on `undefined` throws and Cloudflare
+ * surfaces an opaque 500 — which is what the user sees today before the
+ * namespace is created in the dashboard.
+ */
+export function kvBindingMissingResponse(): Response {
+  return jsonResponse(
+    {
+      error: 'sync_not_configured',
+      message:
+        'Live-Sync ist nicht eingerichtet. Bitte im Cloudflare-Dashboard eine KV-Namespace-Bindung mit dem Variablennamen "TOURNAMENTS" anlegen.',
+    },
+    { status: 503 },
+  )
+}
+
+/**
+ * Parses a stored snapshot, or returns null if the blob is corrupt. Avoids
+ * letting an uncaught `JSON.parse` exception bubble up to a generic 500.
+ */
+export function parseStored(raw: string): StoredTournament | null {
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object') return null
+    const s = parsed as Partial<StoredTournament>
+    if (
+      typeof s.version !== 'number' ||
+      typeof s.ownerTokenHash !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(s.ownerTokenHash) ||
+      typeof s.updatedAt !== 'string' ||
+      !('tournament' in s) ||
+      s.tournament == null
+    ) {
+      return null
+    }
+    return s as StoredTournament
+  } catch {
+    return null
+  }
+}
