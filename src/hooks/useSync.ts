@@ -31,7 +31,11 @@ interface UseSyncResult {
   createSession: () => Promise<string>
   /** Viewer side — connects to an existing code (no write access). */
   joinSession: (code: string) => Promise<void>
-  /** Drops the local session info; remote snapshot stays in KV until TTL. */
+  /**
+   * Drops the local session info. If the user was the owner, this also
+   * fires a best-effort DELETE to invalidate the share code immediately;
+   * viewers just disconnect locally and the snapshot self-cleans on TTL.
+   */
   leaveSession: () => void
 }
 

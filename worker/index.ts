@@ -60,23 +60,24 @@ async function routeSync(
     return methodNotAllowed(['POST'])
   }
 
+  // The outer fetch guard guarantees the path matches CODE_ROUTE here; if it
+  // ever doesn't, surface that as a diagnostic 500 via the catch in fetch()
+  // rather than silently 404'ing.
   const m = CODE_ROUTE.exec(url.pathname)
-  if (m) {
-    const params = { code: m[1] } as { code: string }
-    const fnCtx = makeCtx(request, env, ctx, params)
-    switch (request.method) {
-      case 'GET':
-        return readSync(fnCtx)
-      case 'PUT':
-        return writeSync(fnCtx)
-      case 'DELETE':
-        return deleteSync(fnCtx)
-      default:
-        return methodNotAllowed(['GET', 'PUT', 'DELETE'])
-    }
-  }
+  if (!m) throw new Error(`routeSync: unexpected path ${url.pathname}`)
 
-  return new Response('Not Found', { status: 404 })
+  const params = { code: m[1] } as { code: string }
+  const fnCtx = makeCtx(request, env, ctx, params)
+  switch (request.method) {
+    case 'GET':
+      return readSync(fnCtx)
+    case 'PUT':
+      return writeSync(fnCtx)
+    case 'DELETE':
+      return deleteSync(fnCtx)
+    default:
+      return methodNotAllowed(['GET', 'PUT', 'DELETE'])
+  }
 }
 
 // Bridges the Pages-Functions context shape (used by handlers under functions/)

@@ -366,6 +366,76 @@ describe('corrupt KV data', () => {
     )
     expect(res.status).toBe(500)
   })
+
+  it('GET returns 500 corrupt_data when ownerTokenHash is not 64 hex', async () => {
+    const env = envWithCorrupt(
+      JSON.stringify({
+        tournament: { name: 'x' },
+        version: 1,
+        ownerTokenHash: 'short',
+        updatedAt: new Date().toISOString(),
+      }),
+    )
+    const res = await readTournament(
+      ctx(new Request('https://example.com/api/sync/ABCDEF'), env, {
+        code: 'ABCDEF',
+      }),
+    )
+    expect(res.status).toBe(500)
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toBe('corrupt_data')
+  })
+
+  it('GET returns 500 corrupt_data when tournament field is missing', async () => {
+    const env = envWithCorrupt(
+      JSON.stringify({
+        version: 1,
+        ownerTokenHash: 'a'.repeat(64),
+        updatedAt: new Date().toISOString(),
+      }),
+    )
+    const res = await readTournament(
+      ctx(new Request('https://example.com/api/sync/ABCDEF'), env, {
+        code: 'ABCDEF',
+      }),
+    )
+    expect(res.status).toBe(500)
+  })
+
+  it('PUT returns 500 corrupt_data on unparseable blob', async () => {
+    const env = envWithCorrupt('not json{')
+    const res = await writeTournament(
+      ctx(
+        new Request('https://example.com/api/sync/ABCDEF', {
+          method: 'PUT',
+          headers: { Authorization: 'Bearer ' + 'a'.repeat(64) },
+          body: JSON.stringify({ tournament: {} }),
+        }),
+        env,
+        { code: 'ABCDEF' },
+      ),
+    )
+    expect(res.status).toBe(500)
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toBe('corrupt_data')
+  })
+
+  it('DELETE returns 500 corrupt_data on unparseable blob', async () => {
+    const env = envWithCorrupt('not json{')
+    const res = await deleteTournament(
+      ctx(
+        new Request('https://example.com/api/sync/ABCDEF', {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + 'a'.repeat(64) },
+        }),
+        env,
+        { code: 'ABCDEF' },
+      ),
+    )
+    expect(res.status).toBe(500)
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toBe('corrupt_data')
+  })
 })
 
 describe('DELETE /api/sync/:code', () => {

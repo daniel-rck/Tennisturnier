@@ -110,7 +110,10 @@ export function parseStored(raw: string): StoredTournament | null {
     if (
       typeof s.version !== 'number' ||
       typeof s.ownerTokenHash !== 'string' ||
-      typeof s.updatedAt !== 'string'
+      !/^[0-9a-f]{64}$/.test(s.ownerTokenHash) ||
+      typeof s.updatedAt !== 'string' ||
+      !('tournament' in s) ||
+      s.tournament == null
     ) {
       return null
     }
