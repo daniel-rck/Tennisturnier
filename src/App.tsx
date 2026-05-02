@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
 import { useSync } from './hooks/useSync'
 import { generateSchedule } from './scheduler'
@@ -16,6 +16,7 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { InstallPrompt } from './components/InstallPrompt'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { OfflineBanner } from './components/OfflineBanner'
+import { PrivacyDialog } from './components/PrivacyDialog'
 import { useConfirm } from './hooks/useConfirm'
 import { useToast } from './hooks/useToast'
 
@@ -39,6 +40,8 @@ function App() {
   const [tab, setTab] = useState<Tab>('setup')
   const [warnings, setWarnings] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [privacyOpen, setPrivacyOpen] = useState(false)
+  const closePrivacy = useCallback(() => setPrivacyOpen(false), [])
   const isOwner = sync.role !== 'viewer'
   const confirm = useConfirm()
   const { toast } = useToast()
@@ -361,9 +364,22 @@ function App() {
         </div>
       </main>
 
-      <footer className="no-print text-center text-xs text-fg-muted py-4">
-        Lokal im Browser gespeichert · keine Daten verlassen dein Gerät
+      <footer className="no-print text-center text-xs text-fg-muted py-4 space-y-1">
+        <div>
+          Lokal im Browser gespeichert · keine Daten verlassen dein Gerät ·{' '}
+          <button
+            type="button"
+            onClick={() => setPrivacyOpen(true)}
+            className="underline hover:text-fg"
+          >
+            Datenschutz
+          </button>
+        </div>
+        <div className="opacity-70">
+          v{__APP_VERSION__} · {__BUILD_DATE__}
+        </div>
       </footer>
+      <PrivacyDialog open={privacyOpen} onClose={closePrivacy} />
       <UpdatePrompt />
     </div>
   )
