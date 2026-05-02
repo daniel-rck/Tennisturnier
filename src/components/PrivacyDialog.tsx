@@ -127,6 +127,18 @@ export function PrivacyDialog({ open, onClose }: Props) {
             Browsereinstellungen entfernen; aktive Sync-Sessions kannst du in
             der App beenden.
           </p>
+
+          <h3 className="font-semibold text-fg mt-4">7. Kontakt</h3>
+          <p>
+            Bei Fragen zum Datenschutz erreichst du mich unter{' '}
+            <a
+              href="mailto:daniel-rck@proton.me"
+              className="underline hover:text-fg"
+            >
+              daniel-rck@proton.me
+            </a>
+            .
+          </p>
         </div>
         <div className="mt-5 flex justify-end">
           <button
