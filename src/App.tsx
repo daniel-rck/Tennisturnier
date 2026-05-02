@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
 import { useSync } from './hooks/useSync'
 import { generateSchedule } from './scheduler'
@@ -41,6 +41,7 @@ function App() {
   const [warnings, setWarnings] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [privacyOpen, setPrivacyOpen] = useState(false)
+  const closePrivacy = useCallback(() => setPrivacyOpen(false), [])
   const isOwner = sync.role !== 'viewer'
   const confirm = useConfirm()
   const { toast } = useToast()
@@ -378,7 +379,7 @@ function App() {
           v{__APP_VERSION__} · {__BUILD_DATE__}
         </div>
       </footer>
-      <PrivacyDialog open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
+      <PrivacyDialog open={privacyOpen} onClose={closePrivacy} />
       <UpdatePrompt />
     </div>
   )

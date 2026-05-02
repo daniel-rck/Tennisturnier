@@ -105,11 +105,9 @@ export function PrivacyDialog({ open, onClose }: Props) {
             4. Externe Ressourcen
           </h3>
           <p>
-            Schriftarten werden über{' '}
-            <span className="whitespace-nowrap">Google Fonts</span> geladen.
-            Beim erstmaligen Laden kann dadurch eine Verbindung zu Google
-            entstehen. Anschließend werden die Schriften vom Service Worker
-            gecached und offline ausgeliefert.
+            Die App lädt keine externen Schriften, Skripte oder Tracker. Es
+            werden ausschließlich die Systemschriften deines Geräts und die
+            mit der App ausgelieferten Assets verwendet.
           </p>
 
           <h3 className="font-semibold text-fg mt-4">5. PWA / Service Worker</h3>
