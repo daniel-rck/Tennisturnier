@@ -15,6 +15,7 @@ const baseTournament = (overrides: Partial<Tournament> = {}): Tournament => ({
   rounds: 4,
   mode: 'mixed',
   timerMinutes: 15,
+  bellVariant: 'classic',
   players: [],
   schedule: [],
   allowPartialFinalRound: false,

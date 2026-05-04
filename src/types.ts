@@ -2,6 +2,7 @@ export type Gender = 'F' | 'M'
 export type Mode = 'mixed' | 'women' | 'men' | 'open'
 export type Format = 'rotation' | 'groups' | 'knockout' | 'groups-ko'
 export type EntryFormat = 'singles' | 'doubles'
+export type BellVariant = 'classic' | 'boxing' | 'alarm' | 'temple'
 
 export interface Player {
   id: string
@@ -67,6 +68,7 @@ export interface Tournament {
   // Always
   courts: number
   timerMinutes: number
+  bellVariant: BellVariant
 
   // Rotation-only
   mode: Mode

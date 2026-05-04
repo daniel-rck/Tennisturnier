@@ -8,8 +8,9 @@ import {
   roundRobin,
 } from '../groupScheduler'
 import { groupLetter } from '../knockoutScheduler'
-import { parsePositiveInt, parseScore } from '../utils/parseScore'
+import { parsePositiveInt } from '../utils/parseScore'
 import { useConfirm } from '../hooks/useConfirm'
+import { ScoreInput } from './ScoreInput'
 
 interface Props {
   tournament: Tournament
@@ -225,30 +226,20 @@ function GroupMatchRow({
   return (
     <div className="grid grid-cols-[1fr_auto_auto_auto_1fr] items-center gap-2 text-sm bg-surface-muted px-2 py-1 rounded">
       <span className="truncate">{a}</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        max={99}
-        placeholder="–"
-        value={match.scoreA ?? ''}
-        onChange={(e) =>
-          onScore(match.group, match.matchIndex, parseScore(e.target.value), match.scoreB)
+      <ScoreInput
+        value={match.scoreA}
+        onChange={(scoreA) =>
+          onScore(match.group, match.matchIndex, scoreA, match.scoreB)
         }
-        className="w-12 rounded border border-border-strong px-1 py-0.5 text-center"
+        ariaLabel={`Score ${a}`}
       />
       <span className="text-fg-subtle text-xs">:</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        max={99}
-        placeholder="–"
-        value={match.scoreB ?? ''}
-        onChange={(e) =>
-          onScore(match.group, match.matchIndex, match.scoreA, parseScore(e.target.value))
+      <ScoreInput
+        value={match.scoreB}
+        onChange={(scoreB) =>
+          onScore(match.group, match.matchIndex, match.scoreA, scoreB)
         }
-        className="w-12 rounded border border-border-strong px-1 py-0.5 text-center"
+        ariaLabel={`Score ${b}`}
       />
       <span className="truncate text-right">{b}</span>
     </div>

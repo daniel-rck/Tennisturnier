@@ -1,4 +1,11 @@
-import type { Entry, RevealState, Tournament } from './types'
+import type { BellVariant, Entry, RevealState, Tournament } from './types'
+
+const BELL_VARIANTS: readonly BellVariant[] = [
+  'classic',
+  'boxing',
+  'alarm',
+  'temple',
+]
 
 const KEY_V1 = 'tennisturnier:v1'
 const KEY = 'tennisturnier:v2'
@@ -15,6 +22,7 @@ export const defaultTournament = (): Tournament => ({
   rounds: 5,
   mode: 'mixed',
   timerMinutes: 15,
+  bellVariant: 'classic',
   players: [],
   schedule: [],
   allowPartialFinalRound: true,
@@ -70,6 +78,11 @@ export function migrate(parsed: unknown): Tournament {
       typeof p.allowPartialFinalRound === 'boolean'
         ? p.allowPartialFinalRound
         : base.allowPartialFinalRound,
+    bellVariant:
+      typeof p.bellVariant === 'string' &&
+      (BELL_VARIANTS as readonly string[]).includes(p.bellVariant)
+        ? (p.bellVariant as BellVariant)
+        : base.bellVariant,
     reveal: sanitizeReveal(p.reveal),
     sync: sanitizeSync(p.sync),
   }
