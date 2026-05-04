@@ -34,10 +34,9 @@ du locker im Free-Tier — siehe Verbrauchstabelle ganz unten.
 
 ```bash
 wrangler kv namespace create tennisturnier-tournaments
-wrangler kv namespace create tennisturnier-tournaments --preview
 ```
 
-Im Output stehen die jeweiligen IDs:
+Im Output steht die ID:
 
 ```
 🌀 Creating namespace with title "tennisturnier-tournaments"
@@ -48,11 +47,7 @@ binding = "TOURNAMENTS"
 id = "abc123def456..."
 ```
 
-Beide IDs notieren. Die Production-ID kommt in `wrangler.toml` an die Stelle
-von `<production-id>`, die `--preview`-ID an die Stelle von `<preview-id>`
-(siehe Schritt 4). Den Preview-Namespace brauchst du nur, falls du
-PR-Preview-Deployments separat halten willst — sonst kannst du dort die
-gleiche ID wie für Production eintragen.
+ID notieren — sie kommt in Schritt 4 in die `wrangler.toml`.
 
 > **Alternative GUI:** **Workers & Pages → Storage & Database → KV →
 > Create namespace** → Name `tennisturnier-tournaments`. Die ID steht danach
@@ -95,17 +90,16 @@ Speichern → Cloudflare deployt automatisch neu (~30 s).
 ### 4. Bindings in `wrangler.toml` festhalten (empfohlen)
 
 Den auskommentierten Block ans Ende der `wrangler.toml` aktivieren und die
-IDs aus Schritt 1 einsetzen:
+ID aus Schritt 1 einsetzen:
 
 ```toml
 [[kv_namespaces]]
 binding = "TOURNAMENTS"
-id = "<production-id-aus-schritt-1>"
-preview_id = "<preview-id-aus-schritt-1>"
+id = "<id-aus-schritt-1>"
 ```
 
-Committen & pushen. Workers Builds deployt automatisch — die Bindings sind
-jetzt versioniert und können nicht aus Versehen im Dashboard verschwinden.
+Committen & pushen. Workers Builds deployt automatisch — das Binding ist
+jetzt versioniert und kann nicht aus Versehen im Dashboard verschwinden.
 
 > **Warum doppelt absichern?** Workers Builds (Git-Auto-Deploy) hat in der
 > Vergangenheit gelegentlich Dashboard-Bindings überschrieben. Mit der
