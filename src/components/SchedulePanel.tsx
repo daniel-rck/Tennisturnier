@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { Match, Player, Round, Tournament } from '../types'
 import { MODE_LABELS } from '../types'
 import { RoundTimer } from './RoundTimer'
-import { parseScore } from '../utils/parseScore'
+import { ScoreInput } from './ScoreInput'
 import { Spinner } from './Spinner'
 import { EmptyState } from './EmptyState'
 
@@ -203,29 +203,21 @@ function MatchCard({
         <span className="truncate text-right">
           {match.teamB.players.map((id) => byId.get(id)?.name).join(' & ')}
         </span>
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={99}
-          placeholder="–"
-          value={match.scoreA ?? ''}
-          onChange={(e) => onScore(parseScore(e.target.value), match.scoreB)}
-          className="w-12 rounded border border-border-strong px-2 py-0.5 text-center text-sm"
-          aria-label="Spiele Team A"
-        />
+        <div className="justify-self-start">
+          <ScoreInput
+            value={match.scoreA}
+            onChange={(a) => onScore(a, match.scoreB)}
+            ariaLabel="Spiele Team A"
+          />
+        </div>
         <span className="text-fg-subtle text-xs text-center">:</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={99}
-          placeholder="–"
-          value={match.scoreB ?? ''}
-          onChange={(e) => onScore(match.scoreA, parseScore(e.target.value))}
-          className="w-12 ml-auto rounded border border-border-strong px-2 py-0.5 text-center text-sm"
-          aria-label="Spiele Team B"
-        />
+        <div className="justify-self-end">
+          <ScoreInput
+            value={match.scoreB}
+            onChange={(b) => onScore(match.scoreA, b)}
+            ariaLabel="Spiele Team B"
+          />
+        </div>
       </div>
     </div>
   )

@@ -11,7 +11,7 @@ import {
   groupStandings,
   resolveGroupAssignment,
 } from '../groupScheduler'
-import { parseScore } from '../utils/parseScore'
+import { ScoreInput } from './ScoreInput'
 
 interface Props {
   tournament: Tournament
@@ -211,14 +211,16 @@ function BracketCard({
         score={m.scoreA}
         editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
         winning={aWinning}
-        onChange={(v) => onScore(m.matchId, parseScore(v), m.scoreB)}
+        ariaLabel={`Score ${m.pendingA}`}
+        onChange={(a) => onScore(m.matchId, a, m.scoreB)}
       />
       <SlotRow
         label={m.pendingB}
         score={m.scoreB}
         editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
         winning={bWinning}
-        onChange={(v) => onScore(m.matchId, m.scoreA, parseScore(v))}
+        ariaLabel={`Score ${m.pendingB}`}
+        onChange={(b) => onScore(m.matchId, m.scoreA, b)}
       />
       {isTie && (
         <p
@@ -237,13 +239,15 @@ function SlotRow({
   score,
   editable,
   winning,
+  ariaLabel,
   onChange,
 }: {
   label: string
   score?: number
   editable: boolean
   winning: boolean
-  onChange: (v: string) => void
+  ariaLabel: string
+  onChange: (next: number | undefined) => void
 }) {
   return (
     <div
@@ -253,16 +257,11 @@ function SlotRow({
       }
     >
       <span className="truncate">{label}</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        max={99}
-        placeholder={editable ? '–' : ''}
-        value={score ?? ''}
+      <ScoreInput
+        value={score}
+        onChange={onChange}
         disabled={!editable}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-12 rounded border border-border-strong px-1 py-0.5 text-center disabled:bg-surface-sunken disabled:text-fg-subtle"
+        ariaLabel={ariaLabel}
       />
     </div>
   )
