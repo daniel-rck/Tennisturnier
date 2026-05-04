@@ -1,115 +1,200 @@
-# Cloudflare-Setup für Tennisturnier
+# Cloudflare Setup
 
-Was im Cloudflare-Dashboard angelegt werden muss, damit die App + Live-Sync läuft.
-**Alles im Free Tier möglich** — keine Kreditkarte, keine laufenden Kosten zu erwarten.
+Du brauchst genau **zwei Cloudflare-Services** — beide im kostenlosen Free-Tier
+nutzbar, keine Kreditkarte nötig.
 
-Alle Services bekommen einheitlich `tennis-` als Namens-Prefix, damit sie im
-Dashboard zusammenstehen.
+| Service | Resource-Name (Dashboard) | Binding (im Code) | Wofür | Free Tier |
+|---|---|---|---|---|
+| **Workers** | `tennisturnier` | — | Hostet die SPA + das `/api/sync/*`-Backend | 100k Requests/Tag |
+| **KV** | `tennisturnier-tournaments` | `TOURNAMENTS` | Geteilte Turnier-Snapshots für Live-Sync (TTL 7 Tage) | 100k Reads/Tag, 1k Writes/Tag, 1 GB |
 
-| Cloudflare-Resource | Vorgeschlagener Name |
+Der Resource-Name `tennisturnier-tournaments` ist frei wählbar — er taucht im
+Code nicht auf. Der **Binding-Name** `TOURNAMENTS` ist dagegen **fest** — er
+steht in `functions/_shared/kv.ts` (`env.TOURNAMENTS`) und muss bei der
+Binding-Konfiguration exakt so geschrieben werden.
+
+Der Worker-Name `tennisturnier` ist `wrangler.toml`-Default und kann frei
+geändert werden — Cloudflare nutzt ihn als Subdomain
+(`https://tennisturnier.<account>.workers.dev`).
+
+Bei typischer Nutzung (1–5 parallele Turniere, je 2–4 Anzeige-Geräte) bleibst
+du locker im Free-Tier — siehe Verbrauchstabelle ganz unten.
+
+---
+
+## Schritt-für-Schritt
+
+### 0. Voraussetzungen
+
+- Cloudflare-Account: <https://dash.cloudflare.com/sign-up>
+- Wrangler CLI: `bun add -g wrangler` oder `npm i -g wrangler`
+- Eingeloggt: `wrangler login`
+
+### 1. KV-Namespace anlegen
+
+```bash
+wrangler kv namespace create tennisturnier-tournaments
+wrangler kv namespace create tennisturnier-tournaments --preview
+```
+
+Im Output stehen die jeweiligen IDs:
+
+```
+🌀 Creating namespace with title "tennisturnier-tournaments"
+✨ Success!
+Add the following to your configuration file:
+[[kv_namespaces]]
+binding = "TOURNAMENTS"
+id = "abc123def456..."
+```
+
+Beide IDs notieren. Die Production-ID kommt in `wrangler.toml` an die Stelle
+von `<production-id>`, die `--preview`-ID an die Stelle von `<preview-id>`
+(siehe Schritt 4). Den Preview-Namespace brauchst du nur, falls du
+PR-Preview-Deployments separat halten willst — sonst kannst du dort die
+gleiche ID wie für Production eintragen.
+
+> **Alternative GUI:** **Workers & Pages → Storage & Database → KV →
+> Create namespace** → Name `tennisturnier-tournaments`. Die ID steht danach
+> in der Liste.
+
+### 2. Worker mit Git verbinden
+
+Im Cloudflare-Dashboard:
+
+1. **Workers & Pages → Create → Workers → Connect to Git**
+2. Repo `daniel-rck/Tennisturnier` auswählen
+3. Build settings:
+   - Build command: `bun install --frozen-lockfile && bun run build`
+   - Deploy command: *(leer lassen — `wrangler deploy` ist Default)*
+   - Root directory: *(leer)*
+4. Branch: `main`
+5. **Save & Deploy**
+
+Cloudflare erkennt Bun automatisch über `packageManager` in `package.json`.
+Erster Build dauert ~1–2 Minuten. Danach ist die App unter
+`https://tennisturnier.<account>.workers.dev` erreichbar — vorerst noch ohne
+Live-Sync, das aktiviert sich erst nach Schritt 3 oder 4.
+
+### 3. Bindings zuweisen ⚠️ **Der häufigste Fehler-Punkt**
+
+**Empfohlener Weg:** in `wrangler.toml` deklarieren (Schritt 4) — dann sind die
+Bindings Teil des Repos und überleben jeden Re-Deploy automatisch.
+
+**Alternative über Dashboard** (falls du die IDs nicht ins Repo schreiben
+willst): **Workers & Pages → tennisturnier → Settings → Bindings → Add binding**
+
+| Feld | Wert |
 |---|---|
-| Worker | `tennis-turnier` (steht in `wrangler.toml`, dort ggf. anpassen) |
-| KV Namespace (Production) | `tennis-tournaments` |
-| KV Namespace (Preview, optional) | `tennis-tournaments-preview` |
-| KV-Binding-Variable im Worker | `TOURNAMENTS` (**fest verdrahtet, nicht ändern!**) |
+| Type | KV namespace |
+| Variable name | `TOURNAMENTS` *(exakt so, Großbuchstaben!)* |
+| KV namespace | `tennisturnier-tournaments` |
+
+Speichern → Cloudflare deployt automatisch neu (~30 s).
+
+### 4. Bindings in `wrangler.toml` festhalten (empfohlen)
+
+Den auskommentierten Block ans Ende der `wrangler.toml` aktivieren und die
+IDs aus Schritt 1 einsetzen:
+
+```toml
+[[kv_namespaces]]
+binding = "TOURNAMENTS"
+id = "<production-id-aus-schritt-1>"
+preview_id = "<preview-id-aus-schritt-1>"
+```
+
+Committen & pushen. Workers Builds deployt automatisch — die Bindings sind
+jetzt versioniert und können nicht aus Versehen im Dashboard verschwinden.
+
+> **Warum doppelt absichern?** Workers Builds (Git-Auto-Deploy) hat in der
+> Vergangenheit gelegentlich Dashboard-Bindings überschrieben. Mit der
+> wrangler.toml-Deklaration ist das sicher gelöst. Wenn du diesen Weg gehst,
+> kannst du das Dashboard-Binding aus Schritt 3 auch wieder entfernen.
+
+### 5. Verifizieren
+
+Auf der deployten URL: **Einstellungen → Live-Sync (Multi-Device) →
+"Sync für dieses Turnier starten"**.
+
+Im Browser-Netzwerktab solltest du sehen:
+
+1. `POST /api/sync` → **201** (Session erstellt, Response enthält `code` + `ownerToken`)
+2. Status-Badge wird grün („live"), 6-stelliger Code + QR-Code erscheinen
+3. Bei jeder Eingabe: `PUT /api/sync/<code>` → **200** (Snapshot gepusht)
+
+Wenn das klappt: ✅ fertig. Code an ein zweites Gerät weitergeben oder QR
+scannen lassen — dort sollte der Spielplan live mitlaufen.
 
 ---
 
-## Übersicht
+## Troubleshooting
 
-| Service | Wofür | Pflicht? |
-|---|---|---|
-| **Workers** (Workers Builds) | hostet die SPA + Sync-API, baut bei jedem Git-Push | ✅ ja |
-| **Workers KV** Namespace | Speichert die geteilten Turnier-Snapshots (7-Tage-TTL) | ⚠️ nur für Live-Sync |
-| **Custom Domain** | eigene URL statt `*.workers.dev` | optional |
+### `503 sync_not_configured`
 
-Ohne KV läuft die App ganz normal (nur lokal, kein Multi-Device-Sync). Sobald
-KV gebunden ist, schalten sich die „Sync starten" / „Code beitreten"-Buttons frei.
+Die KV-Bindung ist nicht zugewiesen — oder der Variable-Name ist falsch
+geschrieben. Schritt 3 / 4 prüfen: der Name muss **exakt** `TOURNAMENTS`
+lauten (alles groß, keine Unterstriche, kein Prefix).
 
----
+Falls du Bindings im Dashboard gesetzt hattest: nach jeder Änderung muss
+neu deployed werden. **Deployments → Retry deployment** auf den letzten
+Build oder leerer Commit:
 
-## 1. Workers Service einrichten (Workers Builds)
+```bash
+git commit --allow-empty -m "redeploy" && git push
+```
 
-Einmalig pro Repo. Cloudflare baut dann bei jedem Push auf `main` automatisch.
+### `500 sync_internal_error: <message>`
 
-1. **Cloudflare Dashboard → Workers & Pages → Create → Import a repository**
-2. GitHub authentifizieren, `daniel-rck/Tennisturnier` auswählen.
-3. Settings, die Cloudflare aus `wrangler.toml` zieht — meist nichts ändern,
-   nur prüfen:
-   - **Build command:** `bun install && bun run build`
-   - **Deploy command:** leer (wrangler übernimmt)
-   - **Root directory:** leer (Repo-Root)
-   - **Compatibility date:** wie in `wrangler.toml` (`2024-12-30`)
-4. **Save and Deploy.** Erster Build dauert ~1–2 Min. Danach ist die App unter
-   `https://tennis-turnier.<dein-account>.workers.dev` erreichbar.
+Echter Runtime-Fehler. Die Message gibt den Hinweis:
 
-> Falls der Build mit „command not found: bun" abbricht, ist die Workers-Build-
-> Image-Version zu alt. In den Settings auf „v3" o. ä. stellen, oder als
-> Build-Command `npm install -g bun && bun install && bun run build` setzen.
+- `KV namespace … not found` → Namespace gelöscht oder ID falsch
+- alles andere → Worker-Logs öffnen (*Workers → tennisturnier → Logs → Live*)
+  und Fehler dort lesen, ggf. Issue auf GitHub aufmachen mit der Message
 
----
+### „Code nicht gefunden"
 
-## 2. KV Namespace anlegen (für Live-Sync)
+- Tippfehler im Code (Code-Alphabet vermeidet absichtlich `0/O/1/I/L`,
+  manuelles Diktieren bleibt aber fehleranfällig).
+- TTL abgelaufen (7 Tage seit letztem Push). Owner muss neu starten.
+- Owner hat „Sync beenden" geklickt → Code ist explizit invalidiert.
 
-1. **Workers & Pages → KV → Create a namespace**
-2. Name: `tennis-tournaments`. Der Anzeigename ist nur intern, die App
-   referenziert das Binding über den Variablennamen (siehe Schritt 3).
-3. *Optional* einen zweiten Namespace `tennis-tournaments-preview` für
-   Preview-Deployments anlegen — dann sehen PRs ihre eigenen Daten und stören
-   die Production-Sync-Sessions nicht.
+### Viewer sieht Updates erst nach 30–60 Sekunden
 
----
+KV ist eventually consistent: Schreibvorgänge propagieren zwischen
+Cloudflare-Edges in bis zu 60 s. In der Praxis meist <10 s. Das Polling
+(alle 3 s) holt den neuen Stand, sobald er am Edge des Viewers ankommt —
+für echtes Realtime bräuchte es Durable Objects, was bewusst nicht gemacht
+ist (KV reicht für die typische Nutzung).
 
-## 3. KV ans Worker binden
+### Bindings verschwinden nach Deploy
 
-1. **Workers & Pages → tennis-turnier → Settings → Variables and Secrets →
-   KV namespace bindings → Add binding**
-2. Eintragen:
-   - **Variable name:** `TOURNAMENTS` (genau so, Groß-/Kleinschreibung zählt)
-   - **KV namespace:** `tennis-tournaments` aus Schritt 2 auswählen
-3. Speichern → Cloudflare deployt automatisch neu (~30 s).
+Bekanntes Cloudflare-Verhalten: Workers Builds überschreibt manchmal
+Dashboard-Bindings. → **Schritt 4** umsetzen, dann sind die Bindings im Repo
+verankert.
 
-> ⚠️ Der Variablenname muss exakt `TOURNAMENTS` sein — die Handler in
-> `functions/_shared/kv.ts` greifen direkt auf `env.TOURNAMENTS` zu. Falsch
-> getippt → die App liefert 503 mit „Live-Sync ist nicht eingerichtet".
+### Lokal ohne Cloudflare entwickeln
+
+```bash
+bunx wrangler dev    # http://localhost:8787 — Worker + Assets + Mock-KV
+```
+
+Wrangler stellt einen lokalen KV-Mock bereit, also läuft Sync auch ohne
+Cloud-KV-Namespace gegen einen In-Memory-Store.
 
 ---
 
-## 4. (Optional) Custom Domain
-
-1. **Workers & Pages → tennis-turnier → Settings → Domains & Routes → Add →
-   Custom Domain**
-2. Domain eintragen, Cloudflare ergänzt den DNS-Eintrag automatisch (Domain
-   muss in Cloudflare gehostet sein).
-
----
-
-## Verifizieren, dass alles läuft
-
-1. App öffnen, *Einstellungen* → Block „Live-Sync (Multi-Device)".
-2. Auf „Sync für dieses Turnier starten" klicken.
-3. Erwartet: 6-stelliger Code + QR-Code erscheinen, Status-Badge wird grün
-   („live").
-4. Falls statt Code eine Fehlermeldung erscheint:
-   - **„Live-Sync ist nicht eingerichtet"** → Schritt 3 prüfen (Binding-Name
-     oder fehlender Re-Deploy nach Binding).
-   - **„HTTP 500" / „sync\_internal\_error"** → Worker-Logs öffnen
-     (*Workers → tennis-turnier → Logs → Live*) und Fehler dort lesen.
-
----
-
-## Kosten / Limits (Free Plan, Stand 2026)
+## Verbrauch / Free-Tier-Limits
 
 | Ressource | Free-Limit | Verbrauch dieser App |
 |---|---|---|
-| Workers Requests | 100k / Tag | ~50/Sync-Sitzung (Owner-Push) + ~1.2k (Viewer-Polling alle 3 s über 1 h) → 1 paralleles Turnier ≈ 1.3k Requests |
-| KV Reads | 100k / Tag | identisch zum Polling: ~1.2k pro Viewer & Stunde |
-| KV Writes | 1k / Tag | nur Owner-Pushes, debounced auf 1 s, also ~10–30 / Sitzung |
-| KV Storage | 1 GB | ein Turnier-Snapshot ≈ 5–20 KB → faktisch nie ausgereizt |
-| KV TTL | – | App setzt 7 Tage, danach Auto-Cleanup |
+| Workers Requests | 100k / Tag | ~50/Sync-Sitzung (Owner-Push, debounced) + ~1.2k pro Viewer & Stunde (3 s-Polling) → 1 paralleles Turnier mit 3 Viewern ≈ 4k/Tag |
+| KV Reads | 100k / Tag | Identisch zum Polling: ~1.2k pro Viewer & Stunde |
+| KV Writes | 1k / Tag | Nur Owner-Pushes, debounced auf 1 s, also ~10–30 / Sitzung |
+| KV Storage | 1 GB | Ein Turnier-Snapshot ≈ 5–20 KB, TTL 7 Tage → faktisch nie ausgereizt |
 
 Selbst mit 5 parallelen Turnieren + je 3 Viewer-Geräten bleibst du locker
-unter dem Free Limit. Falls doch mal nötig: Workers Paid Plan kostet $5/Monat
+unter dem Free-Limit. Falls doch mal nötig: Workers Paid Plan kostet $5/Monat
 für 10 Mio Requests.
 
 ---
@@ -117,34 +202,7 @@ für 10 Mio Requests.
 ## Was du **nicht** brauchst
 
 - ❌ Pages (das Projekt nutzt seit PR #3 die neueren Workers Builds, keine Pages Functions)
-- ❌ Durable Objects, D1, R2, Queues
+- ❌ R2, Durable Objects, D1, Queues
 - ❌ Workers AI, Vectorize, Browser Rendering
 - ❌ Argo, Load Balancing, Spectrum
 - ❌ Eine bezahlte Workers- oder KV-Stufe
-
----
-
-## Troubleshooting
-
-### „HTTP 503 sync\_not\_configured"
-KV-Binding fehlt oder heißt nicht `TOURNAMENTS`. Schritt 3 nochmal prüfen,
-besonders ob nach dem Add-Binding ein neuer Deploy gelaufen ist (sieht man
-in *Deployments*).
-
-### Code-Eingabe „nicht gefunden"
-- Tippfehler im Code (auf Klein-l vs. groß-I aufpassen — der Code-Alphabet
-  vermeidet das absichtlich, aber manuelles Diktieren bleibt fehleranfällig).
-- TTL abgelaufen (7 Tage seit letztem Push). Dann Owner muss neu starten.
-- Owner hat „Sync beenden" geklickt → Code ist explizit invalidiert.
-
-### Viewer sieht Updates erst nach ~30–60 s
-KV ist eventually consistent: Schreibvorgänge propagieren cross-Edge in bis
-zu 60 s. In der Praxis meist <10 s. Für echtes Realtime bräuchte es Durable
-Objects — bewusst nicht gemacht, weil Free-Tier-Workers KV reicht.
-
-### Lokal ohne Cloudflare entwickeln
-```bash
-bunx wrangler dev    # http://localhost:8787 — Worker + Assets + Mock-KV
-```
-Wrangler stellt einen lokalen KV-Mock bereit, also läuft Sync auch ohne
-Cloud-KV-Namespace.

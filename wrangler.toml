@@ -1,4 +1,4 @@
-name = "tennis-turnier"
+name = "tennisturnier"
 main = "./worker/index.ts"
 compatibility_date = "2024-12-30"
 
@@ -9,11 +9,18 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# KV namespace binding for live-sync is configured in the Cloudflare dashboard
-# (Worker → Settings → Bindings → KV namespace, variable name `TOURNAMENTS`).
-# Intentionally not declared here so the first deploy succeeds without it.
+# KV-Binding für Live-Sync.
 #
-# Once you've created the namespace, you may also pin it here:
+# Variable name `TOURNAMENTS` ist fest verdrahtet (`env.TOURNAMENTS` in
+# functions/_shared/kv.ts) — bitte nicht umbenennen. `id` und `preview_id`
+# kommen aus `wrangler kv namespace create tennisturnier-tournaments` bzw.
+# `… --preview`. Detailanleitung in SETUP.md.
+#
+# Solange dieser Block auskommentiert ist, läuft der Deploy auch ohne KV
+# durch — die App liefert dann beim Sync-Versuch eine 503 mit klarem
+# Hinweistext. Sobald du die IDs hast: einfach unten einkommentieren und
+# pushen.
+#
 # [[kv_namespaces]]
 # binding = "TOURNAMENTS"
 # id = "<production-id>"
