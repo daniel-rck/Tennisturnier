@@ -66,6 +66,8 @@ Cloudflare Workers Builds baut und deployt bei jedem Push automatisch via Git-In
 
 Jeder Push auf `main` deployt zur Production; Branches/PRs bekommen Preview-URLs. PR-CI (Lint + Tests + Build) läuft separat als GitHub Action.
 
+Schritt-für-Schritt-Anleitung inkl. Free-Tier-Limits und Troubleshooting: [`SETUP.md`](SETUP.md).
+
 ## Algorithmus (kurz)
 
 Der Spielplan-Generator (`src/scheduler.ts`) arbeitet greedy pro Runde: Spieler:innen-Auswahl nach Pausen-Saldo → Paarbildung per bipartitem Matching (Mixed) bzw. Perfect Matching → Court-Verteilung minimiert wiederholte Gegner-Begegnungen. Im Test mit 4F + 4M, 2 Plätzen, 4 Runden Mixed: 0 Partner-Wiederholungen, jede Frau spielt mit jedem Mann genau einmal.

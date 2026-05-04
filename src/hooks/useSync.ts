@@ -120,6 +120,7 @@ export function useSync({
     if (pushInFlightRef.current) return
     pushInFlightRef.current = true
     setStatus('connecting')
+    let pushed = false
     try {
       const res = await fetch(`/api/sync/${sync.shareCode}`, {
         method: 'PUT',
@@ -139,11 +140,23 @@ export function useSync({
       lastPushedRef.current = json
       setStatus('live')
       setError(null)
+      pushed = true
     } catch {
       setStatus('offline')
       setError('Netzwerkfehler')
     } finally {
       pushInFlightRef.current = false
+    }
+    // Edits that arrived while this push was in flight would otherwise sit in
+    // localStorage until the next user edit triggers another push. Catch up
+    // immediately on success — on failure we wait for the `online` listener
+    // (or the next edit) so we don't spin against a broken connection.
+    if (pushed) {
+      const latestPayload = stripSync(tournamentRef.current)
+      const latestJson = JSON.stringify(latestPayload)
+      if (latestJson !== lastPushedRef.current) {
+        void doPush(latestJson, latestPayload)
+      }
     }
   }
 
