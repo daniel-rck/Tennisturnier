@@ -329,6 +329,7 @@ function App() {
               tournament={t.tournament}
               onGenerate={handleGenerate}
               onTimerMinutes={t.setTimerMinutes}
+              onBellVariant={t.setBellVariant}
               onScore={t.setMatchScore}
               warnings={warnings}
               isGenerating={isGenerating}

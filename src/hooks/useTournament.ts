@@ -6,6 +6,7 @@ import {
 } from '../storage'
 import { assignGroups } from '../groupScheduler'
 import type {
+  BellVariant,
   BracketMatch,
   Entry,
   EntryFormat,
@@ -241,6 +242,12 @@ export function useTournament() {
         ...prev,
         timerMinutes: Math.max(1, Math.min(120, Math.round(timerMinutes))),
       })),
+    [],
+  )
+
+  const setBellVariant = useCallback(
+    (bellVariant: BellVariant) =>
+      setTournament((prev) => ({ ...prev, bellVariant })),
     [],
   )
 
@@ -530,6 +537,7 @@ export function useTournament() {
     setAdvancePerGroup,
     setName,
     setTimerMinutes,
+    setBellVariant,
     addEntry,
     updateEntry,
     removeEntry,

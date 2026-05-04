@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  ringBell,
-  ringBellAlarm,
-  ringBellBoxing,
-  ringBellTemple,
+  ringBellOnce,
+  startBellLoop,
+  stopBell,
   unlockAudio,
 } from '../bell'
+import type { BellVariant } from '../types'
 import { parsePositiveInt } from '../utils/parseScore'
 
 interface Props {
   minutes: number
   onMinutesChange: (n: number) => void
+  bellVariant: BellVariant
+  onBellVariantChange: (v: BellVariant) => void
+}
+
+const BELL_LABELS: Record<BellVariant, string> = {
+  classic: 'Standard',
+  boxing: 'Boxing-Bell',
+  alarm: 'Wecker',
+  temple: 'Tempelglocke',
 }
 
 const fmt = (sec: number) => {
@@ -20,11 +29,19 @@ const fmt = (sec: number) => {
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`
 }
 
-export function RoundTimer({ minutes, onMinutesChange }: Props) {
+export function RoundTimer({
+  minutes,
+  onMinutesChange,
+  bellVariant,
+  onBellVariantChange,
+}: Props) {
   const [remaining, setRemaining] = useState(minutes * 60)
   const [running, setRunning] = useState(false)
+  const [ringing, setRinging] = useState(false)
   const endAtRef = useRef<number | null>(null)
   const rangRef = useRef(false)
+  const variantRef = useRef(bellVariant)
+  variantRef.current = bellVariant
 
   // Only sync remaining to minutes when minutes change while not running
   // (don't reset on every running-toggle — that would erase the pause).
@@ -41,7 +58,8 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
       setRemaining(rem)
       if (rem <= 0 && !rangRef.current) {
         rangRef.current = true
-        void ringBell(3)
+        startBellLoop(variantRef.current)
+        setRinging(true)
         setRunning(false)
         endAtRef.current = null
       }
@@ -50,6 +68,9 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
     const id = window.setInterval(tick, 200)
     return () => window.clearInterval(id)
   }, [running])
+
+  // Stop the bell on unmount so it doesn't keep ringing on tab switches.
+  useEffect(() => () => stopBell(), [])
 
   const start = () => {
     unlockAudio()
@@ -63,7 +84,12 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
     setRunning(false)
     endAtRef.current = null
   }
+  const silence = () => {
+    stopBell()
+    setRinging(false)
+  }
   const reset = () => {
+    silence()
     setRunning(false)
     endAtRef.current = null
     rangRef.current = false
@@ -84,8 +110,17 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
         >
           {fmt(remaining)}
         </div>
-        <div className="flex gap-2">
-          {!running ? (
+        <div className="flex flex-wrap gap-2">
+          {ringing ? (
+            <button
+              type="button"
+              onClick={silence}
+              className="rounded-md bg-danger-fg px-4 py-1.5 text-sm text-white font-medium hover:opacity-90 animate-pulse"
+              autoFocus
+            >
+              🔕 Glocke aus
+            </button>
+          ) : !running ? (
             <button
               type="button"
               onClick={start}
@@ -115,48 +150,30 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
             type="button"
             onClick={() => {
               unlockAudio()
-              void ringBell(1)
+              void ringBellOnce(bellVariant)
             }}
-            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
-            title="Glocke testen (aktuell)"
+            disabled={ringing}
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Klingelton testen"
           >
             🔔
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              unlockAudio()
-              void ringBellBoxing(1)
-            }}
-            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
-            title="V1 – Boxing-Bell"
-          >
-            V1
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              unlockAudio()
-              void ringBellAlarm(1)
-            }}
-            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
-            title="V2 – Wecker / mechanische Klingel"
-          >
-            V2
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              unlockAudio()
-              void ringBellTemple(1)
-            }}
-            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
-            title="V3 – Tempelglocke"
-          >
-            V3
-          </button>
         </div>
         <div className="flex-1" />
+        <label className="text-sm text-fg-muted flex items-center gap-2">
+          Klingelton
+          <select
+            value={bellVariant}
+            onChange={(e) => onBellVariantChange(e.target.value as BellVariant)}
+            className="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm"
+          >
+            {(Object.keys(BELL_LABELS) as BellVariant[]).map((v) => (
+              <option key={v} value={v}>
+                {BELL_LABELS[v]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="text-sm text-fg-muted flex items-center gap-2">
           Spielzeit
           <input
@@ -178,9 +195,14 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
           min
         </label>
       </div>
-      {expired && (
+      {ringing && (
+        <p className="mt-2 text-sm text-danger-fg font-medium">
+          Zeit abgelaufen – Glocke läutet, bis du auf „Glocke aus" klickst.
+        </p>
+      )}
+      {expired && !ringing && (
         <p className="mt-2 text-sm text-danger-fg">
-          Zeit abgelaufen – Glocke geklingelt. „Reset“ für die nächste Runde.
+          Zeit abgelaufen. „Reset" für die nächste Runde.
         </p>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Match, Player, Round, Tournament } from '../types'
+import type { BellVariant, Match, Player, Round, Tournament } from '../types'
 import { MODE_LABELS } from '../types'
 import { RoundTimer } from './RoundTimer'
 import { ScoreInput } from './ScoreInput'
@@ -10,6 +10,7 @@ interface Props {
   tournament: Tournament
   onGenerate: () => void
   onTimerMinutes: (n: number) => void
+  onBellVariant: (v: BellVariant) => void
   onScore: (
     roundIndex: number,
     court: number,
@@ -24,6 +25,7 @@ export function SchedulePanel({
   tournament,
   onGenerate,
   onTimerMinutes,
+  onBellVariant,
   onScore,
   warnings,
   isGenerating = false,
@@ -43,6 +45,8 @@ export function SchedulePanel({
       <RoundTimer
         minutes={tournament.timerMinutes}
         onMinutesChange={onTimerMinutes}
+        bellVariant={tournament.bellVariant}
+        onBellVariantChange={onBellVariant}
       />
 
       <div className="flex flex-wrap items-center gap-3">
