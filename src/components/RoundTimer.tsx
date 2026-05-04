@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { ringBell, unlockAudio } from '../bell'
+import {
+  ringBell,
+  ringBellAlarm,
+  ringBellBoxing,
+  ringBellTemple,
+  unlockAudio,
+} from '../bell'
 import { parsePositiveInt } from '../utils/parseScore'
 
 interface Props {
@@ -112,9 +118,42 @@ export function RoundTimer({ minutes, onMinutesChange }: Props) {
               void ringBell(1)
             }}
             className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
-            title="Glocke testen"
+            title="Glocke testen (aktuell)"
           >
             🔔
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              unlockAudio()
+              void ringBellBoxing(1)
+            }}
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
+            title="V1 – Boxing-Bell"
+          >
+            V1
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              unlockAudio()
+              void ringBellAlarm(1)
+            }}
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
+            title="V2 – Wecker / mechanische Klingel"
+          >
+            V2
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              unlockAudio()
+              void ringBellTemple(1)
+            }}
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
+            title="V3 – Tempelglocke"
+          >
+            V3
           </button>
         </div>
         <div className="flex-1" />
