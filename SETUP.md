@@ -3,6 +3,16 @@
 Was im Cloudflare-Dashboard angelegt werden muss, damit die App + Live-Sync läuft.
 **Alles im Free Tier möglich** — keine Kreditkarte, keine laufenden Kosten zu erwarten.
 
+Alle Services bekommen einheitlich `tennis-` als Namens-Prefix, damit sie im
+Dashboard zusammenstehen.
+
+| Cloudflare-Resource | Vorgeschlagener Name |
+|---|---|
+| Worker | `tennis-turnier` (steht in `wrangler.toml`, dort ggf. anpassen) |
+| KV Namespace (Production) | `tennis-tournaments` |
+| KV Namespace (Preview, optional) | `tennis-tournaments-preview` |
+| KV-Binding-Variable im Worker | `TOURNAMENTS` (**fest verdrahtet, nicht ändern!**) |
+
 ---
 
 ## Übersicht
@@ -31,7 +41,7 @@ Einmalig pro Repo. Cloudflare baut dann bei jedem Push auf `main` automatisch.
    - **Root directory:** leer (Repo-Root)
    - **Compatibility date:** wie in `wrangler.toml` (`2024-12-30`)
 4. **Save and Deploy.** Erster Build dauert ~1–2 Min. Danach ist die App unter
-   `https://tennisturnier.<dein-account>.workers.dev` erreichbar.
+   `https://tennis-turnier.<dein-account>.workers.dev` erreichbar.
 
 > Falls der Build mit „command not found: bun" abbricht, ist die Workers-Build-
 > Image-Version zu alt. In den Settings auf „v3" o. ä. stellen, oder als
@@ -42,10 +52,9 @@ Einmalig pro Repo. Cloudflare baut dann bei jedem Push auf `main` automatisch.
 ## 2. KV Namespace anlegen (für Live-Sync)
 
 1. **Workers & Pages → KV → Create a namespace**
-2. Name frei wählen, z. B. `tennisturnier-tournaments`. Der Anzeigename ist
-   nur intern, die App referenziert das Binding über den Variablennamen
-   (siehe Schritt 3).
-3. *Optional* einen zweiten Namespace `tennisturnier-tournaments-preview` für
+2. Name: `tennis-tournaments`. Der Anzeigename ist nur intern, die App
+   referenziert das Binding über den Variablennamen (siehe Schritt 3).
+3. *Optional* einen zweiten Namespace `tennis-tournaments-preview` für
    Preview-Deployments anlegen — dann sehen PRs ihre eigenen Daten und stören
    die Production-Sync-Sessions nicht.
 
@@ -53,11 +62,11 @@ Einmalig pro Repo. Cloudflare baut dann bei jedem Push auf `main` automatisch.
 
 ## 3. KV ans Worker binden
 
-1. **Workers & Pages → tennisturnier → Settings → Variables and Secrets →
+1. **Workers & Pages → tennis-turnier → Settings → Variables and Secrets →
    KV namespace bindings → Add binding**
 2. Eintragen:
    - **Variable name:** `TOURNAMENTS` (genau so, Groß-/Kleinschreibung zählt)
-   - **KV namespace:** den aus Schritt 2 auswählen
+   - **KV namespace:** `tennis-tournaments` aus Schritt 2 auswählen
 3. Speichern → Cloudflare deployt automatisch neu (~30 s).
 
 > ⚠️ Der Variablenname muss exakt `TOURNAMENTS` sein — die Handler in
@@ -68,7 +77,7 @@ Einmalig pro Repo. Cloudflare baut dann bei jedem Push auf `main` automatisch.
 
 ## 4. (Optional) Custom Domain
 
-1. **Workers & Pages → tennisturnier → Settings → Domains & Routes → Add →
+1. **Workers & Pages → tennis-turnier → Settings → Domains & Routes → Add →
    Custom Domain**
 2. Domain eintragen, Cloudflare ergänzt den DNS-Eintrag automatisch (Domain
    muss in Cloudflare gehostet sein).
@@ -85,7 +94,7 @@ Einmalig pro Repo. Cloudflare baut dann bei jedem Push auf `main` automatisch.
    - **„Live-Sync ist nicht eingerichtet"** → Schritt 3 prüfen (Binding-Name
      oder fehlender Re-Deploy nach Binding).
    - **„HTTP 500" / „sync\_internal\_error"** → Worker-Logs öffnen
-     (*Workers → tennisturnier → Logs → Live*) und Fehler dort lesen.
+     (*Workers → tennis-turnier → Logs → Live*) und Fehler dort lesen.
 
 ---
 
