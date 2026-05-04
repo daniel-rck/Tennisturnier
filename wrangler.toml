@@ -9,12 +9,9 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# KV namespace binding for live-sync is configured in the Cloudflare dashboard
-# (Worker → Settings → Bindings → KV namespace, variable name `TOURNAMENTS`).
-# Intentionally not declared here so the first deploy succeeds without it.
-#
-# Once you've created the namespace, you may also pin it here:
-# [[kv_namespaces]]
-# binding = "TOURNAMENTS"
-# id = "<production-id>"
-# preview_id = "<preview-id>"
+# KV-Binding für Live-Sync. Variable name `TOURNAMENTS` ist fest verdrahtet
+# (`env.TOURNAMENTS` in functions/_shared/kv.ts) — bitte nicht umbenennen.
+# Resource: KV-Namespace `tennisturnier-tournaments` (siehe SETUP.md).
+[[kv_namespaces]]
+binding = "TOURNAMENTS"
+id = "0383b364e95a41b8b17194021eed3416"
