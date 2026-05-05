@@ -72,4 +72,4 @@ Der Spielplan-Generator (`src/scheduler.ts`) arbeitet greedy pro Runde: Spieler:
 
 ## Lizenz
 
-Privates Projekt für den Vereinsalltag – gerne forken und anpassen.
+[MIT](LICENSE) – gerne forken und anpassen.
