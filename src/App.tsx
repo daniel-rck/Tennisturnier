@@ -216,20 +216,18 @@ function App() {
           <div className="flex items-center gap-1">
             {sync.role !== 'none' && (
               <span
-                title={sync.error ?? sync.status}
-                aria-label={`Sync-Status: ${sync.status}`}
+                role="status"
+                title={`${sync.role === 'owner' ? 'Sync' : 'Viewer'} · ${sync.error ?? sync.status}`}
+                aria-label={`Sync-Status: ${sync.status} (${sync.role === 'owner' ? 'Owner' : 'Viewer'})`}
                 className={
-                  'text-xs px-2 py-1 rounded-full font-medium transition-colors duration-300 ' +
+                  'inline-block h-2.5 w-2.5 rounded-full mx-1 transition-colors duration-300 ' +
                   (sync.status === 'live'
-                    ? 'bg-brand text-white'
+                    ? 'bg-emerald-300'
                     : sync.status === 'connecting'
-                      ? 'bg-warn-bg text-warn-fg animate-pulse'
-                      : 'bg-danger-bg text-danger-fg')
+                      ? 'bg-amber-300 animate-pulse'
+                      : 'bg-rose-400')
                 }
-              >
-                {sync.status === 'live' ? '●' : sync.status === 'connecting' ? '⏳' : '⚠'}{' '}
-                {sync.role === 'owner' ? 'sync' : 'viewer'}
-              </span>
+              />
             )}
             <InstallPrompt />
             <ThemeToggle />
