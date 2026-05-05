@@ -11,11 +11,13 @@ import { useConfirm } from '../hooks/useConfirm'
 const WELCOME_DISMISS_KEY = 'tennisturnier:welcomeDismissed'
 
 function readWelcomeDismissed(): boolean {
-  if (typeof window === 'undefined') return true
+  if (typeof window === 'undefined') return false
   try {
     return window.localStorage.getItem(WELCOME_DISMISS_KEY) === '1'
   } catch {
-    return true
+    // localStorage blocked (privacy mode, sandbox, etc.) — show the hint;
+    // dismissal still works in-memory for the current session.
+    return false
   }
 }
 
