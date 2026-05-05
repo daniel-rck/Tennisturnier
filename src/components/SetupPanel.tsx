@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { EntryFormat, Format, Mode } from '../types'
 import {
   ENTRY_FORMAT_LABELS,
@@ -6,6 +7,17 @@ import {
 } from '../types'
 import { parsePositiveInt } from '../utils/parseScore'
 import { useConfirm } from '../hooks/useConfirm'
+
+const WELCOME_DISMISS_KEY = 'tennisturnier:welcomeDismissed'
+
+function readWelcomeDismissed(): boolean {
+  if (typeof window === 'undefined') return true
+  try {
+    return window.localStorage.getItem(WELCOME_DISMISS_KEY) === '1'
+  } catch {
+    return true
+  }
+}
 
 interface Props {
   name: string
@@ -63,8 +75,41 @@ export function SetupPanel({
   onImport,
 }: Props) {
   const confirm = useConfirm()
+  const [welcomeDismissed, setWelcomeDismissed] = useState(readWelcomeDismissed)
+  const dismissWelcome = () => {
+    try {
+      window.localStorage.setItem(WELCOME_DISMISS_KEY, '1')
+    } catch {
+      // ignore
+    }
+    setWelcomeDismissed(true)
+  }
   return (
     <div className="space-y-6">
+      {!welcomeDismissed && (
+        <div className="rounded-md border border-brand-soft bg-brand-soft p-4 text-sm text-brand-soft-fg">
+          <div className="flex items-start gap-3">
+            <span aria-hidden className="text-2xl">👋</span>
+            <div className="flex-1">
+              <p className="font-semibold mb-1">Willkommen zum Tennisturnier-Planer</p>
+              <ol className="list-decimal list-inside space-y-0.5 text-brand-soft-fg/90">
+                <li>Format wählen (Wechselturnier, Gruppen, KO oder Gruppen + KO)</li>
+                <li>Spieler:innen oder Teams anlegen</li>
+                <li>Spielplan generieren oder Bracket starten</li>
+                <li>Ergebnisse eintragen — die Siegerehrung berechnet sich automatisch</li>
+              </ol>
+            </div>
+            <button
+              type="button"
+              onClick={dismissWelcome}
+              aria-label="Hinweis ausblenden"
+              className="icon-btn shrink-0 text-brand-soft-fg/70 hover:text-brand-soft-fg"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-fg mb-1">
           Turniername

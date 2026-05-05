@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -53,43 +53,49 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
     >
       <button
         type="button"
-        className="cursor-grab touch-none px-1 text-fg-subtle hover:text-fg"
+        className="icon-btn cursor-grab active:cursor-grabbing touch-none text-fg-subtle"
         aria-label="Verschieben"
         {...attributes}
         {...listeners}
       >
-        ⋮⋮
+        <DragHandleIcon />
       </button>
       <input
         type="text"
         value={player.name}
         onChange={(e) => onUpdate(player.id, { name: e.target.value })}
-        className="flex-1 rounded-md border border-transparent px-2 py-1 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+        className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none"
       />
       <div className="flex rounded-md border border-border-strong overflow-hidden text-xs">
         <button
           type="button"
           onClick={() => onUpdate(player.id, { gender: 'F' })}
+          aria-pressed={player.gender === 'F'}
+          aria-label="Dame"
           className={
-            'px-3 py-1 ' +
+            'inline-flex items-center gap-1 px-3 min-h-[40px] ' +
             (player.gender === 'F'
-              ? 'bg-pink-100 text-pink-800 font-medium'
+              ? 'bg-pink-100 text-pink-800 font-medium dark:bg-pink-900/40 dark:text-pink-200'
               : 'bg-surface text-fg-muted hover:bg-surface-muted')
           }
         >
-          Dame
+          <span aria-hidden>♀</span>
+          <span>Dame</span>
         </button>
         <button
           type="button"
           onClick={() => onUpdate(player.id, { gender: 'M' })}
+          aria-pressed={player.gender === 'M'}
+          aria-label="Herr"
           className={
-            'px-3 py-1 border-l border-border-strong ' +
+            'inline-flex items-center gap-1 px-3 min-h-[40px] border-l border-border-strong ' +
             (player.gender === 'M'
-              ? 'bg-sky-100 text-sky-800 font-medium'
+              ? 'bg-sky-100 text-sky-800 font-medium dark:bg-sky-900/40 dark:text-sky-200'
               : 'bg-surface text-fg-muted hover:bg-surface-muted')
           }
         >
-          Herr
+          <span aria-hidden>♂</span>
+          <span>Herr</span>
         </button>
       </div>
       <button
@@ -102,12 +108,31 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
           })
           if (ok) onRemove(player.id)
         }}
-        className="text-fg-subtle hover:text-danger-fg px-2"
+        className="icon-btn hover:text-danger-fg hover:bg-danger-bg/30"
         aria-label="Entfernen"
       >
         ✕
       </button>
     </div>
+  )
+}
+
+function DragHandleIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden
+    >
+      <circle cx="5" cy="3" r="1.4" />
+      <circle cx="5" cy="8" r="1.4" />
+      <circle cx="5" cy="13" r="1.4" />
+      <circle cx="11" cy="3" r="1.4" />
+      <circle cx="11" cy="8" r="1.4" />
+      <circle cx="11" cy="13" r="1.4" />
+    </svg>
   )
 }
 
@@ -121,6 +146,7 @@ export function PlayersPanel({
 }: Props) {
   const [draftName, setDraftName] = useState('')
   const [draftGender, setDraftGender] = useState<Gender>('F')
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -153,43 +179,50 @@ export function PlayersPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <input
+          ref={nameInputRef}
           type="text"
           placeholder="Name eingeben…"
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="flex-1 min-w-[12rem] rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+          className="flex-1 min-w-[12rem] min-h-[44px] rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
         />
         <div className="flex rounded-md border border-border-strong overflow-hidden">
           <button
             type="button"
             onClick={() => setDraftGender('F')}
+            aria-pressed={draftGender === 'F'}
+            aria-label="Dame"
             className={
-              'px-3 py-2 text-sm ' +
+              'inline-flex items-center gap-1 px-3 text-sm min-h-[44px] ' +
               (draftGender === 'F'
-                ? 'bg-pink-100 text-pink-800 font-medium'
+                ? 'bg-pink-100 text-pink-800 font-medium dark:bg-pink-900/40 dark:text-pink-200'
                 : 'bg-surface text-fg-muted hover:bg-surface-muted')
             }
           >
-            Dame
+            <span aria-hidden>♀</span>
+            <span>Dame</span>
           </button>
           <button
             type="button"
             onClick={() => setDraftGender('M')}
+            aria-pressed={draftGender === 'M'}
+            aria-label="Herr"
             className={
-              'px-3 py-2 text-sm border-l border-border-strong ' +
+              'inline-flex items-center gap-1 px-3 text-sm min-h-[44px] border-l border-border-strong ' +
               (draftGender === 'M'
-                ? 'bg-sky-100 text-sky-800 font-medium'
+                ? 'bg-sky-100 text-sky-800 font-medium dark:bg-sky-900/40 dark:text-sky-200'
                 : 'bg-surface text-fg-muted hover:bg-surface-muted')
             }
           >
-            Herr
+            <span aria-hidden>♂</span>
+            <span>Herr</span>
           </button>
         </div>
         <button
           type="button"
           onClick={submit}
-          className="rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover"
+          className="btn-primary"
         >
           Hinzufügen
         </button>
@@ -203,21 +236,21 @@ export function PlayersPanel({
         <button
           type="button"
           onClick={() => onSort('name')}
-          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
+          className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
           Sortieren A→Z
         </button>
         <button
           type="button"
           onClick={() => onSort('women-first')}
-          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
+          className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
           Damen zuerst
         </button>
         <button
           type="button"
           onClick={() => onSort('men-first')}
-          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
+          className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
           Herren zuerst
         </button>
@@ -227,7 +260,16 @@ export function PlayersPanel({
         <EmptyState
           icon="🎾"
           title="Noch keine Spieler:innen"
-          description={'Tippe oben einen Namen ein und wähle Dame/Herr — dann „Hinzufügen".'}
+          description={'Tippe oben einen Namen ein und wähle Dame/Herr — dann „Hinzufügen". Per Drag-and-Drop kannst du die Reihenfolge ändern.'}
+          action={
+            <button
+              type="button"
+              onClick={() => nameInputRef.current?.focus()}
+              className="btn-primary"
+            >
+              Erste:n Spieler:in anlegen
+            </button>
+          }
         />
       ) : (
         <DndContext

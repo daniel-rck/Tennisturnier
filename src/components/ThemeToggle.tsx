@@ -25,11 +25,11 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       title={`Theme: ${LABELS[theme]} → ${LABELS[NEXT[theme]]}`}
       aria-label={`Theme wechseln (aktuell: ${LABELS[theme]})`}
       className={
-        'text-emerald-100 hover:text-white text-sm px-2 py-1 leading-none ' +
+        'inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-emerald-100 hover:text-white hover:bg-emerald-600 leading-none ' +
         className
       }
     >
-      <span aria-hidden className="text-base">
+      <span aria-hidden className="text-lg">
         {ICONS[theme]}
       </span>
     </button>

@@ -7,6 +7,7 @@ import {
 } from '../groupScheduler'
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
 import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
+import { EmptyState } from './EmptyState'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -46,9 +47,11 @@ export function PrintView({ tournament }: Props) {
       </div>
 
       {!hasContent ? (
-        <p className="text-fg-muted text-sm italic">
-          Noch nichts zum Drucken — zuerst Spielplan / Bracket erzeugen.
-        </p>
+        <EmptyState
+          icon="🖨"
+          title="Noch nichts zum Drucken"
+          description="Erzeuge zuerst einen Spielplan, eine Gruppenphase oder ein Bracket — dann erscheint hier das druckfertige Layout."
+        />
       ) : (
         <div className="bg-surface p-6 rounded-md border border-border">
           <header className="mb-4 border-b border-border-strong pb-3">

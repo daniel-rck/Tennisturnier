@@ -34,7 +34,9 @@ export function SyncPanel({
       return
     }
     const url = `${window.location.origin}${window.location.pathname}?join=${sync.shareCode}`
-    QRCode.toDataURL(url, { width: 220, margin: 1 })
+    const isLargeViewport =
+      typeof window !== 'undefined' && window.innerWidth >= 1536
+    QRCode.toDataURL(url, { width: isLargeViewport ? 360 : 220, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null))
   }, [sync, role])
@@ -120,14 +122,14 @@ export function SyncPanel({
           <p className="text-xs text-fg-muted">
             Code an Anzeige-Geräte weitergeben oder QR scannen lassen.
           </p>
-          <div className="flex items-center gap-4">
-            <div className="font-mono text-3xl font-bold tracking-widest bg-brand-soft border border-brand-soft rounded px-4 py-2">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="font-mono text-3xl 2xl:text-6xl font-bold tracking-widest bg-brand-soft border border-brand-soft rounded px-4 py-2 2xl:px-8 2xl:py-4">
               {sync.shareCode}
             </div>
             <button
               type="button"
               onClick={() => navigator.clipboard?.writeText(sync.shareCode)}
-              className="text-xs text-fg-muted hover:text-fg underline"
+              className="text-xs text-fg-muted hover:text-fg underline min-h-[36px]"
             >
               Code kopieren
             </button>

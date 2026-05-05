@@ -125,17 +125,18 @@ function RevealStage({
       </div>
 
       {showCategories && (
-        <div className="flex gap-1 border-b border-border">
+        <div className="flex flex-wrap gap-2">
           {tabs.map((tt) => (
             <button
               key={tt.id}
               type="button"
               onClick={() => setTab(tt.id)}
+              aria-pressed={tab === tt.id}
               className={
-                'px-3 py-1.5 text-sm border-b-2 -mb-px transition ' +
+                'rounded-full px-4 py-1.5 text-sm transition min-h-[36px] ' +
                 (tab === tt.id
-                  ? 'border-brand font-semibold text-brand-soft-fg'
-                  : 'border-transparent text-fg-muted hover:text-fg')
+                  ? 'bg-brand-soft text-brand-soft-fg font-semibold'
+                  : 'bg-surface-sunken text-fg-muted hover:bg-surface-muted hover:text-fg')
               }
             >
               {tt.label}
@@ -184,12 +185,12 @@ function PodiumStage({
   step: RevealStep
 }) {
   return (
-    <div className="grid grid-cols-3 gap-3 items-end mt-8">
+    <div className="grid grid-cols-3 gap-3 2xl:gap-6 items-end mt-8 2xl:mt-16">
       <PodiumColumn
         place={2}
         entry={podium[1]}
         visible={isVisible(step, 2)}
-        height="h-32"
+        height="h-32 2xl:h-64"
         tone="bg-slate-300"
         medal="🥈"
       />
@@ -197,7 +198,7 @@ function PodiumStage({
         place={1}
         entry={podium[0]}
         visible={isVisible(step, 1)}
-        height="h-44"
+        height="h-44 2xl:h-80"
         tone="bg-warn-bg"
         medal="🥇"
       />
@@ -205,7 +206,7 @@ function PodiumStage({
         place={3}
         entry={podium[2]}
         visible={isVisible(step, 3)}
-        height="h-24"
+        height="h-24 2xl:h-48"
         tone="bg-orange-300"
         medal="🥉"
       />
@@ -231,23 +232,23 @@ function PodiumColumn({
   return (
     <div
       className={
-        'flex flex-col items-center gap-2 transition-all duration-700 ease-out ' +
+        'flex flex-col items-center gap-2 2xl:gap-4 transition-all duration-700 ease-out ' +
         (visible
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-6 pointer-events-none')
       }
     >
-      <div className="text-4xl">{visible ? medal : ' '}</div>
-      <div className="font-semibold text-center text-base min-h-[1.5rem]">
+      <div className="text-4xl 2xl:text-7xl">{visible ? medal : ' '}</div>
+      <div className="font-semibold text-center text-base 2xl:text-3xl min-h-[1.5rem]">
         {visible ? entry.name : ' '}
       </div>
-      <div className="text-xs text-fg-muted min-h-[1rem]">
+      <div className="text-xs 2xl:text-xl text-fg-muted min-h-[1rem]">
         {visible
           ? `${entry.wins} Siege · ${entry.diff > 0 ? '+' : ''}${entry.diff}`
           : ' '}
       </div>
       <div
-        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-2xl text-fg shadow`}
+        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-2xl 2xl:text-5xl text-fg shadow`}
       >
         {place}
       </div>
@@ -284,7 +285,7 @@ function RevealController({
             disabled={!b.enabled}
             onClick={() => onStep(b.target)}
             className={
-              'rounded-md px-3 py-2 text-sm font-medium transition ' +
+              'rounded-md px-3 py-2 text-sm font-medium transition min-h-[44px] ' +
               (b.enabled
                 ? 'bg-brand text-white hover:bg-brand-hover'
                 : 'bg-surface-sunken text-fg-subtle cursor-not-allowed')
@@ -294,13 +295,27 @@ function RevealController({
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={onReset}
-        className="text-xs text-fg-muted hover:text-fg underline"
-      >
-        Show neu starten (alle Kategorien)
-      </button>
+      <div className="flex flex-wrap gap-3 items-center pt-1">
+        <button
+          type="button"
+          onClick={onReset}
+          className="text-xs text-fg-muted hover:text-fg underline"
+        >
+          Show neu starten
+        </button>
+        <details className="text-xs text-fg-muted">
+          <summary className="cursor-pointer hover:text-fg">
+            Generalprobe
+          </summary>
+          <button
+            type="button"
+            onClick={() => onStep(1)}
+            className="mt-1 rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
+          >
+            Sofort zum Sieger springen
+          </button>
+        </details>
+      </div>
     </div>
   )
 }

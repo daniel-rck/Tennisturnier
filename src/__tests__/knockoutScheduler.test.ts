@@ -4,6 +4,7 @@ import {
   entrySlots,
   groupAdvanceSlots,
   groupLetter,
+  humanMatchLabel,
   resolveBracket,
 } from '../knockoutScheduler'
 
@@ -61,6 +62,20 @@ describe('groupLetter', () => {
   })
 })
 
+describe('humanMatchLabel', () => {
+  it('humanises Round-Match IDs', () => {
+    expect(humanMatchLabel('R1-M1')).toBe('Match 1 (Runde 1)')
+    expect(humanMatchLabel('R3-M2')).toBe('Match 2 (Runde 3)')
+  })
+  it('replaces special IDs with German labels', () => {
+    expect(humanMatchLabel('F')).toBe('Finale')
+    expect(humanMatchLabel('3P')).toBe('Spiel um Platz 3')
+  })
+  it('returns unknown IDs as-is', () => {
+    expect(humanMatchLabel('XYZ')).toBe('XYZ')
+  })
+})
+
 describe('resolveBracket', () => {
   const name = (id: string) => `name-${id}`
 
@@ -87,6 +102,23 @@ describe('resolveBracket', () => {
     const withScores = bracket.map((m) => ({ ...m, scoreA: 6, scoreB: 6 }))
     const resolved = resolveBracket(withScores, name)
     expect(resolved[0].winner).toBeNull()
+  })
+
+  it('uses human-friendly slot labels for unresolved feeders', () => {
+    const bracket = buildBracket(entrySlots(['a', 'b', 'c', 'd']))
+    const resolved = resolveBracket(bracket, name)
+    const final = resolved.find((m) => m.matchId === 'F')!
+    expect(final.pendingA).toMatch(/Sieger Match \d+ \(Runde 1\)/)
+    expect(final.pendingB).toMatch(/Sieger Match \d+ \(Runde 1\)/)
+  })
+
+  it('uses human-friendly slot labels for unresolved group ranks', () => {
+    const slots = groupAdvanceSlots(2, 2)
+    const bracket = buildBracket(slots)
+    const resolved = resolveBracket(bracket, (id) => id, () => undefined)
+    const labels = resolved.flatMap((m) => [m.pendingA, m.pendingB])
+    expect(labels).toContain('Gruppensieger A')
+    expect(labels).toContain('Gruppe A · 2.')
   })
 
   it('resolves loser feeders for 3rd place match', () => {

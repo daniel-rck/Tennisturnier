@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -59,12 +59,12 @@ function EntryRow({
     >
       <button
         type="button"
-        className="cursor-grab touch-none px-1 text-fg-subtle hover:text-fg"
+        className="icon-btn cursor-grab active:cursor-grabbing touch-none text-fg-subtle"
         aria-label="Verschieben"
         {...attributes}
         {...listeners}
       >
-        ⋮⋮
+        <DragHandleIcon />
       </button>
       {Array.from({ length: memberCount }).map((_, i) => (
         <input
@@ -78,7 +78,7 @@ function EntryRow({
             next[i] = e.target.value
             onUpdate(entry.id, { members: next.slice(0, memberCount) })
           }}
-          className="flex-1 min-w-[8rem] rounded-md border border-transparent px-2 py-1 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+          className="flex-1 min-w-[8rem] h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none"
         />
       ))}
       <button
@@ -91,12 +91,31 @@ function EntryRow({
           })
           if (ok) onRemove(entry.id)
         }}
-        className="text-fg-subtle hover:text-danger-fg px-2"
+        className="icon-btn hover:text-danger-fg hover:bg-danger-bg/30"
         aria-label="Entfernen"
       >
         ✕
       </button>
     </div>
+  )
+}
+
+function DragHandleIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden
+    >
+      <circle cx="5" cy="3" r="1.4" />
+      <circle cx="5" cy="8" r="1.4" />
+      <circle cx="5" cy="13" r="1.4" />
+      <circle cx="11" cy="3" r="1.4" />
+      <circle cx="11" cy="8" r="1.4" />
+      <circle cx="11" cy="13" r="1.4" />
+    </svg>
   )
 }
 
@@ -113,6 +132,7 @@ export function EntriesPanel({
   const [drafts, setDrafts] = useState<string[]>(
     Array(memberCount).fill('') as string[],
   )
+  const firstDraftRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -165,6 +185,7 @@ export function EntriesPanel({
         {Array.from({ length: memberCount }).map((_, i) => (
           <input
             key={i}
+            ref={i === 0 ? firstDraftRef : undefined}
             type="text"
             placeholder={
               memberCount === 1
@@ -178,13 +199,13 @@ export function EntriesPanel({
               setDrafts(next)
             }}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
-            className="flex-1 min-w-[8rem] rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+            className="flex-1 min-w-[8rem] min-h-[44px] rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
           />
         ))}
         <button
           type="button"
           onClick={submit}
-          className="rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover"
+          className="btn-primary"
         >
           Hinzufügen
         </button>
@@ -196,7 +217,7 @@ export function EntriesPanel({
         <button
           type="button"
           onClick={onSortByName}
-          className="rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
+          className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
           Sortieren A→Z
         </button>
@@ -206,7 +227,16 @@ export function EntriesPanel({
         <EmptyState
           icon="👥"
           title={`Noch keine ${entryFormat === 'doubles' ? 'Paare' : 'Teilnehmer:innen'} angelegt`}
-          description={'Trage oben die Namen ein und klicke auf „Hinzufügen".'}
+          description={'Trage oben die Namen ein und klicke auf „Hinzufügen". Per Drag-and-Drop kannst du die Setzliste-Reihenfolge ändern.'}
+          action={
+            <button
+              type="button"
+              onClick={() => firstDraftRef.current?.focus()}
+              className="btn-primary"
+            >
+              {entryFormat === 'doubles' ? 'Erstes Paar anlegen' : 'Ersten Eintrag anlegen'}
+            </button>
+          }
         />
       ) : (
         <DndContext

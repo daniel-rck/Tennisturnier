@@ -21,7 +21,7 @@ export function Toaster() {
     <div
       role="region"
       aria-label="Benachrichtigungen"
-      className="no-print fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-[calc(100%-2rem)]"
+      className="no-print fixed top-2 left-2 right-2 sm:top-4 sm:right-4 sm:left-auto z-50 flex flex-col gap-2 sm:max-w-sm"
     >
       {toasts.map((t) => (
         <div
@@ -45,7 +45,7 @@ export function Toaster() {
             type="button"
             onClick={() => dismiss(t.id)}
             aria-label="Schließen"
-            className="text-fg-subtle hover:text-fg text-base leading-none"
+            className="icon-btn shrink-0 text-fg-subtle hover:text-fg"
           >
             ×
           </button>

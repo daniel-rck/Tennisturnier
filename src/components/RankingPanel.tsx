@@ -455,40 +455,52 @@ interface TableRow {
 function RankingTable({ rows }: { rows: TableRow[] }) {
   return (
     <div className="overflow-x-auto rounded-md border border-border bg-surface">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm 2xl:text-lg">
         <thead>
           <tr className="bg-surface-sunken text-fg text-left">
             <th className="px-2 py-2 w-10">#</th>
             <th className="px-2 py-2">Name</th>
-            <th className="px-2 py-2 text-right">Sp</th>
-            <th className="px-2 py-2 text-right">S</th>
-            <th className="px-2 py-2 text-right">U</th>
-            <th className="px-2 py-2 text-right">N</th>
-            <th className="px-2 py-2 text-right">Spiele +/–</th>
-            <th className="px-2 py-2 text-right">Diff</th>
+            <th className="px-2 py-2 text-right" title="Spiele (gespielte Matches)">
+              <abbr title="Spiele" className="no-underline">Sp</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Siege">
+              <abbr title="Siege" className="no-underline">S</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Unentschieden">
+              <abbr title="Unentschieden" className="no-underline">U</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Niederlagen">
+              <abbr title="Niederlagen" className="no-underline">N</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Gewonnene : verlorene Spiele (Games)">
+              Spiele +/–
+            </th>
+            <th className="px-2 py-2 text-right" title="Differenz aus +/–">
+              Diff
+            </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className="border-t border-border">
-              <td className="px-2 py-1.5 font-semibold">
+              <td className="px-2 py-1.5 2xl:py-3 font-semibold">
                 {medal(r.rank)} {r.rank}.
               </td>
-              <td className="px-2 py-1.5">{r.name}</td>
-              <td className="px-2 py-1.5 text-right">{r.played}</td>
-              <td className="px-2 py-1.5 text-right text-brand">
+              <td className="px-2 py-1.5 2xl:py-3">{r.name}</td>
+              <td className="px-2 py-1.5 2xl:py-3 text-right">{r.played}</td>
+              <td className="px-2 py-1.5 2xl:py-3 text-right text-brand">
                 {r.wins}
               </td>
-              <td className="px-2 py-1.5 text-right text-fg-muted">
+              <td className="px-2 py-1.5 2xl:py-3 text-right text-fg-muted">
                 {r.draws}
               </td>
-              <td className="px-2 py-1.5 text-right text-danger-fg">
+              <td className="px-2 py-1.5 2xl:py-3 text-right text-danger-fg">
                 {r.losses}
               </td>
-              <td className="px-2 py-1.5 text-right tabular-nums">
+              <td className="px-2 py-1.5 2xl:py-3 text-right tabular-nums">
                 {r.for}:{r.against}
               </td>
-              <td className="px-2 py-1.5 text-right tabular-nums font-medium">
+              <td className="px-2 py-1.5 2xl:py-3 text-right tabular-nums font-medium">
                 {r.diff > 0 ? '+' : ''}
                 {r.diff}
               </td>

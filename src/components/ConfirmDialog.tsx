@@ -5,14 +5,19 @@ export function ConfirmDialog() {
   const { request, resolve } = useConfirmRequest()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null)
+  const cancelBtnRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     const el = dialogRef.current
     if (!el) return
     if (request && !el.open) {
       el.showModal()
-      // Focus confirm button so Enter triggers the action.
-      window.requestAnimationFrame(() => confirmBtnRef.current?.focus())
+      // Destructive actions: focus Cancel so an accidental Enter doesn't trigger the action.
+      // Otherwise focus Confirm so Enter triggers the primary action.
+      window.requestAnimationFrame(() => {
+        if (request.destructive) cancelBtnRef.current?.focus()
+        else confirmBtnRef.current?.focus()
+      })
     } else if (!request && el.open) {
       el.close()
     }
@@ -54,21 +59,17 @@ export function ConfirmDialog() {
           )}
           <div className="mt-5 flex justify-end gap-2">
             <button
+              ref={cancelBtnRef}
               type="button"
               onClick={() => resolve(false)}
-              className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
+              className="btn-secondary"
             >
               {request.cancelLabel ?? 'Abbrechen'}
             </button>
             <button
               ref={confirmBtnRef}
               type="submit"
-              className={
-                'rounded-md px-3 py-1.5 text-sm font-medium text-white ' +
-                (request.destructive
-                  ? 'bg-danger-fg hover:opacity-90'
-                  : 'bg-brand hover:bg-brand-hover')
-              }
+              className={request.destructive ? 'btn-danger' : 'btn-primary'}
             >
               {request.confirmLabel ?? 'Bestätigen'}
             </button>

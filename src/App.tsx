@@ -201,58 +201,63 @@ function App() {
     <div className="min-h-screen flex flex-col">
       <OfflineBanner />
       <header className="no-print bg-emerald-700 text-white">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
           <span className="text-2xl" aria-hidden>
             🎾
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-lg font-bold leading-tight">
               Tennisturnier-Planer
             </h1>
-            <p className="text-xs text-emerald-100">
+            <p className="text-xs text-emerald-100 truncate">
               {t.tournament.name || 'Vereinsturnier'}
             </p>
           </div>
-          <div className="flex-1" />
-          {sync.role !== 'none' && (
-            <span
-              title={sync.error ?? sync.status}
-              className={
-                'text-xs px-2 py-0.5 rounded-full font-medium mr-2 transition-colors duration-300 ' +
-                (sync.status === 'live'
-                  ? 'bg-brand text-white'
-                  : sync.status === 'connecting'
-                    ? 'bg-warn-bg text-warn-fg animate-pulse'
-                    : 'bg-danger-bg text-danger-fg')
-              }
+          <div className="flex items-center gap-1">
+            {sync.role !== 'none' && (
+              <span
+                title={sync.error ?? sync.status}
+                aria-label={`Sync-Status: ${sync.status}`}
+                className={
+                  'text-xs px-2 py-1 rounded-full font-medium transition-colors duration-300 ' +
+                  (sync.status === 'live'
+                    ? 'bg-brand text-white'
+                    : sync.status === 'connecting'
+                      ? 'bg-warn-bg text-warn-fg animate-pulse'
+                      : 'bg-danger-bg text-danger-fg')
+                }
+              >
+                {sync.status === 'live' ? '●' : sync.status === 'connecting' ? '⏳' : '⚠'}{' '}
+                {sync.role === 'owner' ? 'sync' : 'viewer'}
+              </span>
+            )}
+            <InstallPrompt />
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={t.undo}
+              disabled={!t.canUndo || !isOwner}
+              title={isOwner ? 'Rückgängig (Strg/Cmd+Z)' : 'Im Viewer-Modus deaktiviert'}
+              aria-label="Rückgängig"
+              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-emerald-100 hover:text-white hover:bg-emerald-600 disabled:text-emerald-400 disabled:cursor-not-allowed disabled:hover:bg-transparent text-base"
             >
-              ● {sync.role === 'owner' ? 'sync' : 'viewer'}
-            </span>
-          )}
-          <InstallPrompt />
-          <ThemeToggle />
-          <button
-            type="button"
-            onClick={t.undo}
-            disabled={!t.canUndo || !isOwner}
-            title={isOwner ? 'Rückgängig (Strg/Cmd+Z)' : 'Im Viewer-Modus deaktiviert'}
-            aria-label="Rückgängig"
-            className="text-emerald-100 hover:text-white disabled:text-emerald-300 disabled:cursor-not-allowed text-sm px-2 py-1"
-          >
-            ↶ Rückgängig
-          </button>
+              <span aria-hidden>↶</span>
+              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-sm">Rückgängig</span>
+            </button>
+          </div>
         </div>
-        <nav className="max-w-3xl mx-auto px-4 flex gap-1 overflow-x-auto">
+        <nav className="max-w-3xl mx-auto px-2 flex gap-0.5 overflow-x-auto">
           {tabs.map((tt) => (
             <button
               key={tt.id}
               type="button"
               onClick={() => setTab(tt.id)}
+              aria-current={tab === tt.id ? 'page' : undefined}
               className={
-                'px-3 py-2 text-sm whitespace-nowrap border-b-2 transition ' +
+                'px-4 py-2.5 text-sm whitespace-nowrap min-h-[44px] border-b-2 transition rounded-t ' +
                 (tab === tt.id
-                  ? 'border-white font-semibold'
-                  : 'border-transparent text-emerald-100 hover:text-white')
+                  ? 'border-white font-semibold bg-emerald-800/50'
+                  : 'border-transparent text-emerald-100 hover:text-white hover:bg-emerald-600/40')
               }
             >
               {tt.label}

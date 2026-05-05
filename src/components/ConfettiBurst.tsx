@@ -15,6 +15,13 @@ interface Props {
 export function ConfettiBurst({ trigger, intensity = 'burst' }: Props) {
   useEffect(() => {
     if (trigger === 0) return
+    // Respect users' motion preferences — skip confetti entirely.
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return
+    }
     if (intensity === 'burst') {
       confetti({
         particleCount: 120,
