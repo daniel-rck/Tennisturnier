@@ -33,7 +33,7 @@ export function ConfirmDialog() {
   return (
     <dialog
       ref={dialogRef}
-      className="no-print m-auto rounded-lg border border-border bg-surface text-fg p-0 shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm w-[min(28rem,calc(100%-2rem))] open:animate-scale-fade-in"
+      className="no-print fixed inset-0 m-auto h-fit max-h-[calc(100%-2rem)] rounded-lg border border-border bg-surface text-fg p-0 shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm w-[min(28rem,calc(100%-2rem))] open:animate-scale-fade-in"
       onClick={(e) => {
         // Click on backdrop (dialog itself, not children) → cancel
         if (e.target === dialogRef.current) resolve(false)
