@@ -35,7 +35,7 @@ export function PrivacyDialog({ open, onClose }: Props) {
     <dialog
       ref={dialogRef}
       aria-labelledby="privacy-title"
-      className="no-print rounded-lg border border-border bg-surface text-fg p-0 shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm w-[min(36rem,calc(100%-2rem))] open:animate-scale-fade-in"
+      className="no-print m-auto rounded-lg border border-border bg-surface text-fg p-0 shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm w-[min(36rem,calc(100%-2rem))] open:animate-scale-fade-in"
       onClick={(e) => {
         if (e.target === dialogRef.current) onClose()
       }}
