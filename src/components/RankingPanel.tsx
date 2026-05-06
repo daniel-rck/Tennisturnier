@@ -14,6 +14,7 @@ import { groupLetter, resolveBracket } from '../knockoutScheduler'
 import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
 import type { RotationRanking } from '../ranking'
 import { RevealPanel } from './RevealPanel'
+import { EmptyState } from './EmptyState'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -105,15 +106,19 @@ function RotationRanking({ tournament }: Props) {
 
   if (tournament.schedule.length === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch kein Spielplan generiert.
-      </p>
+      <EmptyState
+        icon="📋"
+        title="Noch kein Spielplan generiert"
+        description={'Wechsle in den Spielplan-Tab und klicke auf „Spielplan generieren".'}
+      />
     )
   if (completed === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch keine Ergebnisse eingetragen.
-      </p>
+      <EmptyState
+        icon="📝"
+        title="Noch keine Ergebnisse eingetragen"
+        description="Trage im Spielplan-Tab die Spielergebnisse ein — die Tabelle aktualisiert sich live."
+      />
     )
 
   const podium = rows.slice(0, 3)
@@ -199,9 +204,11 @@ function GroupsRanking({ tournament }: Props) {
   const groups = useMemo(() => groupsFor(tournament), [tournament])
   if (tournament.entries.length === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch keine Teilnehmer:innen angelegt.
-      </p>
+      <EmptyState
+        icon="👥"
+        title="Noch keine Teilnehmer:innen angelegt"
+        description="Lege auf der Teams-Seite die Teilnehmer:innen an — die Gruppentabellen erscheinen automatisch."
+      />
     )
 
   return (
@@ -292,8 +299,9 @@ function GroupsKoRanking({ tournament }: Props) {
   return (
     <div className="space-y-6">
       <BracketSummary resolved={resolved} entryName={entryName} />
-      <details>
-        <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">
+      <details className="group">
+        <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
+          <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
           Gruppenphase-Tabellen
         </summary>
         <div className="mt-3 space-y-3">
@@ -344,9 +352,11 @@ function BracketSummary({
 }) {
   if (resolved.length === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch kein Bracket erzeugt.
-      </p>
+      <EmptyState
+        icon="🏆"
+        title="Noch kein Bracket erzeugt"
+        description="Lege Teilnehmer:innen an — das Bracket wird automatisch generiert."
+      />
     )
   const { champion, runnerUp, thirds } = computeKnockoutPodium(resolved, entryName)
 
@@ -363,9 +373,9 @@ function BracketSummary({
           </div>
         </div>
       ) : (
-        <p className="text-fg-muted text-sm italic">
-          Finale noch nicht entschieden.
-        </p>
+        <div className="rounded-md border border-dashed border-border-strong bg-surface-muted px-4 py-3 text-center text-sm text-fg-muted">
+          🎯 Finale noch nicht entschieden — die Siegerehrung wartet auf die letzten Ergebnisse.
+        </div>
       )}
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-md border border-border p-3">

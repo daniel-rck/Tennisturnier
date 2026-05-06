@@ -192,8 +192,9 @@ export function GroupsPanel({
 
             <StandingsTable standings={standings} />
 
-            <details>
-              <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">
+            <details className="group">
+              <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
+                <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
                 {matches.length} Spiele
               </summary>
               <div className="mt-2 space-y-1">

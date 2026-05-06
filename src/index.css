@@ -131,6 +131,16 @@
   50%      { background-color: var(--color-brand-soft) }
 }
 
+/* Reveal-Modus im Vollbild — Header + Footer ausblenden, mehr Platz für die Bühne. */
+html[data-reveal-fullscreen='true'] header.no-print,
+html[data-reveal-fullscreen='true'] footer.no-print {
+  display: none;
+}
+html[data-reveal-fullscreen='true'] main > div {
+  max-width: 100%;
+  padding: 2rem 3rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

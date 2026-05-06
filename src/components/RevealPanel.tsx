@@ -9,6 +9,7 @@ import type {
 } from '../types'
 import { ConfettiBurst } from './ConfettiBurst'
 import { playFanfare, playFinale, unlockAudio } from '../bell'
+import { useFullscreen } from '../hooks/useFullscreen'
 
 interface Props {
   tournament: Tournament
@@ -76,6 +77,32 @@ function RevealStage({
     : [{ id: 'overall', label: 'Gesamt' }]
   const [tab, setTab] = useState<RevealCategory>('overall')
   const step = tournament.reveal.steps[tab]
+  const { isFullscreen, supported: fullscreenSupported, toggle: toggleFullscreen, exit: exitFullscreen } =
+    useFullscreen()
+
+  // Drive a global data-attribute on <html> while we're showing the reveal stage
+  // in fullscreen, so the app chrome (header/footer) can hide via CSS.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const flag = isFullscreen ? 'true' : null
+    if (flag) document.documentElement.setAttribute('data-reveal-fullscreen', flag)
+    else document.documentElement.removeAttribute('data-reveal-fullscreen')
+    return () => {
+      document.documentElement.removeAttribute('data-reveal-fullscreen')
+    }
+  }, [isFullscreen])
+
+  // Make sure we leave fullscreen when the reveal stage unmounts (e.g. tab change).
+  useEffect(() => {
+    return () => {
+      void exitFullscreen()
+    }
+  }, [exitFullscreen])
+
+  const handleClose = () => {
+    void exitFullscreen()
+    onClose()
+  }
 
   const podium = useMemo(
     () => computePodium(tournament, tab),
@@ -111,17 +138,31 @@ function RevealStage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold">🎉 Siegerehrung</h2>
-        {isOwner && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-xs text-fg-muted hover:text-fg underline"
-          >
-            Reveal-Modus beenden
-          </button>
-        )}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-2xl 2xl:text-5xl font-bold">🎉 Siegerehrung</h2>
+        <div className="flex items-center gap-2">
+          {fullscreenSupported && (
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface px-3 py-2 text-sm hover:border-brand-hover min-h-[40px]"
+              title={isFullscreen ? 'Vollbild verlassen (Esc)' : 'Vollbild für TV-Anzeige'}
+              aria-pressed={isFullscreen}
+            >
+              <span aria-hidden>{isFullscreen ? '⛶' : '⛶'}</span>
+              <span>{isFullscreen ? 'Vollbild verlassen' : 'Vollbild'}</span>
+            </button>
+          )}
+          {isOwner && (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="text-xs text-fg-muted hover:text-fg underline"
+            >
+              Reveal-Modus beenden
+            </button>
+          )}
+        </div>
       </div>
 
       {showCategories && (

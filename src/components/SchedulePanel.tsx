@@ -124,30 +124,33 @@ export function SchedulePanel({
             ))}
           </div>
 
-          <details className="text-sm">
-            <summary className="cursor-pointer text-fg-muted hover:text-fg">
-              Statistik (Einsätze / Pausen pro Spieler:in)
+          <details className="group text-sm rounded-md border border-border bg-surface">
+            <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-2 rounded-md text-fg-muted hover:text-fg hover:bg-surface-muted">
+              <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
+              <span>Statistik (Einsätze / Pausen pro Spieler:in)</span>
             </summary>
-            <table className="mt-2 w-full text-sm">
-              <thead>
-                <tr className="text-left text-fg-muted">
-                  <th className="py-1">Name</th>
-                  <th className="py-1">Spiele</th>
-                  <th className="py-1">Pausen</th>
-                  <th className="py-1">Verschiedene Partner</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.map((s) => (
-                  <tr key={s.id} className="border-t border-border">
-                    <td className="py-1">{s.name}</td>
-                    <td className="py-1">{s.plays}</td>
-                    <td className="py-1">{s.rests}</td>
-                    <td className="py-1">{s.uniquePartners}</td>
+            <div className="px-3 pb-3 pt-1 border-t border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-fg-muted">
+                    <th className="py-1">Name</th>
+                    <th className="py-1">Spiele</th>
+                    <th className="py-1">Pausen</th>
+                    <th className="py-1">Verschiedene Partner</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {stats.map((s) => (
+                    <tr key={s.id} className="border-t border-border">
+                      <td className="py-1">{s.name}</td>
+                      <td className="py-1">{s.plays}</td>
+                      <td className="py-1">{s.rests}</td>
+                      <td className="py-1">{s.uniquePartners}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </details>
         </>
       )}

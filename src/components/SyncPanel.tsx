@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import type { Tournament } from '../types'
 import type { SyncRole, SyncStatus } from '../hooks/useSync'
 import { Spinner } from './Spinner'
+import { useToast } from '../hooks/useToast'
 
 interface Props {
   tournament: Tournament
@@ -27,6 +28,21 @@ export function SyncPanel({
   const [busy, setBusy] = useState(false)
   const [joinCode, setJoinCode] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  const copyCode = async () => {
+    if (!sync?.shareCode) return
+    try {
+      await navigator.clipboard?.writeText(sync.shareCode)
+      toast({ variant: 'success', title: 'Code kopiert' })
+    } catch {
+      toast({
+        variant: 'error',
+        title: 'Konnte nicht kopiert werden',
+        description: 'Code manuell auswählen und kopieren.',
+      })
+    }
+  }
 
   useEffect(() => {
     if (!sync || role !== 'owner') {
@@ -128,7 +144,7 @@ export function SyncPanel({
             </div>
             <button
               type="button"
-              onClick={() => navigator.clipboard?.writeText(sync.shareCode)}
+              onClick={copyCode}
               className="text-xs text-fg-muted hover:text-fg underline min-h-[36px]"
             >
               Code kopieren
