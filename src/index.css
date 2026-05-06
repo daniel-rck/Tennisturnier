@@ -27,6 +27,36 @@
   --animate-pulse-brand: pulse-brand 600ms ease-out both;
 }
 
+@utility btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white min-h-[44px];
+  @apply hover:bg-brand-hover;
+  @apply disabled:bg-surface-sunken disabled:text-fg-subtle disabled:border disabled:border-dashed disabled:border-border-strong disabled:cursor-not-allowed;
+}
+
+@utility btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-fg min-h-[44px];
+  @apply hover:border-brand-hover;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-md bg-danger-fg px-4 py-2 text-sm font-medium text-white min-h-[44px];
+  @apply hover:opacity-90;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm text-fg-muted min-h-[44px];
+  @apply hover:text-fg hover:bg-surface-sunken;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility icon-btn {
+  @apply inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-fg-muted;
+  @apply hover:text-fg hover:bg-surface-sunken;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
 @layer base {
   html {
     color-scheme: light;
@@ -99,6 +129,16 @@
 @keyframes pulse-brand {
   0%, 100% { background-color: transparent }
   50%      { background-color: var(--color-brand-soft) }
+}
+
+/* Reveal-Modus im Vollbild — Header + Footer ausblenden, mehr Platz für die Bühne. */
+html[data-reveal-fullscreen='true'] header.no-print,
+html[data-reveal-fullscreen='true'] footer.no-print {
+  display: none;
+}
+html[data-reveal-fullscreen='true'] main > div {
+  max-width: 100%;
+  padding: 2rem 3rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

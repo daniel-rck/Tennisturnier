@@ -14,6 +14,7 @@ import { groupLetter, resolveBracket } from '../knockoutScheduler'
 import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
 import type { RotationRanking } from '../ranking'
 import { RevealPanel } from './RevealPanel'
+import { EmptyState } from './EmptyState'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -105,15 +106,19 @@ function RotationRanking({ tournament }: Props) {
 
   if (tournament.schedule.length === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch kein Spielplan generiert.
-      </p>
+      <EmptyState
+        icon="📋"
+        title="Noch kein Spielplan generiert"
+        description={'Wechsle in den Spielplan-Tab und klicke auf „Spielplan generieren".'}
+      />
     )
   if (completed === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch keine Ergebnisse eingetragen.
-      </p>
+      <EmptyState
+        icon="📝"
+        title="Noch keine Ergebnisse eingetragen"
+        description="Trage im Spielplan-Tab die Spielergebnisse ein — die Tabelle aktualisiert sich live."
+      />
     )
 
   const podium = rows.slice(0, 3)
@@ -199,9 +204,11 @@ function GroupsRanking({ tournament }: Props) {
   const groups = useMemo(() => groupsFor(tournament), [tournament])
   if (tournament.entries.length === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch keine Teilnehmer:innen angelegt.
-      </p>
+      <EmptyState
+        icon="👥"
+        title="Noch keine Teilnehmer:innen angelegt"
+        description="Lege auf der Teams-Seite die Teilnehmer:innen an — die Gruppentabellen erscheinen automatisch."
+      />
     )
 
   return (
@@ -292,8 +299,9 @@ function GroupsKoRanking({ tournament }: Props) {
   return (
     <div className="space-y-6">
       <BracketSummary resolved={resolved} entryName={entryName} />
-      <details>
-        <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">
+      <details className="group">
+        <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
+          <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
           Gruppenphase-Tabellen
         </summary>
         <div className="mt-3 space-y-3">
@@ -344,9 +352,11 @@ function BracketSummary({
 }) {
   if (resolved.length === 0)
     return (
-      <p className="text-fg-muted text-sm italic">
-        Noch kein Bracket erzeugt.
-      </p>
+      <EmptyState
+        icon="🏆"
+        title="Noch kein Bracket erzeugt"
+        description="Lege Teilnehmer:innen an — das Bracket wird automatisch generiert."
+      />
     )
   const { champion, runnerUp, thirds } = computeKnockoutPodium(resolved, entryName)
 
@@ -363,9 +373,9 @@ function BracketSummary({
           </div>
         </div>
       ) : (
-        <p className="text-fg-muted text-sm italic">
-          Finale noch nicht entschieden.
-        </p>
+        <div className="rounded-md border border-dashed border-border-strong bg-surface-muted px-4 py-3 text-center text-sm text-fg-muted">
+          🎯 Finale noch nicht entschieden — die Siegerehrung wartet auf die letzten Ergebnisse.
+        </div>
       )}
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-md border border-border p-3">
@@ -455,40 +465,52 @@ interface TableRow {
 function RankingTable({ rows }: { rows: TableRow[] }) {
   return (
     <div className="overflow-x-auto rounded-md border border-border bg-surface">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm 2xl:text-lg">
         <thead>
           <tr className="bg-surface-sunken text-fg text-left">
             <th className="px-2 py-2 w-10">#</th>
             <th className="px-2 py-2">Name</th>
-            <th className="px-2 py-2 text-right">Sp</th>
-            <th className="px-2 py-2 text-right">S</th>
-            <th className="px-2 py-2 text-right">U</th>
-            <th className="px-2 py-2 text-right">N</th>
-            <th className="px-2 py-2 text-right">Spiele +/–</th>
-            <th className="px-2 py-2 text-right">Diff</th>
+            <th className="px-2 py-2 text-right" title="Spiele (gespielte Matches)">
+              <abbr title="Spiele" className="no-underline">Sp</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Siege">
+              <abbr title="Siege" className="no-underline">S</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Unentschieden">
+              <abbr title="Unentschieden" className="no-underline">U</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Niederlagen">
+              <abbr title="Niederlagen" className="no-underline">N</abbr>
+            </th>
+            <th className="px-2 py-2 text-right" title="Gewonnene : verlorene Spiele (Games)">
+              Spiele +/–
+            </th>
+            <th className="px-2 py-2 text-right" title="Differenz aus +/–">
+              Diff
+            </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className="border-t border-border">
-              <td className="px-2 py-1.5 font-semibold">
+              <td className="px-2 py-1.5 2xl:py-3 font-semibold">
                 {medal(r.rank)} {r.rank}.
               </td>
-              <td className="px-2 py-1.5">{r.name}</td>
-              <td className="px-2 py-1.5 text-right">{r.played}</td>
-              <td className="px-2 py-1.5 text-right text-brand">
+              <td className="px-2 py-1.5 2xl:py-3">{r.name}</td>
+              <td className="px-2 py-1.5 2xl:py-3 text-right">{r.played}</td>
+              <td className="px-2 py-1.5 2xl:py-3 text-right text-brand">
                 {r.wins}
               </td>
-              <td className="px-2 py-1.5 text-right text-fg-muted">
+              <td className="px-2 py-1.5 2xl:py-3 text-right text-fg-muted">
                 {r.draws}
               </td>
-              <td className="px-2 py-1.5 text-right text-danger-fg">
+              <td className="px-2 py-1.5 2xl:py-3 text-right text-danger-fg">
                 {r.losses}
               </td>
-              <td className="px-2 py-1.5 text-right tabular-nums">
+              <td className="px-2 py-1.5 2xl:py-3 text-right tabular-nums">
                 {r.for}:{r.against}
               </td>
-              <td className="px-2 py-1.5 text-right tabular-nums font-medium">
+              <td className="px-2 py-1.5 2xl:py-3 text-right tabular-nums font-medium">
                 {r.diff > 0 ? '+' : ''}
                 {r.diff}
               </td>

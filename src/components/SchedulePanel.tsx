@@ -54,7 +54,7 @@ export function SchedulePanel({
           type="button"
           onClick={onGenerate}
           disabled={tournament.players.length < 4 || isGenerating}
-          className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover disabled:bg-surface-sunken disabled:text-fg-muted disabled:cursor-not-allowed"
+          className="btn-primary"
         >
           {isGenerating && <Spinner />}
           {isGenerating ? 'Generiere…' : 'Spielplan generieren'}
@@ -96,6 +96,19 @@ export function SchedulePanel({
               ? 'Lege erst mindestens 4 Spieler:innen an.'
               : 'Klicke auf „Spielplan generieren", um zu starten.'
           }
+          action={
+            tournament.players.length >= 4 && (
+              <button
+                type="button"
+                onClick={onGenerate}
+                disabled={isGenerating}
+                className="btn-primary"
+              >
+                {isGenerating && <Spinner />}
+                {isGenerating ? 'Generiere…' : 'Spielplan generieren'}
+              </button>
+            )
+          }
         />
       ) : (
         <>
@@ -111,30 +124,33 @@ export function SchedulePanel({
             ))}
           </div>
 
-          <details className="text-sm">
-            <summary className="cursor-pointer text-fg-muted hover:text-fg">
-              Statistik (Einsätze / Pausen pro Spieler:in)
+          <details className="group text-sm rounded-md border border-border bg-surface">
+            <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-2 rounded-md text-fg-muted hover:text-fg hover:bg-surface-muted">
+              <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
+              <span>Statistik (Einsätze / Pausen pro Spieler:in)</span>
             </summary>
-            <table className="mt-2 w-full text-sm">
-              <thead>
-                <tr className="text-left text-fg-muted">
-                  <th className="py-1">Name</th>
-                  <th className="py-1">Spiele</th>
-                  <th className="py-1">Pausen</th>
-                  <th className="py-1">Verschiedene Partner</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.map((s) => (
-                  <tr key={s.id} className="border-t border-border">
-                    <td className="py-1">{s.name}</td>
-                    <td className="py-1">{s.plays}</td>
-                    <td className="py-1">{s.rests}</td>
-                    <td className="py-1">{s.uniquePartners}</td>
+            <div className="px-3 pb-3 pt-1 border-t border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-fg-muted">
+                    <th className="py-1">Name</th>
+                    <th className="py-1">Spiele</th>
+                    <th className="py-1">Pausen</th>
+                    <th className="py-1">Verschiedene Partner</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {stats.map((s) => (
+                    <tr key={s.id} className="border-t border-border">
+                      <td className="py-1">{s.name}</td>
+                      <td className="py-1">{s.plays}</td>
+                      <td className="py-1">{s.rests}</td>
+                      <td className="py-1">{s.uniquePartners}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </details>
         </>
       )}
@@ -194,24 +210,51 @@ function MatchCard({
   byId: Map<string, Player>
   onScore: (a: number | undefined, b: number | undefined) => void
 }) {
+  const teamAName = match.teamA.players.map((id) => byId.get(id)?.name).join(' & ')
+  const teamBName = match.teamB.players.map((id) => byId.get(id)?.name).join(' & ')
+  const hasA = match.scoreA != null
+  const hasB = match.scoreB != null
+  const status: 'pending' | 'partial' | 'complete' =
+    hasA && hasB ? 'complete' : hasA || hasB ? 'partial' : 'pending'
+  const accent =
+    status === 'complete'
+      ? 'border-l-4 border-l-brand'
+      : status === 'partial'
+        ? 'border-l-4 border-l-warn-fg'
+        : ''
   return (
-    <div className="rounded-md border border-border bg-surface-muted px-3 py-2 text-sm">
-      <div className="text-xs font-medium text-fg-muted mb-1">
-        Platz {match.court}
+    <div
+      className={
+        'rounded-md border border-border bg-surface-muted px-3 py-2 text-sm ' +
+        accent
+      }
+    >
+      <div className="flex items-center justify-between mb-1 text-xs font-medium">
+        <span className="text-fg-muted">Platz {match.court}</span>
+        {status === 'complete' && (
+          <span className="rounded-full bg-brand-soft text-brand-soft-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
+            Erfasst
+          </span>
+        )}
+        {status === 'partial' && (
+          <span className="rounded-full bg-warn-bg text-warn-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
+            Unvollständig
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <span className="truncate">
-          {match.teamA.players.map((id) => byId.get(id)?.name).join(' & ')}
+        <span className="truncate" title={teamAName}>
+          {teamAName}
         </span>
         <span className="text-fg-subtle text-xs">vs.</span>
-        <span className="truncate text-right">
-          {match.teamB.players.map((id) => byId.get(id)?.name).join(' & ')}
+        <span className="truncate text-right" title={teamBName}>
+          {teamBName}
         </span>
         <div className="justify-self-start">
           <ScoreInput
             value={match.scoreA}
             onChange={(a) => onScore(a, match.scoreB)}
-            ariaLabel="Spiele Team A"
+            ariaLabel={`Spiele ${teamAName}`}
           />
         </div>
         <span className="text-fg-subtle text-xs text-center">:</span>
@@ -219,7 +262,7 @@ function MatchCard({
           <ScoreInput
             value={match.scoreB}
             onChange={(b) => onScore(match.scoreA, b)}
-            ariaLabel="Spiele Team B"
+            ariaLabel={`Spiele ${teamBName}`}
           />
         </div>
       </div>

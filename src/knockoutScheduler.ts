@@ -133,18 +133,25 @@ export function resolveBracket(
           const map = s.loser ? losers : winners
           const w = map.get(s.matchId)
           const labelPrefix = s.loser ? 'Verlierer' : 'Sieger'
-          if (w === undefined)
-            return { entryId: null, label: `${labelPrefix} ${s.matchId}` }
-          if (w === null) return { entryId: null, label: '—' }
+          // Match not yet decided (or referenced before processing) — surface a
+          // descriptive placeholder so spectators know who will end up here.
+          if (w === undefined || w === null) {
+            return {
+              entryId: null,
+              label: `${labelPrefix} ${humanMatchLabel(s.matchId)}`,
+            }
+          }
           return { entryId: w, label: entryName(w) }
         }
         case 'group-rank': {
           const id = groupWinner?.(s.group, s.rank)
-          if (!id)
-            return {
-              entryId: null,
-              label: `${s.rank}. Gruppe ${groupLetter(s.group)}`,
-            }
+          if (!id) {
+            const placeholder =
+              s.rank === 1
+                ? `Gruppensieger ${groupLetter(s.group)}`
+                : `Gruppe ${groupLetter(s.group)} · ${s.rank}.`
+            return { entryId: null, label: placeholder }
+          }
           return { entryId: id, label: entryName(id) }
         }
         case 'bye':
@@ -202,6 +209,15 @@ export function resolveBracket(
 
 export function groupLetter(group: number): string {
   return String.fromCharCode(64 + group) // 1 -> 'A'
+}
+
+/** Convert internal match IDs (e.g. "R1-M1", "F", "3P") into human-readable labels. */
+export function humanMatchLabel(matchId: string): string {
+  if (matchId === 'F') return 'Finale'
+  if (matchId === '3P') return 'Spiel um Platz 3'
+  const m = /^R(\d+)-M(\d+)$/.exec(matchId)
+  if (m) return `Match ${m[2]} (Runde ${m[1]})`
+  return matchId
 }
 
 /** Build initial slots from entry IDs (entry order = seed). */

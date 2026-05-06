@@ -56,21 +56,20 @@ export function ScoreInput({
   }
 
   const stepperBtn =
-    'h-7 w-6 shrink-0 rounded border border-border-strong text-fg-muted text-base leading-none ' +
+    'h-10 w-10 shrink-0 rounded-md border border-border-strong text-fg-muted text-lg leading-none ' +
     'hover:bg-surface-muted hover:text-fg active:bg-surface-sunken ' +
-    'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent'
+    'disabled:opacity-50 disabled:border-dashed disabled:cursor-not-allowed disabled:hover:bg-transparent'
 
   const minusDisabled = disabled || value === undefined || value <= min
   const plusDisabled = disabled || (value !== undefined && value >= max)
 
   return (
-    <div className="inline-flex items-stretch gap-0.5">
+    <div className="inline-flex items-stretch gap-1">
       <button
         type="button"
         onClick={() => step(-1)}
         disabled={minusDisabled}
         aria-label={`${ariaLabel} verringern`}
-        tabIndex={-1}
         className={stepperBtn}
       >
         −
@@ -93,7 +92,7 @@ export function ScoreInput({
           isFocused.current = false
           setDraft(value?.toString() ?? '')
         }}
-        className="w-10 rounded border border-border-strong px-1 py-0.5 text-center text-sm tabular-nums disabled:bg-surface-sunken disabled:text-fg-subtle"
+        className="w-12 h-10 rounded-md border border-border-strong px-1 text-center text-base tabular-nums disabled:bg-surface-sunken disabled:text-fg-subtle"
         aria-label={ariaLabel}
       />
       <button
@@ -101,7 +100,6 @@ export function ScoreInput({
         onClick={() => step(1)}
         disabled={plusDisabled}
         aria-label={`${ariaLabel} erhöhen`}
-        tabIndex={-1}
         className={stepperBtn}
       >
         +

@@ -12,6 +12,7 @@ import {
   resolveGroupAssignment,
 } from '../groupScheduler'
 import { ScoreInput } from './ScoreInput'
+import { EmptyState } from './EmptyState'
 
 interface Props {
   tournament: Tournament
@@ -118,16 +119,20 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     tournament.entries.length < 2
   ) {
     return (
-      <p className="text-fg-muted text-sm italic">
-        Lege zuerst Teilnehmer:innen auf der Teams-Seite an (mindestens 2).
-      </p>
+      <EmptyState
+        icon="🏆"
+        title="Noch keine Teilnehmer:innen"
+        description="Lege zuerst mindestens 2 Teilnehmer:innen auf der Teams-Seite an — das Bracket wird dann automatisch erzeugt."
+      />
     )
   }
   if (tournament.format === 'groups-ko' && tournament.entries.length < 2) {
     return (
-      <p className="text-fg-muted text-sm italic">
-        Lege zuerst Teilnehmer:innen auf der Teams-Seite an.
-      </p>
+      <EmptyState
+        icon="🏆"
+        title="Noch keine Teilnehmer:innen"
+        description="Lege zuerst Teilnehmer:innen an. Nach Abschluss der Gruppenphase erscheint hier das KO-Bracket."
+      />
     )
   }
 
@@ -151,12 +156,12 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
       </div>
 
       <div className="overflow-x-auto">
-        <div className="flex gap-4 min-w-fit pb-2">
+        <div className="flex gap-4 2xl:gap-8 min-w-fit pb-2">
           {roundNumbers.map((rn) => {
             const matches = rounds.get(rn)!
             return (
-              <div key={rn} className="min-w-[16rem]">
-                <h3 className="text-sm font-semibold mb-2 text-fg-muted">
+              <div key={rn} className="min-w-[16rem] 2xl:min-w-[24rem]">
+                <h3 className="text-sm 2xl:text-lg font-semibold mb-2 text-fg-muted">
                   {roundLabel(rn, lastRound, matches.length)}
                 </h3>
                 <div className="space-y-2">
@@ -199,12 +204,43 @@ function BracketCard({
     m.scoreA != null &&
     m.scoreB != null &&
     m.scoreA === m.scoreB
+  const hasA = m.scoreA != null
+  const hasB = m.scoreB != null
+  const status: 'pending' | 'partial' | 'complete' = m.isByeMatch
+    ? 'complete'
+    : hasA && hasB
+      ? 'complete'
+      : hasA || hasB
+        ? 'partial'
+        : 'pending'
+  const accent =
+    !m.isByeMatch && status === 'complete'
+      ? 'border-l-4 border-l-brand'
+      : status === 'partial'
+        ? 'border-l-4 border-l-warn-fg'
+        : ''
 
   return (
-    <div className="rounded-md border border-border bg-surface p-2 text-sm">
-      <div className="text-xs text-fg-muted mb-1">
-        {m.matchId === '3P' ? 'Spiel um Platz 3' : m.matchId}
-        {m.isByeMatch && ' · Freilos'}
+    <div className={'rounded-md border border-border bg-surface p-2 text-sm ' + accent}>
+      <div className="flex items-center justify-between gap-2 mb-1 text-xs">
+        <span className="text-fg-muted">
+          {m.matchId === '3P' ? 'Spiel um Platz 3' : m.matchId}
+        </span>
+        {m.isByeMatch && (
+          <span className="rounded bg-fg-subtle/20 text-fg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide font-medium">
+            Freilos
+          </span>
+        )}
+        {!m.isByeMatch && status === 'complete' && (
+          <span className="rounded-full bg-brand-soft text-brand-soft-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
+            Erfasst
+          </span>
+        )}
+        {!m.isByeMatch && status === 'partial' && (
+          <span className="rounded-full bg-warn-bg text-warn-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
+            Unvollständig
+          </span>
+        )}
       </div>
       <SlotRow
         label={m.pendingA}
@@ -256,7 +292,7 @@ function SlotRow({
         (winning ? 'bg-brand-soft font-semibold' : '')
       }
     >
-      <span className="truncate">{label}</span>
+      <span className="truncate" title={label}>{label}</span>
       <ScoreInput
         value={score}
         onChange={onChange}

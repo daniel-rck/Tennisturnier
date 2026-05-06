@@ -51,10 +51,11 @@ export function InstallPrompt() {
         setHidden(true)
       }}
       title="Als App installieren (Rechtsklick zum Ausblenden)"
-      className="text-emerald-100 hover:text-white text-xs px-2 py-1 leading-none"
+      className="inline-flex items-center gap-1 min-h-[44px] px-2 rounded-md text-emerald-100 hover:text-white hover:bg-emerald-600 leading-none"
       aria-label="App installieren"
     >
-      ⤓ Installieren
+      <span aria-hidden className="text-base">⤓</span>
+      <span className="hidden sm:inline text-xs">Installieren</span>
     </button>
   )
 }

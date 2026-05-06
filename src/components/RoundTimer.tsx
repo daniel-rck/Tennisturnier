@@ -100,10 +100,20 @@ export function RoundTimer({
 
   return (
     <div className="rounded-md border border-border bg-surface p-3">
+      {ringing && (
+        <button
+          type="button"
+          onClick={silence}
+          className="w-full sm:hidden rounded-md bg-danger-fg px-4 py-4 text-base text-white font-semibold hover:opacity-90 animate-pulse min-h-[60px] mb-3"
+          autoFocus
+        >
+          🔕 Glocke aus
+        </button>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <div
           className={
-            'font-mono text-3xl tabular-nums ' +
+            'font-mono text-3xl 2xl:text-5xl tabular-nums ' +
             (expired ? 'text-danger-fg' : 'text-fg')
           }
           aria-live="polite"
@@ -115,7 +125,7 @@ export function RoundTimer({
             <button
               type="button"
               onClick={silence}
-              className="rounded-md bg-danger-fg px-4 py-1.5 text-sm text-white font-medium hover:opacity-90 animate-pulse"
+              className="hidden sm:inline-flex items-center justify-center rounded-md bg-danger-fg px-4 py-2 text-sm text-white font-medium hover:opacity-90 animate-pulse min-w-[8rem] min-h-[44px]"
               autoFocus
             >
               🔕 Glocke aus
@@ -124,7 +134,7 @@ export function RoundTimer({
             <button
               type="button"
               onClick={start}
-              className="rounded-md bg-brand px-3 py-1.5 text-sm text-white font-medium hover:bg-brand-hover"
+              className="inline-flex items-center justify-center rounded-md bg-brand px-3 py-2 text-sm text-white font-medium hover:bg-brand-hover min-w-[6rem] min-h-[44px]"
             >
               {remaining > 0 && remaining < minutes * 60
                 ? 'Weiter'
@@ -134,7 +144,7 @@ export function RoundTimer({
             <button
               type="button"
               onClick={pause}
-              className="rounded-md bg-amber-500 px-3 py-1.5 text-sm text-white font-medium hover:bg-amber-600"
+              className="inline-flex items-center justify-center rounded-md bg-amber-500 px-3 py-2 text-sm text-white font-medium hover:bg-amber-600 min-w-[6rem] min-h-[44px]"
             >
               Pause
             </button>
@@ -142,7 +152,7 @@ export function RoundTimer({
           <button
             type="button"
             onClick={reset}
-            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted"
+            className="inline-flex items-center justify-center rounded-md border border-border-strong px-3 py-2 text-sm hover:border-fg-muted min-w-[5rem] min-h-[44px]"
           >
             Reset
           </button>
@@ -153,10 +163,12 @@ export function RoundTimer({
               void ringBellOnce(bellVariant)
             }}
             disabled={ringing}
-            className="rounded-md border border-border-strong px-3 py-1.5 text-sm hover:border-fg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1 rounded-md border border-border-strong px-3 py-2 text-sm hover:border-fg-muted disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
             title="Klingelton testen"
+            aria-label="Klingelton testen"
           >
-            🔔
+            <span aria-hidden>🔔</span>
+            <span className="hidden sm:inline">Test</span>
           </button>
         </div>
         <div className="flex-1" />
@@ -165,7 +177,7 @@ export function RoundTimer({
           <select
             value={bellVariant}
             onChange={(e) => onBellVariantChange(e.target.value as BellVariant)}
-            className="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm"
+            className="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm min-h-[40px]"
           >
             {(Object.keys(BELL_LABELS) as BellVariant[]).map((v) => (
               <option key={v} value={v}>
@@ -190,7 +202,7 @@ export function RoundTimer({
                 ),
               )
             }
-            className="w-16 rounded-md border border-border-strong px-2 py-1 disabled:bg-surface-sunken"
+            className="w-16 rounded-md border border-border-strong px-2 py-1 min-h-[40px] disabled:bg-surface-sunken"
           />
           min
         </label>

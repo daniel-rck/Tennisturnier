@@ -11,6 +11,7 @@ import { groupLetter } from '../knockoutScheduler'
 import { parsePositiveInt } from '../utils/parseScore'
 import { useConfirm } from '../hooks/useConfirm'
 import { ScoreInput } from './ScoreInput'
+import { EmptyState } from './EmptyState'
 
 interface Props {
   tournament: Tournament
@@ -109,9 +110,11 @@ export function GroupsPanel({
 
   if (tournament.entries.length < 2) {
     return (
-      <p className="text-fg-muted text-sm italic">
-        Lege zuerst Teilnehmer:innen auf der Teams-Seite an.
-      </p>
+      <EmptyState
+        icon="👥"
+        title="Noch keine Teilnehmer:innen"
+        description="Lege zuerst Teilnehmer:innen auf der Teams-Seite an, dann werden hier automatisch Gruppen gebildet."
+      />
     )
   }
 
@@ -189,8 +192,9 @@ export function GroupsPanel({
 
             <StandingsTable standings={standings} />
 
-            <details>
-              <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">
+            <details className="group">
+              <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
+                <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
                 {matches.length} Spiele
               </summary>
               <div className="mt-2 space-y-1">
@@ -223,9 +227,24 @@ function GroupMatchRow({
   const byId = new Map(entries.map((e) => [e.id, e]))
   const a = byId.get(match.entryA)?.name ?? '?'
   const b = byId.get(match.entryB)?.name ?? '?'
+  const hasA = match.scoreA != null
+  const hasB = match.scoreB != null
+  const status: 'pending' | 'partial' | 'complete' =
+    hasA && hasB ? 'complete' : hasA || hasB ? 'partial' : 'pending'
+  const accent =
+    status === 'complete'
+      ? 'border-l-4 border-l-brand'
+      : status === 'partial'
+        ? 'border-l-4 border-l-warn-fg'
+        : 'border-l-4 border-l-transparent'
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto_1fr] items-center gap-2 text-sm bg-surface-muted px-2 py-1 rounded">
-      <span className="truncate">{a}</span>
+    <div
+      className={
+        'grid grid-cols-[1fr_auto_auto_auto_1fr] items-center gap-2 text-sm bg-surface-muted px-2 py-1 rounded ' +
+        accent
+      }
+    >
+      <span className="truncate" title={a}>{a}</span>
       <ScoreInput
         value={match.scoreA}
         onChange={(scoreA) =>
@@ -241,7 +260,7 @@ function GroupMatchRow({
         }
         ariaLabel={`Score ${b}`}
       />
-      <span className="truncate text-right">{b}</span>
+      <span className="truncate text-right" title={b}>{b}</span>
     </div>
   )
 }
@@ -267,17 +286,29 @@ function StandingsTable({ standings }: { standings: Standing[] }) {
   const [bodyRef] = useAutoAnimate<HTMLTableSectionElement>()
   return (
     <div className="overflow-x-auto mb-3">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm 2xl:text-base">
         <thead>
-          <tr className="text-left text-fg-muted text-xs">
+          <tr className="text-left text-fg-muted text-xs 2xl:text-sm">
             <th className="px-1 py-1 w-10">#</th>
             <th className="px-1 py-1">Name</th>
-            <th className="px-1 py-1 text-right">Sp</th>
-            <th className="px-1 py-1 text-right">S</th>
-            <th className="px-1 py-1 text-right">U</th>
-            <th className="px-1 py-1 text-right">N</th>
-            <th className="px-1 py-1 text-right">Spiele</th>
-            <th className="px-1 py-1 text-right">Diff</th>
+            <th className="px-1 py-1 text-right" title="Spiele">
+              <abbr title="Spiele" className="no-underline">Sp</abbr>
+            </th>
+            <th className="px-1 py-1 text-right" title="Siege">
+              <abbr title="Siege" className="no-underline">S</abbr>
+            </th>
+            <th className="px-1 py-1 text-right" title="Unentschieden">
+              <abbr title="Unentschieden" className="no-underline">U</abbr>
+            </th>
+            <th className="px-1 py-1 text-right" title="Niederlagen">
+              <abbr title="Niederlagen" className="no-underline">N</abbr>
+            </th>
+            <th className="px-1 py-1 text-right" title="Gewonnene : verlorene Games">
+              Spiele
+            </th>
+            <th className="px-1 py-1 text-right" title="Differenz aus +/–">
+              Diff
+            </th>
           </tr>
         </thead>
         <tbody ref={bodyRef}>
