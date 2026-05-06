@@ -17,8 +17,22 @@ import { InstallPrompt } from './components/InstallPrompt'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { OfflineBanner } from './components/OfflineBanner'
 import { PrivacyDialog } from './components/PrivacyDialog'
+import { OnboardingDialog } from './components/OnboardingDialog'
 import { useConfirm } from './hooks/useConfirm'
 import { useToast } from './hooks/useToast'
+
+const ONBOARDING_KEY = 'tennisturnier:welcomeDismissed'
+
+function readOnboardingDone(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem(ONBOARDING_KEY) === '1'
+  } catch {
+    // localStorage blocked (privacy mode, sandbox) — show the dialog every
+    // session; dismissal still works in-memory.
+    return false
+  }
+}
 
 type Tab =
   | 'setup'
@@ -42,6 +56,17 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const closePrivacy = useCallback(() => setPrivacyOpen(false), [])
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !readOnboardingDone(),
+  )
+  const finishOnboarding = useCallback(() => {
+    try {
+      window.localStorage.setItem(ONBOARDING_KEY, '1')
+    } catch {
+      // ignore — in-memory dismissal still works for this session
+    }
+    setShowOnboarding(false)
+  }, [])
   const isOwner = sync.role !== 'viewer'
   const confirm = useConfirm()
   const { toast } = useToast()
@@ -385,6 +410,9 @@ function App() {
       </footer>
       <PrivacyDialog open={privacyOpen} onClose={closePrivacy} />
       <UpdatePrompt />
+      {showOnboarding && (
+        <OnboardingDialog onDone={finishOnboarding} onImport={handleImport} />
+      )}
     </div>
   )
 }
