@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useConfirmRequest } from '../hooks/useConfirm'
+import { useTranslation } from '../i18n'
 
 export function ConfirmDialog() {
   const { request, resolve } = useConfirmRequest()
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null)
   const cancelBtnRef = useRef<HTMLButtonElement | null>(null)
@@ -12,8 +14,6 @@ export function ConfirmDialog() {
     if (!el) return
     if (request && !el.open) {
       el.showModal()
-      // Destructive actions: focus Cancel so an accidental Enter doesn't trigger the action.
-      // Otherwise focus Confirm so Enter triggers the primary action.
       window.requestAnimationFrame(() => {
         if (request.destructive) cancelBtnRef.current?.focus()
         else confirmBtnRef.current?.focus()
@@ -23,7 +23,6 @@ export function ConfirmDialog() {
     }
   }, [request])
 
-  // ESC closes natively → trigger cancel
   useEffect(() => {
     const el = dialogRef.current
     if (!el) return
@@ -40,7 +39,6 @@ export function ConfirmDialog() {
       ref={dialogRef}
       className="no-print fixed inset-0 m-auto h-fit max-h-[calc(100%-2rem)] rounded-lg border border-border bg-surface text-fg p-0 shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm w-[min(28rem,calc(100%-2rem))] open:animate-scale-fade-in"
       onClick={(e) => {
-        // Click on backdrop (dialog itself, not children) → cancel
         if (e.target === dialogRef.current) resolve(false)
       }}
     >
@@ -64,14 +62,14 @@ export function ConfirmDialog() {
               onClick={() => resolve(false)}
               className="btn-secondary"
             >
-              {request.cancelLabel ?? 'Abbrechen'}
+              {request.cancelLabel ?? t('confirm.cancel')}
             </button>
             <button
               ref={confirmBtnRef}
               type="submit"
               className={request.destructive ? 'btn-danger' : 'btn-primary'}
             >
-              {request.confirmLabel ?? 'Bestätigen'}
+              {request.confirmLabel ?? t('confirm.confirm')}
             </button>
           </div>
         </form>

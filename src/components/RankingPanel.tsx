@@ -13,6 +13,7 @@ import {
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
 import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
 import type { RotationRanking } from '../ranking'
+import { useTranslation } from '../i18n'
 import { RevealPanel } from './RevealPanel'
 import { EmptyState } from './EmptyState'
 
@@ -38,6 +39,7 @@ export function RankingPanel({
   onSetRevealStep,
   onResetReveal,
 }: Props) {
+  const { t } = useTranslation()
   const f = tournament.format
 
   if (tournament.reveal.active && onSetRevealActive && onSetRevealStep && onResetReveal) {
@@ -61,7 +63,7 @@ export function RankingPanel({
             onClick={() => onSetRevealActive(true)}
             className="rounded-md bg-brand px-3 py-1.5 text-sm text-white font-medium hover:bg-brand-hover"
           >
-            🎉 Siegerehrung-Show starten
+            {t('ranking.startReveal')}
           </button>
         </div>
       )}
@@ -73,11 +75,10 @@ export function RankingPanel({
   )
 }
 
-// ========== Rotation =====================================================
-
 type RotationRow = RotationRanking
 
 function RotationRanking({ tournament }: Props) {
+  const { t } = useTranslation()
   const rows = useMemo(
     () => computeRotationRanking(tournament.schedule, tournament.players),
     [tournament.schedule, tournament.players],
@@ -108,16 +109,16 @@ function RotationRanking({ tournament }: Props) {
     return (
       <EmptyState
         icon="📋"
-        title="Noch kein Spielplan generiert"
-        description={'Wechsle in den Spielplan-Tab und klicke auf „Spielplan generieren".'}
+        title={t('ranking.empty.scheduleTitle')}
+        description={t('ranking.empty.scheduleDescription')}
       />
     )
   if (completed === 0)
     return (
       <EmptyState
         icon="📝"
-        title="Noch keine Ergebnisse eingetragen"
-        description="Trage im Spielplan-Tab die Spielergebnisse ein — die Tabelle aktualisiert sich live."
+        title={t('ranking.empty.resultsTitle')}
+        description={t('ranking.empty.resultsDescription')}
       />
     )
 
@@ -126,23 +127,23 @@ function RotationRanking({ tournament }: Props) {
   return (
     <div className="space-y-6">
       <div className="text-sm text-fg-muted">
-        {completed} von {total} Matches erfasst
-        {completed < total && ' — Tabelle aktualisiert sich live.'}
+        {t('ranking.matchesProgress', { done: completed, total })}
+        {completed < total && t('ranking.liveSuffix')}
       </div>
       <section className="space-y-4">
         {showPerGender && (
           <h3 className="text-base font-semibold text-fg">
-            Gesamtwertung
+            {t('ranking.overall')}
           </h3>
         )}
         {podium.length >= 3 && <Podium podium={podium.map(rowToPodium)} />}
         <RankingTable rows={rows.map(rowToTableRow)} />
       </section>
       {showPerGender && (
-        <GenderRanking title="Damen" rows={womenRows} />
+        <GenderRanking title={t('ranking.women')} rows={womenRows} />
       )}
       {showPerGender && (
-        <GenderRanking title="Herren" rows={menRows} />
+        <GenderRanking title={t('ranking.men')} rows={menRows} />
       )}
     </div>
   )
@@ -198,25 +199,21 @@ function rerank(rows: RotationRow[]): RotationRow[] {
   return next
 }
 
-// ========== Groups =======================================================
-
 function GroupsRanking({ tournament }: Props) {
+  const { t } = useTranslation()
   const groups = useMemo(() => groupsFor(tournament), [tournament])
   if (tournament.entries.length === 0)
     return (
       <EmptyState
         icon="👥"
-        title="Noch keine Teilnehmer:innen angelegt"
-        description="Lege auf der Teams-Seite die Teilnehmer:innen an — die Gruppentabellen erscheinen automatisch."
+        title={t('ranking.empty.entriesTitle')}
+        description={t('ranking.empty.entriesDescription')}
       />
     )
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-fg-muted">
-        Tabelle pro Gruppe — sortiert nach Siegen, dann Spielesaldo, dann
-        gewonnenen Spielen.
-      </p>
+      <p className="text-sm text-fg-muted">{t('ranking.groupsHint')}</p>
       {groups.map((group, gi) => {
         const groupNum = gi + 1
         const matches = tournament.groupSchedule.filter(
@@ -229,7 +226,7 @@ function GroupsRanking({ tournament }: Props) {
             className="rounded-md border border-border bg-surface p-3"
           >
             <h3 className="font-semibold mb-2">
-              Gruppe {groupLetter(groupNum)}
+              {t('ranking.groupHeading', { letter: groupLetter(groupNum) })}
             </h3>
             <RankingTable
               rows={standings.map((s) => ({
@@ -251,8 +248,6 @@ function GroupsRanking({ tournament }: Props) {
   )
 }
 
-// ========== Knockout =====================================================
-
 function KnockoutRanking({ tournament }: Props) {
   const entryName = useCallback(
     (id: string) =>
@@ -266,9 +261,8 @@ function KnockoutRanking({ tournament }: Props) {
   return <BracketSummary resolved={resolved} entryName={entryName} />
 }
 
-// ========== Groups + KO ==================================================
-
 function GroupsKoRanking({ tournament }: Props) {
+  const { t } = useTranslation()
   const groups = useMemo(() => groupsFor(tournament), [tournament])
   const groupWinnerMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -302,7 +296,7 @@ function GroupsKoRanking({ tournament }: Props) {
       <details className="group">
         <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
           <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
-          Gruppenphase-Tabellen
+          {t('ranking.groupTablesToggle')}
         </summary>
         <div className="mt-3 space-y-3">
           {groups.map((group, gi) => {
@@ -317,7 +311,7 @@ function GroupsKoRanking({ tournament }: Props) {
                 className="rounded-md border border-border bg-surface p-3"
               >
                 <h3 className="font-semibold mb-2">
-                  Gruppe {groupLetter(groupNum)}
+                  {t('ranking.groupHeading', { letter: groupLetter(groupNum) })}
                 </h3>
                 <RankingTable
                   rows={standings.map((s) => ({
@@ -341,8 +335,6 @@ function GroupsKoRanking({ tournament }: Props) {
   )
 }
 
-// ========== Shared =======================================================
-
 function BracketSummary({
   resolved,
   entryName,
@@ -350,12 +342,13 @@ function BracketSummary({
   resolved: ReturnType<typeof resolveBracket>
   entryName: (id: string) => string
 }) {
+  const { t } = useTranslation()
   if (resolved.length === 0)
     return (
       <EmptyState
         icon="🏆"
-        title="Noch kein Bracket erzeugt"
-        description="Lege Teilnehmer:innen an — das Bracket wird automatisch generiert."
+        title={t('ranking.empty.bracketTitle')}
+        description={t('ranking.empty.bracketDescription')}
       />
     )
   const { champion, runnerUp, thirds } = computeKnockoutPodium(resolved, entryName)
@@ -366,7 +359,7 @@ function BracketSummary({
         <div className="rounded-md bg-brand-soft border border-emerald-300 p-4 text-center">
           <div className="text-3xl mb-1">🏆</div>
           <div className="text-xs text-brand font-medium uppercase tracking-wide">
-            Sieger
+            {t('ranking.champion')}
           </div>
           <div className="text-2xl font-bold text-brand-soft-fg">
             {champion}
@@ -374,20 +367,20 @@ function BracketSummary({
         </div>
       ) : (
         <div className="rounded-md border border-dashed border-border-strong bg-surface-muted px-4 py-3 text-center text-sm text-fg-muted">
-          🎯 Finale noch nicht entschieden — die Siegerehrung wartet auf die letzten Ergebnisse.
+          {t('ranking.finalPending')}
         </div>
       )}
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-md border border-border p-3">
-          <div className="text-xs text-fg-muted mb-1">🥈 Finalist:in</div>
-          <div className="font-semibold">{runnerUp ?? '—'}</div>
+          <div className="text-xs text-fg-muted mb-1">{t('ranking.finalist')}</div>
+          <div className="font-semibold">{runnerUp ?? t('common.dash')}</div>
         </div>
         <div className="rounded-md border border-border p-3">
           <div className="text-xs text-fg-muted mb-1">
-            🥉 Halbfinal-Verlierer
+            {t('ranking.semiLosers')}
           </div>
           <div className="font-semibold">
-            {thirds.length > 0 ? thirds.join(', ') : '—'}
+            {thirds.length > 0 ? thirds.join(', ') : t('common.dash')}
           </div>
         </div>
       </div>
@@ -426,13 +419,16 @@ function PodiumStep({
   height: string
   tone: string
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="text-2xl">{medal(place)}</div>
       <div className="font-semibold text-center text-sm">{row.name}</div>
       <div className="text-xs text-fg-muted">
-        {row.wins} S · {row.diff > 0 ? '+' : ''}
-        {row.diff}
+        {t('ranking.podiumWinsDiff', {
+          wins: row.wins,
+          diff: (row.diff > 0 ? '+' : '') + row.diff,
+        })}
       </div>
       <div
         className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-fg`}
@@ -463,30 +459,39 @@ interface TableRow {
 }
 
 function RankingTable({ rows }: { rows: TableRow[] }) {
+  const { t } = useTranslation()
   return (
     <div className="overflow-x-auto rounded-md border border-border bg-surface">
       <table className="w-full text-sm 2xl:text-lg">
         <thead>
           <tr className="bg-surface-sunken text-fg text-left">
             <th className="px-2 py-2 w-10">#</th>
-            <th className="px-2 py-2">Name</th>
-            <th className="px-2 py-2 text-right" title="Spiele (gespielte Matches)">
-              <abbr title="Spiele" className="no-underline">Sp</abbr>
+            <th className="px-2 py-2">{t('ranking.col.name')}</th>
+            <th className="px-2 py-2 text-right" title={t('ranking.col.played')}>
+              <abbr title={t('ranking.col.played')} className="no-underline">
+                {t('ranking.col.playedShort')}
+              </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title="Siege">
-              <abbr title="Siege" className="no-underline">S</abbr>
+            <th className="px-2 py-2 text-right" title={t('ranking.col.wins')}>
+              <abbr title={t('ranking.col.wins')} className="no-underline">
+                {t('ranking.col.winsShort')}
+              </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title="Unentschieden">
-              <abbr title="Unentschieden" className="no-underline">U</abbr>
+            <th className="px-2 py-2 text-right" title={t('ranking.col.draws')}>
+              <abbr title={t('ranking.col.draws')} className="no-underline">
+                {t('ranking.col.drawsShort')}
+              </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title="Niederlagen">
-              <abbr title="Niederlagen" className="no-underline">N</abbr>
+            <th className="px-2 py-2 text-right" title={t('ranking.col.losses')}>
+              <abbr title={t('ranking.col.losses')} className="no-underline">
+                {t('ranking.col.lossesShort')}
+              </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title="Gewonnene : verlorene Spiele (Games)">
-              Spiele +/–
+            <th className="px-2 py-2 text-right" title={t('ranking.col.gamesTitle')}>
+              {t('ranking.col.games')}
             </th>
-            <th className="px-2 py-2 text-right" title="Differenz aus +/–">
-              Diff
+            <th className="px-2 py-2 text-right" title={t('ranking.col.diffTitle')}>
+              {t('ranking.col.diff')}
             </th>
           </tr>
         </thead>
@@ -521,4 +526,3 @@ function RankingTable({ rows }: { rows: TableRow[] }) {
     </div>
   )
 }
-

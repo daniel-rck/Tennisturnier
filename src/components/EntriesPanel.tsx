@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import type { Entry, EntryFormat } from '../types'
 import { useConfirm } from '../hooks/useConfirm'
+import { useTranslation } from '../i18n'
 import { EmptyState } from './EmptyState'
 
 interface Props {
@@ -43,6 +44,7 @@ function EntryRow({
   onRemove: Props['onRemove']
 }) {
   const confirm = useConfirm()
+  const { t } = useTranslation()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: entry.id })
   const style = {
@@ -60,7 +62,7 @@ function EntryRow({
       <button
         type="button"
         className="icon-btn cursor-grab active:cursor-grabbing touch-none text-fg-subtle"
-        aria-label="Verschieben"
+        aria-label={t('common.move')}
         {...attributes}
         {...listeners}
       >
@@ -71,7 +73,7 @@ function EntryRow({
           key={i}
           type="text"
           value={entry.members[i] ?? ''}
-          placeholder={`Spieler:in ${i + 1}`}
+          placeholder={t('entries.placeholder.member', { n: i + 1 })}
           onChange={(e) => {
             const next = entry.members.slice()
             while (next.length < memberCount) next.push('')
@@ -85,14 +87,14 @@ function EntryRow({
         type="button"
         onClick={async () => {
           const ok = await confirm({
-            title: `„${entry.name}" entfernen?`,
-            confirmLabel: 'Entfernen',
+            title: t('entries.removeConfirm.title', { name: entry.name }),
+            confirmLabel: t('common.remove'),
             destructive: true,
           })
           if (ok) onRemove(entry.id)
         }}
         className="icon-btn hover:text-danger-fg hover:bg-danger-bg/30"
-        aria-label="Entfernen"
+        aria-label={t('common.remove')}
       >
         ✕
       </button>
@@ -128,6 +130,7 @@ export function EntriesPanel({
   onReorder,
   onSortByName,
 }: Props) {
+  const { t } = useTranslation()
   const memberCount = entryFormat === 'singles' ? 1 : 2
   const [drafts, setDrafts] = useState<string[]>(
     Array(memberCount).fill('') as string[],
@@ -154,7 +157,6 @@ export function EntriesPanel({
     setDrafts(Array(memberCount).fill('') as string[])
   }
 
-  // Adjust drafts length when entryFormat changes
   useEffect(() => {
     setDrafts((prev) =>
       prev.length === memberCount
@@ -168,17 +170,7 @@ export function EntriesPanel({
   return (
     <div className="space-y-4">
       <div className="text-sm text-fg-muted">
-        {entryFormat === 'doubles' ? (
-          <>
-            Lege fixe Doppel-Paare an. Reihenfolge = Setzliste (1. = stärkstes
-            Team), per Drag-and-Drop änderbar.
-          </>
-        ) : (
-          <>
-            Lege Einzelspieler:innen an. Reihenfolge = Setzliste, per
-            Drag-and-Drop änderbar.
-          </>
-        )}
+        {entryFormat === 'doubles' ? t('entries.descDoubles') : t('entries.descSingles')}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -189,8 +181,8 @@ export function EntriesPanel({
             type="text"
             placeholder={
               memberCount === 1
-                ? 'Name'
-                : `Spieler:in ${i + 1}`
+                ? t('entries.placeholder.name')
+                : t('entries.placeholder.member', { n: i + 1 })
             }
             value={drafts[i] ?? ''}
             onChange={(e) => {
@@ -207,34 +199,44 @@ export function EntriesPanel({
           onClick={submit}
           className="btn-primary"
         >
-          Hinzufügen
+          {t('common.add')}
         </button>
       </div>
 
       <div className="flex items-center gap-2 text-sm text-fg-muted">
-        <span>{entries.length} {entryFormat === 'doubles' ? 'Paare' : 'Spieler:innen'}</span>
+        <span>
+          {entryFormat === 'doubles'
+            ? t('entries.countDoubles', { count: entries.length })
+            : t('entries.countSingles', { count: entries.length })}
+        </span>
         <div className="flex-1" />
         <button
           type="button"
           onClick={onSortByName}
           className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
-          Sortieren A→Z
+          {t('common.sortAZ')}
         </button>
       </div>
 
       {entries.length === 0 ? (
         <EmptyState
           icon="👥"
-          title={`Noch keine ${entryFormat === 'doubles' ? 'Paare' : 'Teilnehmer:innen'} angelegt`}
-          description={'Trage oben die Namen ein und klicke auf „Hinzufügen". Per Drag-and-Drop kannst du die Setzliste-Reihenfolge ändern.'}
+          title={
+            entryFormat === 'doubles'
+              ? t('entries.empty.titleDoubles')
+              : t('entries.empty.titleSingles')
+          }
+          description={t('entries.empty.description')}
           action={
             <button
               type="button"
               onClick={() => firstDraftRef.current?.focus()}
               className="btn-primary"
             >
-              {entryFormat === 'doubles' ? 'Erstes Paar anlegen' : 'Ersten Eintrag anlegen'}
+              {entryFormat === 'doubles'
+                ? t('entries.empty.actionDoubles')
+                : t('entries.empty.actionSingles')}
             </button>
           }
         />

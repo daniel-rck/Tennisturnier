@@ -119,21 +119,23 @@ export interface SyncConfig {
   enabled: boolean
 }
 
-export const MODE_LABELS: Record<Mode, string> = {
-  mixed: 'Gemischtes Doppel',
-  women: 'Damen-Doppel',
-  men: 'Herren-Doppel',
-  open: 'Freies Doppel',
+import type { TranslationKey } from './i18n/de'
+
+export const MODE_KEYS: Record<Mode, TranslationKey> = {
+  mixed: 'mode.mixed',
+  women: 'mode.women',
+  men: 'mode.men',
+  open: 'mode.open',
 }
 
-export const FORMAT_LABELS: Record<Format, string> = {
-  rotation: 'Wechselturnier (Mixed)',
-  groups: 'Gruppenphase',
-  knockout: 'KO-System',
-  'groups-ko': 'Gruppen + KO',
+export const FORMAT_KEYS: Record<Format, TranslationKey> = {
+  rotation: 'format.rotation',
+  groups: 'format.groups',
+  knockout: 'format.knockout',
+  'groups-ko': 'format.groups-ko',
 }
 
-export const ENTRY_FORMAT_LABELS: Record<EntryFormat, string> = {
-  singles: 'Einzel',
-  doubles: 'Doppel (fixe Paare)',
+export const ENTRY_FORMAT_KEYS: Record<EntryFormat, TranslationKey> = {
+  singles: 'entryFormat.singles',
+  doubles: 'entryFormat.doubles',
 }

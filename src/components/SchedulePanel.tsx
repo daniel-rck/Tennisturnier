@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { BellVariant, Match, Player, Round, Tournament } from '../types'
-import { MODE_LABELS } from '../types'
+import { MODE_KEYS } from '../types'
+import { useTranslation } from '../i18n'
 import { RoundTimer } from './RoundTimer'
 import { ScoreInput } from './ScoreInput'
 import { Spinner } from './Spinner'
@@ -30,6 +31,7 @@ export function SchedulePanel({
   warnings,
   isGenerating = false,
 }: Props) {
+  const { t } = useTranslation()
   const playerById = useMemo(
     () => new Map(tournament.players.map((p) => [p.id, p])),
     [tournament.players],
@@ -57,11 +59,14 @@ export function SchedulePanel({
           className="btn-primary"
         >
           {isGenerating && <Spinner />}
-          {isGenerating ? 'Generiere…' : 'Spielplan generieren'}
+          {isGenerating ? t('schedule.generating') : t('schedule.generate')}
         </button>
         <div className="text-sm text-fg-muted">
-          Modus: <strong>{MODE_LABELS[tournament.mode]}</strong> ·{' '}
-          {tournament.courts} Plätze · {tournament.rounds} Runden
+          {t('schedule.modeSummary', {
+            mode: t(MODE_KEYS[tournament.mode]),
+            courts: tournament.courts,
+            rounds: tournament.rounds,
+          })}
         </div>
       </div>
 
@@ -70,7 +75,7 @@ export function SchedulePanel({
           role="status"
           className="rounded-md bg-warn-bg border border-warn-bg px-3 py-2 text-sm text-warn-fg"
         >
-          Mindestens 4 Spieler:innen werden benötigt.
+          {t('schedule.minPlayersWarning')}
         </div>
       )}
 
@@ -90,11 +95,11 @@ export function SchedulePanel({
       {tournament.schedule.length === 0 ? (
         <EmptyState
           icon="📋"
-          title="Noch kein Spielplan generiert"
+          title={t('schedule.empty.title')}
           description={
             tournament.players.length < 4
-              ? 'Lege erst mindestens 4 Spieler:innen an.'
-              : 'Klicke auf „Spielplan generieren", um zu starten.'
+              ? t('schedule.empty.descriptionMin')
+              : t('schedule.empty.descriptionGenerate')
           }
           action={
             tournament.players.length >= 4 && (
@@ -105,7 +110,7 @@ export function SchedulePanel({
                 className="btn-primary"
               >
                 {isGenerating && <Spinner />}
-                {isGenerating ? 'Generiere…' : 'Spielplan generieren'}
+                {isGenerating ? t('schedule.generating') : t('schedule.generate')}
               </button>
             )
           }
@@ -127,16 +132,16 @@ export function SchedulePanel({
           <details className="group text-sm rounded-md border border-border bg-surface">
             <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-2 rounded-md text-fg-muted hover:text-fg hover:bg-surface-muted">
               <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
-              <span>Statistik (Einsätze / Pausen pro Spieler:in)</span>
+              <span>{t('schedule.statsSummary')}</span>
             </summary>
             <div className="px-3 pb-3 pt-1 border-t border-border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-fg-muted">
-                    <th className="py-1">Name</th>
-                    <th className="py-1">Spiele</th>
-                    <th className="py-1">Pausen</th>
-                    <th className="py-1">Verschiedene Partner</th>
+                    <th className="py-1">{t('schedule.statsCol.name')}</th>
+                    <th className="py-1">{t('schedule.statsCol.plays')}</th>
+                    <th className="py-1">{t('schedule.statsCol.rests')}</th>
+                    <th className="py-1">{t('schedule.statsCol.partners')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -169,21 +174,24 @@ function RoundCard({
   expectedCourts: number
   onScore: Props['onScore']
 }) {
+  const { t } = useTranslation()
   const isPartial = round.matches.length < expectedCourts
   return (
     <div className="rounded-md border border-border bg-surface p-3">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold">Runde {round.index}</h3>
+          <h3 className="font-semibold">{t('schedule.round', { n: round.index })}</h3>
           {isPartial && (
             <span className="rounded-full bg-warn-bg text-warn-fg text-[10px] uppercase tracking-wide font-medium px-2 py-0.5">
-              Teilrunde
+              {t('schedule.partial')}
             </span>
           )}
         </div>
         {round.resting.length > 0 && (
           <span className="text-xs text-fg-muted">
-            Pause: {round.resting.map((id) => byId.get(id)?.name).join(', ')}
+            {t('schedule.rest', {
+              names: round.resting.map((id) => byId.get(id)?.name ?? '?').join(', '),
+            })}
           </span>
         )}
       </div>
@@ -210,6 +218,7 @@ function MatchCard({
   byId: Map<string, Player>
   onScore: (a: number | undefined, b: number | undefined) => void
 }) {
+  const { t } = useTranslation()
   const teamAName = match.teamA.players.map((id) => byId.get(id)?.name).join(' & ')
   const teamBName = match.teamB.players.map((id) => byId.get(id)?.name).join(' & ')
   const hasA = match.scoreA != null
@@ -230,15 +239,15 @@ function MatchCard({
       }
     >
       <div className="flex items-center justify-between mb-1 text-xs font-medium">
-        <span className="text-fg-muted">Platz {match.court}</span>
+        <span className="text-fg-muted">{t('schedule.court', { n: match.court })}</span>
         {status === 'complete' && (
           <span className="rounded-full bg-brand-soft text-brand-soft-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
-            Erfasst
+            {t('schedule.statusComplete')}
           </span>
         )}
         {status === 'partial' && (
           <span className="rounded-full bg-warn-bg text-warn-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
-            Unvollständig
+            {t('schedule.statusPartial')}
           </span>
         )}
       </div>
@@ -246,7 +255,7 @@ function MatchCard({
         <span className="truncate" title={teamAName}>
           {teamAName}
         </span>
-        <span className="text-fg-subtle text-xs">vs.</span>
+        <span className="text-fg-subtle text-xs">{t('common.vs')}</span>
         <span className="truncate text-right" title={teamBName}>
           {teamBName}
         </span>
@@ -254,7 +263,7 @@ function MatchCard({
           <ScoreInput
             value={match.scoreA}
             onChange={(a) => onScore(a, match.scoreB)}
-            ariaLabel={`Spiele ${teamAName}`}
+            ariaLabel={t('schedule.scoreAria', { team: teamAName })}
           />
         </div>
         <span className="text-fg-subtle text-xs text-center">:</span>
@@ -262,7 +271,7 @@ function MatchCard({
           <ScoreInput
             value={match.scoreB}
             onChange={(b) => onScore(match.scoreA, b)}
-            ariaLabel={`Spiele ${teamBName}`}
+            ariaLabel={t('schedule.scoreAria', { team: teamBName })}
           />
         </div>
       </div>

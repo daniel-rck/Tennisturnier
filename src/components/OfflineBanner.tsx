@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from '../i18n'
 
 export function OfflineBanner() {
+  const { t } = useTranslation()
   const [online, setOnline] = useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine,
   )
@@ -24,8 +26,7 @@ export function OfflineBanner() {
       aria-live="polite"
       className="no-print bg-warn-bg text-warn-fg text-xs text-center py-1 animate-fade-in"
     >
-      Offline — Änderungen werden lokal gespeichert und synchronisieren, sobald
-      die Verbindung zurück ist.
+      {t('offline.message')}
     </div>
   )
 }

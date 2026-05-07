@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from '../i18n'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -15,6 +16,7 @@ function isStandalone(): boolean {
 }
 
 export function InstallPrompt() {
+  const { t } = useTranslation()
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null)
   const [hidden, setHidden] = useState(false)
 
@@ -50,12 +52,12 @@ export function InstallPrompt() {
         e.preventDefault()
         setHidden(true)
       }}
-      title="Als App installieren (Rechtsklick zum Ausblenden)"
+      title={t('install.title')}
       className="inline-flex items-center gap-1 min-h-[44px] px-2 rounded-md text-emerald-100 hover:text-white hover:bg-emerald-600 leading-none"
-      aria-label="App installieren"
+      aria-label={t('install.label')}
     >
       <span aria-hidden className="text-base">⤓</span>
-      <span className="hidden sm:inline text-xs">Installieren</span>
+      <span className="hidden sm:inline text-xs">{t('install.button')}</span>
     </button>
   )
 }

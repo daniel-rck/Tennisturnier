@@ -1,5 +1,5 @@
 import type { Entry, Tournament } from '../types'
-import { FORMAT_LABELS, MODE_LABELS } from '../types'
+import { FORMAT_KEYS, MODE_KEYS } from '../types'
 import {
   assignGroups,
   groupStandings,
@@ -7,6 +7,7 @@ import {
 } from '../groupScheduler'
 import { groupLetter, resolveBracket } from '../knockoutScheduler'
 import { computeKnockoutPodium, computeRotationRanking } from '../ranking'
+import { useTranslation, type TranslationKey } from '../i18n'
 import { EmptyState } from './EmptyState'
 
 function groupsFor(t: Tournament): Entry[][] {
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function PrintView({ tournament }: Props) {
+  const { t } = useTranslation()
   const f = tournament.format
   const hasContent =
     (f === 'rotation' && tournament.schedule.length > 0) ||
@@ -38,34 +40,32 @@ export function PrintView({ tournament }: Props) {
           className="rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover"
           disabled={!hasContent}
         >
-          Drucken
+          {t('print.button')}
         </button>
-        <p className="text-sm text-fg-muted">
-          Tipp: Im Druck-Dialog „Hintergrundgrafiken“ aktivieren, falls
-          gewünscht.
-        </p>
+        <p className="text-sm text-fg-muted">{t('print.tip')}</p>
       </div>
 
       {!hasContent ? (
         <EmptyState
           icon="🖨"
-          title="Noch nichts zum Drucken"
-          description="Erzeuge zuerst einen Spielplan, eine Gruppenphase oder ein Bracket — dann erscheint hier das druckfertige Layout."
+          title={t('print.empty.title')}
+          description={t('print.empty.description')}
         />
       ) : (
         <div className="bg-surface p-6 rounded-md border border-border">
           <header className="mb-4 border-b border-border-strong pb-3">
             <h1 className="text-2xl font-bold">{tournament.name}</h1>
             <p className="text-sm text-fg-muted">
-              {FORMAT_LABELS[f]}
-              {f === 'rotation' && ` · ${MODE_LABELS[tournament.mode]}`}
+              {t(FORMAT_KEYS[f])}
+              {f === 'rotation' && ` · ${t(MODE_KEYS[tournament.mode])}`}
               {' · '}
-              {tournament.courts} Plätze
-              {f === 'rotation' && ` · ${tournament.rounds} Runden`}
+              {t('print.subtitleCourts', { count: tournament.courts })}
+              {f === 'rotation' &&
+                ` · ${t('print.subtitleRounds', { count: tournament.rounds })}`}
               {' · '}
               {f === 'rotation'
-                ? `${tournament.players.length} Spieler:innen`
-                : `${tournament.entries.length} Teams`}
+                ? t('print.subtitlePlayers', { count: tournament.players.length })
+                : t('print.subtitleTeams', { count: tournament.entries.length })}
             </p>
           </header>
 
@@ -87,22 +87,25 @@ export function PrintView({ tournament }: Props) {
 }
 
 function RotationPrint({ t }: { t: Tournament }) {
+  const { t: tr } = useTranslation()
   const byId = new Map(t.players.map((p) => [p.id, p]))
   const name = (id: string) => byId.get(id)?.name ?? '?'
   return (
     <>
       {t.schedule.map((round) => (
         <section key={round.index} className="mb-5">
-          <h2 className="text-lg font-semibold mb-2">Runde {round.index}</h2>
+          <h2 className="text-lg font-semibold mb-2">
+            {tr('schedule.round', { n: round.index })}
+          </h2>
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-surface-sunken text-left">
-                <th className="border border-border-strong px-2 py-1 w-16">Platz</th>
-                <th className="border border-border-strong px-2 py-1">Team A</th>
+                <th className="border border-border-strong px-2 py-1 w-16">{tr('print.col.court')}</th>
+                <th className="border border-border-strong px-2 py-1">{tr('print.col.teamA')}</th>
                 <th className="border border-border-strong px-2 py-1 w-20 text-center">
-                  Ergebnis
+                  {tr('print.col.result')}
                 </th>
-                <th className="border border-border-strong px-2 py-1">Team B</th>
+                <th className="border border-border-strong px-2 py-1">{tr('print.col.teamB')}</th>
               </tr>
             </thead>
             <tbody>
@@ -128,7 +131,7 @@ function RotationPrint({ t }: { t: Tournament }) {
           </table>
           {round.resting.length > 0 && (
             <p className="mt-1 text-xs text-fg-muted">
-              Pause: {round.resting.map(name).join(', ')}
+              {tr('schedule.rest', { names: round.resting.map(name).join(', ') })}
             </p>
           )}
         </section>
@@ -138,11 +141,12 @@ function RotationPrint({ t }: { t: Tournament }) {
 }
 
 function GroupsPrint({ t }: { t: Tournament }) {
+  const { t: tr } = useTranslation()
   const groups = groupsFor(t)
   const byId = new Map(t.entries.map((e) => [e.id, e]))
   return (
     <>
-      <h2 className="text-lg font-semibold mb-2">Gruppenphase</h2>
+      <h2 className="text-lg font-semibold mb-2">{tr('print.heading.groups')}</h2>
       {groups.map((group, gi) => {
         const groupNum = gi + 1
         const matches = t.groupSchedule.filter((m) => m.group === groupNum)
@@ -150,24 +154,24 @@ function GroupsPrint({ t }: { t: Tournament }) {
         return (
           <section key={gi} className="mb-5">
             <h3 className="font-semibold mb-2">
-              Gruppe {groupLetter(groupNum)}
+              {tr('ranking.groupHeading', { letter: groupLetter(groupNum) })}
             </h3>
             <table className="w-full text-xs border-collapse mb-2">
               <thead>
                 <tr className="bg-surface-sunken text-left">
                   <th className="border border-border-strong px-1 py-1 w-8">#</th>
-                  <th className="border border-border-strong px-1 py-1">Name</th>
+                  <th className="border border-border-strong px-1 py-1">{tr('ranking.col.name')}</th>
                   <th className="border border-border-strong px-1 py-1 text-right">
-                    Sp
+                    {tr('ranking.col.playedShort')}
                   </th>
                   <th className="border border-border-strong px-1 py-1 text-right">
-                    S
+                    {tr('ranking.col.winsShort')}
                   </th>
                   <th className="border border-border-strong px-1 py-1 text-right">
-                    Spiele
+                    {tr('ranking.col.gamesShort')}
                   </th>
                   <th className="border border-border-strong px-1 py-1 text-right">
-                    Diff
+                    {tr('ranking.col.diff')}
                   </th>
                 </tr>
               </thead>
@@ -200,11 +204,11 @@ function GroupsPrint({ t }: { t: Tournament }) {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-surface-sunken text-left">
-                  <th className="border border-border-strong px-1 py-1">Team A</th>
+                  <th className="border border-border-strong px-1 py-1">{tr('print.col.teamA')}</th>
                   <th className="border border-border-strong px-1 py-1 w-20 text-center">
-                    Ergebnis
+                    {tr('print.col.result')}
                   </th>
-                  <th className="border border-border-strong px-1 py-1">Team B</th>
+                  <th className="border border-border-strong px-1 py-1">{tr('print.col.teamB')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -232,7 +236,16 @@ function GroupsPrint({ t }: { t: Tournament }) {
   )
 }
 
+const ROUND_KEYS: Record<number | 'other', TranslationKey> = {
+  0: 'bracket.roundFinal',
+  1: 'bracket.roundSemi',
+  2: 'bracket.roundQuarter',
+  3: 'bracket.roundEighth',
+  other: 'bracket.roundOther',
+}
+
 function BracketPrint({ t }: { t: Tournament }) {
+  const { t: tr } = useTranslation()
   const entryName = (id: string) =>
     t.entries.find((e) => e.id === id)?.name ?? '?'
   let groupWinners: ((g: number, r: number) => string | undefined) | undefined
@@ -259,16 +272,16 @@ function BracketPrint({ t }: { t: Tournament }) {
   const roundNumbers = Array.from(rounds.keys()).sort((a, b) => a - b)
   return (
     <>
-      <h2 className="text-lg font-semibold mb-2 mt-4">Bracket</h2>
+      <h2 className="text-lg font-semibold mb-2 mt-4">{tr('print.heading.bracket')}</h2>
       <table className="w-full text-xs border-collapse">
         <thead>
           <tr className="bg-surface-sunken text-left">
-            <th className="border border-border-strong px-1 py-1 w-24">Runde</th>
-            <th className="border border-border-strong px-1 py-1">Team A</th>
+            <th className="border border-border-strong px-1 py-1 w-24">{tr('print.col.round')}</th>
+            <th className="border border-border-strong px-1 py-1">{tr('print.col.teamA')}</th>
             <th className="border border-border-strong px-1 py-1 w-20 text-center">
-              Ergebnis
+              {tr('print.col.result')}
             </th>
-            <th className="border border-border-strong px-1 py-1">Team B</th>
+            <th className="border border-border-strong px-1 py-1">{tr('print.col.teamB')}</th>
           </tr>
         </thead>
         <tbody>
@@ -276,14 +289,14 @@ function BracketPrint({ t }: { t: Tournament }) {
             rounds.get(rn)!.map((m) => (
               <tr key={m.matchId}>
                 <td className="border border-border-strong px-1 py-1">
-                  {bracketRoundLabel(rn, last)} ({m.matchId})
+                  {bracketRoundLabel(tr, rn, last)} ({m.matchId})
                 </td>
                 <td className="border border-border-strong px-1 py-1">
                   {m.pendingA}
                 </td>
                 <td className="border border-border-strong px-1 py-1 text-center tabular-nums">
                   {m.isByeMatch
-                    ? 'Freilos'
+                    ? tr('bracket.bye')
                     : m.scoreA != null && m.scoreB != null
                       ? `${m.scoreA} : ${m.scoreB}`
                       : '___ : ___'}
@@ -300,12 +313,15 @@ function BracketPrint({ t }: { t: Tournament }) {
   )
 }
 
-function bracketRoundLabel(round: number, last: number) {
-  if (round === last) return 'Finale'
-  if (round === last - 1) return 'Halbfinale'
-  if (round === last - 2) return 'Viertelfinale'
-  if (round === last - 3) return 'Achtelfinale'
-  return `Runde ${round}`
+function bracketRoundLabel(
+  tr: (key: TranslationKey, vars?: Record<string, string | number>) => string,
+  round: number,
+  last: number,
+): string {
+  const offset = last - round
+  const key = ROUND_KEYS[offset as 0 | 1 | 2 | 3] ?? ROUND_KEYS.other
+  if (key === ROUND_KEYS.other) return tr(key, { n: round, count: 0 })
+  return tr(key)
 }
 
 function RankingPrint({ t }: { t: Tournament }) {
@@ -322,33 +338,34 @@ function medalForPrint(rank: number): string {
 }
 
 function RotationRankingPrint({ t }: { t: Tournament }) {
+  const { t: tr } = useTranslation()
   const rows = computeRotationRanking(t.schedule, t.players)
   if (rows.length === 0) return null
   return (
     <section className="mb-5">
-      <h2 className="text-lg font-semibold mb-2">Endstand</h2>
+      <h2 className="text-lg font-semibold mb-2">{tr('print.heading.standings')}</h2>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="bg-surface-sunken text-left">
             <th className="border border-border-strong px-2 py-1 w-12">#</th>
-            <th className="border border-border-strong px-2 py-1">Spieler:in</th>
+            <th className="border border-border-strong px-2 py-1">{tr('print.col.player')}</th>
             <th className="border border-border-strong px-2 py-1 w-12 text-right">
-              Sp
+              {tr('ranking.col.playedShort')}
             </th>
             <th className="border border-border-strong px-2 py-1 w-12 text-right">
-              S
+              {tr('ranking.col.winsShort')}
             </th>
             <th className="border border-border-strong px-2 py-1 w-12 text-right">
-              U
+              {tr('ranking.col.drawsShort')}
             </th>
             <th className="border border-border-strong px-2 py-1 w-12 text-right">
-              N
+              {tr('ranking.col.lossesShort')}
             </th>
             <th className="border border-border-strong px-2 py-1 w-20 text-right">
-              Spiele
+              {tr('ranking.col.gamesShort')}
             </th>
             <th className="border border-border-strong px-2 py-1 w-14 text-right">
-              Diff
+              {tr('ranking.col.diff')}
             </th>
           </tr>
         </thead>
@@ -387,6 +404,7 @@ function RotationRankingPrint({ t }: { t: Tournament }) {
 }
 
 function GroupsRankingPrint({ t }: { t: Tournament }) {
+  const { t: tr } = useTranslation()
   const groups = groupsFor(t)
   const byId = new Map(t.entries.map((e) => [e.id, e]))
   const winners: Array<{ group: number; name: string }> = []
@@ -405,19 +423,19 @@ function GroupsRankingPrint({ t }: { t: Tournament }) {
   if (winners.length === 0) return null
   return (
     <section className="mb-5">
-      <h2 className="text-lg font-semibold mb-2">Gruppensieger</h2>
+      <h2 className="text-lg font-semibold mb-2">{tr('print.heading.groupWinners')}</h2>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="bg-surface-sunken text-left">
-            <th className="border border-border-strong px-2 py-1 w-24">Gruppe</th>
-            <th className="border border-border-strong px-2 py-1">Sieger</th>
+            <th className="border border-border-strong px-2 py-1 w-24">{tr('print.col.group')}</th>
+            <th className="border border-border-strong px-2 py-1">{tr('print.col.winner')}</th>
           </tr>
         </thead>
         <tbody>
           {winners.map((w) => (
             <tr key={w.group}>
               <td className="border border-border-strong px-2 py-1 font-medium">
-                Gruppe {groupLetter(w.group)}
+                {tr('ranking.groupHeading', { letter: groupLetter(w.group) })}
               </td>
               <td className="border border-border-strong px-2 py-1">{w.name}</td>
             </tr>
@@ -429,6 +447,7 @@ function GroupsRankingPrint({ t }: { t: Tournament }) {
 }
 
 function KnockoutRankingPrint({ t }: { t: Tournament }) {
+  const { t: tr } = useTranslation()
   const entryName = (id: string) =>
     t.entries.find((e) => e.id === id)?.name ?? '?'
   let groupWinners: ((g: number, r: number) => string | undefined) | undefined
@@ -449,12 +468,12 @@ function KnockoutRankingPrint({ t }: { t: Tournament }) {
   if (!podium.champion) return null
   return (
     <section className="mb-5">
-      <h2 className="text-lg font-semibold mb-2">Endstand</h2>
+      <h2 className="text-lg font-semibold mb-2">{tr('print.heading.standings')}</h2>
       <table className="w-full text-sm border-collapse">
         <tbody>
           <tr>
             <td className="border border-border-strong px-2 py-1 w-32 font-semibold bg-surface-sunken">
-              🥇 Sieger
+              {tr('print.podium.gold')}
             </td>
             <td className="border border-border-strong px-2 py-1 font-semibold">
               {podium.champion}
@@ -463,7 +482,7 @@ function KnockoutRankingPrint({ t }: { t: Tournament }) {
           {podium.runnerUp && (
             <tr>
               <td className="border border-border-strong px-2 py-1 font-semibold bg-surface-sunken">
-                🥈 Finalist:in
+                {tr('print.podium.silver')}
               </td>
               <td className="border border-border-strong px-2 py-1">
                 {podium.runnerUp}
@@ -473,7 +492,7 @@ function KnockoutRankingPrint({ t }: { t: Tournament }) {
           {podium.thirds.length > 0 && (
             <tr>
               <td className="border border-border-strong px-2 py-1 font-semibold bg-surface-sunken">
-                🥉 Platz 3
+                {tr('print.podium.bronze')}
               </td>
               <td className="border border-border-strong px-2 py-1">
                 {podium.thirds.join(', ')}

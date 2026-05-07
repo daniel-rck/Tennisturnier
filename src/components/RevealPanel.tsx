@@ -10,6 +10,7 @@ import type {
 import { ConfettiBurst } from './ConfettiBurst'
 import { playFanfare, playFinale, unlockAudio } from '../bell'
 import { useFullscreen } from '../hooks/useFullscreen'
+import { useTranslation } from '../i18n'
 
 interface Props {
   tournament: Tournament
@@ -32,17 +33,18 @@ export function RevealPanel({
   onReset,
   onClose,
 }: Props) {
+  const { t } = useTranslation()
   if (tournament.format !== 'rotation') {
     return (
       <div className="rounded-md border border-warn-bg bg-warn-bg p-4 text-sm text-warn-fg">
-        Reveal-Modus ist aktuell nur für Wechselturniere verfügbar.
+        {t('reveal.notRotation')}
         <div className="mt-3">
           <button
             type="button"
             onClick={onClose}
             className="rounded border border-amber-400 px-3 py-1 hover:bg-warn-bg"
           >
-            Reveal-Modus beenden
+            {t('reveal.exit')}
           </button>
         </div>
       </div>
@@ -66,15 +68,16 @@ function RevealStage({
   onReset,
   onClose,
 }: Props) {
+  const { t } = useTranslation()
   const showCategories =
     tournament.mode === 'mixed' && tournament.perGenderRanking
   const tabs: { id: RevealCategory; label: string }[] = showCategories
     ? [
-        { id: 'overall', label: 'Gesamt' },
-        { id: 'women', label: 'Damen' },
-        { id: 'men', label: 'Herren' },
+        { id: 'overall', label: t('reveal.tabsOverall') },
+        { id: 'women', label: t('reveal.tabsWomen') },
+        { id: 'men', label: t('reveal.tabsMen') },
       ]
-    : [{ id: 'overall', label: 'Gesamt' }]
+    : [{ id: 'overall', label: t('reveal.tabsOverall') }]
   const [tab, setTab] = useState<RevealCategory>('overall')
   const step = tournament.reveal.steps[tab]
   const { isFullscreen, supported: fullscreenSupported, toggle: toggleFullscreen, exit: exitFullscreen } =
@@ -139,18 +142,18 @@ function RevealStage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-2xl 2xl:text-5xl font-bold">🎉 Siegerehrung</h2>
+        <h2 className="text-2xl 2xl:text-5xl font-bold">{t('reveal.heading')}</h2>
         <div className="flex items-center gap-2">
           {fullscreenSupported && (
             <button
               type="button"
               onClick={toggleFullscreen}
               className="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface px-3 py-2 text-sm hover:border-brand-hover min-h-[40px]"
-              title={isFullscreen ? 'Vollbild verlassen (Esc)' : 'Vollbild für TV-Anzeige'}
+              title={isFullscreen ? t('reveal.fullscreenTitleExit') : t('reveal.fullscreenTitleEnter')}
               aria-pressed={isFullscreen}
             >
               <span aria-hidden>{isFullscreen ? '⛶' : '⛶'}</span>
-              <span>{isFullscreen ? 'Vollbild verlassen' : 'Vollbild'}</span>
+              <span>{isFullscreen ? t('reveal.fullscreenExit') : t('reveal.fullscreen')}</span>
             </button>
           )}
           {isOwner && (
@@ -159,7 +162,7 @@ function RevealStage({
               onClick={handleClose}
               className="text-xs text-fg-muted hover:text-fg underline"
             >
-              Reveal-Modus beenden
+              {t('reveal.exit')}
             </button>
           )}
         </div>
@@ -188,7 +191,7 @@ function RevealStage({
 
       {podium.length < 3 ? (
         <p className="text-fg-muted text-sm italic">
-          Noch nicht genug Spieler:innen mit Ergebnissen für ein Podium.
+          {t('reveal.notEnough')}
         </p>
       ) : (
         <PodiumStage podium={podium} step={step} />
@@ -270,6 +273,7 @@ function PodiumColumn({
   tone: string
   medal: string
 }) {
+  const { t } = useTranslation()
   return (
     <div
       className={
@@ -285,7 +289,7 @@ function PodiumColumn({
       </div>
       <div className="text-xs 2xl:text-xl text-fg-muted min-h-[1rem]">
         {visible
-          ? `${entry.wins} Siege · ${entry.diff > 0 ? '+' : ''}${entry.diff}`
+          ? t('reveal.podiumStat', { wins: entry.wins, diff: (entry.diff > 0 ? '+' : '') + entry.diff })
           : ' '}
       </div>
       <div
@@ -306,18 +310,16 @@ function RevealController({
   onStep: (s: RevealStep) => void
   onReset: () => void
 }) {
+  const { t } = useTranslation()
   const buttons: { label: string; target: RevealStep; enabled: boolean }[] = [
-    { label: '🥉 Platz 3 enthüllen', target: 3, enabled: step === 0 },
-    { label: '🥈 Platz 2 enthüllen', target: 2, enabled: step === 3 },
-    { label: '🥇 Platz 1 enthüllen', target: 1, enabled: step === 2 },
+    { label: t('reveal.unveil3'), target: 3, enabled: step === 0 },
+    { label: t('reveal.unveil2'), target: 2, enabled: step === 3 },
+    { label: t('reveal.unveil1'), target: 1, enabled: step === 2 },
   ]
 
   return (
     <div className="rounded-md border border-border bg-surface p-3 space-y-2">
-      <p className="text-xs text-fg-muted">
-        Steuere den Reveal — die Anzeige aktualisiert sich auf allen verbundenen
-        Geräten.
-      </p>
+      <p className="text-xs text-fg-muted">{t('reveal.controllerHint')}</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {buttons.map((b) => (
           <button
@@ -342,18 +344,18 @@ function RevealController({
           onClick={onReset}
           className="text-xs text-fg-muted hover:text-fg underline"
         >
-          Show neu starten
+          {t('reveal.restart')}
         </button>
         <details className="text-xs text-fg-muted">
           <summary className="cursor-pointer hover:text-fg">
-            Generalprobe
+            {t('reveal.dryrun')}
           </summary>
           <button
             type="button"
             onClick={() => onStep(1)}
             className="mt-1 rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
           >
-            Sofort zum Sieger springen
+            {t('reveal.jumpToWinner')}
           </button>
         </details>
       </div>
