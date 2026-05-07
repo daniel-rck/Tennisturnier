@@ -13,6 +13,7 @@ import {
 } from '../groupScheduler'
 import { ScoreInput } from './ScoreInput'
 import { EmptyState } from './EmptyState'
+import { useTranslation, type TranslationKey } from '../i18n'
 
 interface Props {
   tournament: Tournament
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
+  const { t } = useTranslation()
   const groupWinners = useMemo(() => {
     if (tournament.format !== 'groups-ko') return undefined
     const groups =
@@ -121,8 +123,8 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     return (
       <EmptyState
         icon="🏆"
-        title="Noch keine Teilnehmer:innen"
-        description="Lege zuerst mindestens 2 Teilnehmer:innen auf der Teams-Seite an — das Bracket wird dann automatisch erzeugt."
+        title={t('bracket.empty.title')}
+        description={t('bracket.empty.descriptionKo')}
       />
     )
   }
@@ -130,8 +132,8 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     return (
       <EmptyState
         icon="🏆"
-        title="Noch keine Teilnehmer:innen"
-        description="Lege zuerst Teilnehmer:innen an. Nach Abschluss der Gruppenphase erscheint hier das KO-Bracket."
+        title={t('bracket.empty.title')}
+        description={t('bracket.empty.descriptionGroupsKo')}
       />
     )
   }
@@ -149,9 +151,13 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <span>
-          {resolved.length} Matches im Bracket
-          {resolved.some((m) => m.isByeMatch) &&
-            ` (inkl. ${resolved.filter((m) => m.isByeMatch).length} Freilos${resolved.filter((m) => m.isByeMatch).length === 1 ? '' : 'e'})`}
+          {(() => {
+            const byes = resolved.filter((m) => m.isByeMatch).length
+            if (byes === 0) return t('bracket.summary', { count: resolved.length })
+            const key: TranslationKey =
+              byes === 1 ? 'bracket.summaryByes' : 'bracket.summaryByesPlural'
+            return t(key, { count: resolved.length, byes })
+          })()}
         </span>
       </div>
 
@@ -162,7 +168,7 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
             return (
               <div key={rn} className="min-w-[16rem] 2xl:min-w-[24rem]">
                 <h3 className="text-sm 2xl:text-lg font-semibold mb-2 text-fg-muted">
-                  {roundLabel(rn, lastRound, matches.length)}
+                  {roundLabel(t, rn, lastRound, matches.length)}
                 </h3>
                 <div className="space-y-2">
                   {matches.map((m) => (
@@ -182,12 +188,18 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
   )
 }
 
-function roundLabel(round: number, last: number, matchCount: number) {
-  if (round === last) return matchCount === 2 ? 'Finale + Spiel um Platz 3' : 'Finale'
-  if (round === last - 1) return 'Halbfinale'
-  if (round === last - 2) return 'Viertelfinale'
-  if (round === last - 3) return 'Achtelfinale'
-  return `Runde ${round} (${matchCount} Matches)`
+function roundLabel(
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string,
+  round: number,
+  last: number,
+  matchCount: number,
+) {
+  if (round === last)
+    return matchCount === 2 ? t('bracket.roundFinalThird') : t('bracket.roundFinal')
+  if (round === last - 1) return t('bracket.roundSemi')
+  if (round === last - 2) return t('bracket.roundQuarter')
+  if (round === last - 3) return t('bracket.roundEighth')
+  return t('bracket.roundOther', { n: round, count: matchCount })
 }
 
 function BracketCard({
@@ -197,6 +209,7 @@ function BracketCard({
   m: ReturnType<typeof resolveBracket>[number]
   onScore: Props['onScore']
 }) {
+  const { t } = useTranslation()
   const aWinning = m.winner != null && m.winner === m.entryA
   const bWinning = m.winner != null && m.winner === m.entryB
   const isTie =
@@ -224,21 +237,21 @@ function BracketCard({
     <div className={'rounded-md border border-border bg-surface p-2 text-sm ' + accent}>
       <div className="flex items-center justify-between gap-2 mb-1 text-xs">
         <span className="text-fg-muted">
-          {m.matchId === '3P' ? 'Spiel um Platz 3' : m.matchId}
+          {m.matchId === '3P' ? t('bracket.thirdPlace') : m.matchId}
         </span>
         {m.isByeMatch && (
           <span className="rounded bg-fg-subtle/20 text-fg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide font-medium">
-            Freilos
+            {t('bracket.bye')}
           </span>
         )}
         {!m.isByeMatch && status === 'complete' && (
           <span className="rounded-full bg-brand-soft text-brand-soft-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
-            Erfasst
+            {t('schedule.statusComplete')}
           </span>
         )}
         {!m.isByeMatch && status === 'partial' && (
           <span className="rounded-full bg-warn-bg text-warn-fg px-2 py-0.5 text-[10px] uppercase tracking-wide">
-            Unvollständig
+            {t('schedule.statusPartial')}
           </span>
         )}
       </div>
@@ -247,7 +260,7 @@ function BracketCard({
         score={m.scoreA}
         editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
         winning={aWinning}
-        ariaLabel={`Score ${m.pendingA}`}
+        ariaLabel={t('schedule.scoreAria', { team: m.pendingA })}
         onChange={(a) => onScore(m.matchId, a, m.scoreB)}
       />
       <SlotRow
@@ -255,7 +268,7 @@ function BracketCard({
         score={m.scoreB}
         editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
         winning={bWinning}
-        ariaLabel={`Score ${m.pendingB}`}
+        ariaLabel={t('schedule.scoreAria', { team: m.pendingB })}
         onChange={(b) => onScore(m.matchId, m.scoreA, b)}
       />
       {isTie && (
@@ -263,7 +276,7 @@ function BracketCard({
           role="alert"
           className="mt-1 text-xs text-danger-fg bg-danger-bg border border-rose-200 rounded px-2 py-1"
         >
-          Unentschieden im KO – bitte korrigieren, sonst kommt niemand weiter.
+          {t('bracket.tieWarning')}
         </p>
       )}
     </div>

@@ -7,6 +7,7 @@ import {
 } from '../bell'
 import type { BellVariant } from '../types'
 import { parsePositiveInt } from '../utils/parseScore'
+import { useTranslation, type TranslationKey } from '../i18n'
 
 interface Props {
   minutes: number
@@ -15,11 +16,11 @@ interface Props {
   onBellVariantChange: (v: BellVariant) => void
 }
 
-const BELL_LABELS: Record<BellVariant, string> = {
-  classic: 'Standard',
-  boxing: 'Boxing-Bell',
-  alarm: 'Wecker',
-  temple: 'Tempelglocke',
+const BELL_KEYS: Record<BellVariant, TranslationKey> = {
+  classic: 'bell.classic',
+  boxing: 'bell.boxing',
+  alarm: 'bell.alarm',
+  temple: 'bell.temple',
 }
 
 const fmt = (sec: number) => {
@@ -35,6 +36,7 @@ export function RoundTimer({
   bellVariant,
   onBellVariantChange,
 }: Props) {
+  const { t } = useTranslation()
   const [remaining, setRemaining] = useState(minutes * 60)
   const [running, setRunning] = useState(false)
   const [ringing, setRinging] = useState(false)
@@ -43,8 +45,6 @@ export function RoundTimer({
   const variantRef = useRef(bellVariant)
   variantRef.current = bellVariant
 
-  // Only sync remaining to minutes when minutes change while not running
-  // (don't reset on every running-toggle — that would erase the pause).
   useEffect(() => {
     if (!running) setRemaining(minutes * 60)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,7 +69,6 @@ export function RoundTimer({
     return () => window.clearInterval(id)
   }, [running])
 
-  // Stop the bell on unmount so it doesn't keep ringing on tab switches.
   useEffect(() => () => stopBell(), [])
 
   const start = () => {
@@ -107,7 +106,7 @@ export function RoundTimer({
           className="w-full sm:hidden rounded-md bg-danger-fg px-4 py-4 text-base text-white font-semibold hover:opacity-90 animate-pulse min-h-[60px] mb-3"
           autoFocus
         >
-          🔕 Glocke aus
+          {t('timer.silence')}
         </button>
       )}
       <div className="flex flex-wrap items-center gap-3">
@@ -128,7 +127,7 @@ export function RoundTimer({
               className="hidden sm:inline-flex items-center justify-center rounded-md bg-danger-fg px-4 py-2 text-sm text-white font-medium hover:opacity-90 animate-pulse min-w-[8rem] min-h-[44px]"
               autoFocus
             >
-              🔕 Glocke aus
+              {t('timer.silence')}
             </button>
           ) : !running ? (
             <button
@@ -137,8 +136,8 @@ export function RoundTimer({
               className="inline-flex items-center justify-center rounded-md bg-brand px-3 py-2 text-sm text-white font-medium hover:bg-brand-hover min-w-[6rem] min-h-[44px]"
             >
               {remaining > 0 && remaining < minutes * 60
-                ? 'Weiter'
-                : 'Start'}
+                ? t('timer.continue')
+                : t('timer.start')}
             </button>
           ) : (
             <button
@@ -146,7 +145,7 @@ export function RoundTimer({
               onClick={pause}
               className="inline-flex items-center justify-center rounded-md bg-amber-500 px-3 py-2 text-sm text-white font-medium hover:bg-amber-600 min-w-[6rem] min-h-[44px]"
             >
-              Pause
+              {t('timer.pause')}
             </button>
           )}
           <button
@@ -154,7 +153,7 @@ export function RoundTimer({
             onClick={reset}
             className="inline-flex items-center justify-center rounded-md border border-border-strong px-3 py-2 text-sm hover:border-fg-muted min-w-[5rem] min-h-[44px]"
           >
-            Reset
+            {t('timer.reset')}
           </button>
           <button
             type="button"
@@ -164,30 +163,30 @@ export function RoundTimer({
             }}
             disabled={ringing}
             className="inline-flex items-center justify-center gap-1 rounded-md border border-border-strong px-3 py-2 text-sm hover:border-fg-muted disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-            title="Klingelton testen"
-            aria-label="Klingelton testen"
+            title={t('timer.testTitle')}
+            aria-label={t('timer.testTitle')}
           >
             <span aria-hidden>🔔</span>
-            <span className="hidden sm:inline">Test</span>
+            <span className="hidden sm:inline">{t('timer.test')}</span>
           </button>
         </div>
         <div className="flex-1" />
         <label className="text-sm text-fg-muted flex items-center gap-2">
-          Klingelton
+          {t('timer.bell')}
           <select
             value={bellVariant}
             onChange={(e) => onBellVariantChange(e.target.value as BellVariant)}
             className="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm min-h-[40px]"
           >
-            {(Object.keys(BELL_LABELS) as BellVariant[]).map((v) => (
+            {(Object.keys(BELL_KEYS) as BellVariant[]).map((v) => (
               <option key={v} value={v}>
-                {BELL_LABELS[v]}
+                {t(BELL_KEYS[v])}
               </option>
             ))}
           </select>
         </label>
         <label className="text-sm text-fg-muted flex items-center gap-2">
-          Spielzeit
+          {t('timer.duration')}
           <input
             type="number"
             min={1}
@@ -204,17 +203,17 @@ export function RoundTimer({
             }
             className="w-16 rounded-md border border-border-strong px-2 py-1 min-h-[40px] disabled:bg-surface-sunken"
           />
-          min
+          {t('timer.minutes')}
         </label>
       </div>
       {ringing && (
         <p className="mt-2 text-sm text-danger-fg font-medium">
-          Zeit abgelaufen – Glocke läutet, bis du auf „Glocke aus" klickst.
+          {t('timer.expired.ringing')}
         </p>
       )}
       {expired && !ringing && (
         <p className="mt-2 text-sm text-danger-fg">
-          Zeit abgelaufen. „Reset" für die nächste Runde.
+          {t('timer.expired.idle')}
         </p>
       )}
     </div>

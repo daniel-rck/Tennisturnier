@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import type { Gender, Player } from '../types'
 import { useConfirm } from '../hooks/useConfirm'
+import { useTranslation } from '../i18n'
 import { EmptyState } from './EmptyState'
 
 interface Props {
@@ -38,6 +39,7 @@ interface RowProps {
 
 function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
   const confirm = useConfirm()
+  const { t } = useTranslation()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: player.id })
   const style = {
@@ -54,7 +56,7 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
       <button
         type="button"
         className="icon-btn cursor-grab active:cursor-grabbing touch-none text-fg-subtle"
-        aria-label="Verschieben"
+        aria-label={t('common.move')}
         {...attributes}
         {...listeners}
       >
@@ -71,7 +73,7 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
           type="button"
           onClick={() => onUpdate(player.id, { gender: 'F' })}
           aria-pressed={player.gender === 'F'}
-          aria-label="Dame"
+          aria-label={t('gender.female')}
           className={
             'inline-flex items-center gap-1 px-3 min-h-[40px] ' +
             (player.gender === 'F'
@@ -80,13 +82,13 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
           }
         >
           <span aria-hidden>♀</span>
-          <span>Dame</span>
+          <span>{t('gender.female')}</span>
         </button>
         <button
           type="button"
           onClick={() => onUpdate(player.id, { gender: 'M' })}
           aria-pressed={player.gender === 'M'}
-          aria-label="Herr"
+          aria-label={t('gender.male')}
           className={
             'inline-flex items-center gap-1 px-3 min-h-[40px] border-l border-border-strong ' +
             (player.gender === 'M'
@@ -95,21 +97,21 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
           }
         >
           <span aria-hidden>♂</span>
-          <span>Herr</span>
+          <span>{t('gender.male')}</span>
         </button>
       </div>
       <button
         type="button"
         onClick={async () => {
           const ok = await confirm({
-            title: `„${player.name}" entfernen?`,
-            confirmLabel: 'Entfernen',
+            title: t('players.removeConfirm.title', { name: player.name }),
+            confirmLabel: t('common.remove'),
             destructive: true,
           })
           if (ok) onRemove(player.id)
         }}
         className="icon-btn hover:text-danger-fg hover:bg-danger-bg/30"
-        aria-label="Entfernen"
+        aria-label={t('common.remove')}
       >
         ✕
       </button>
@@ -144,6 +146,7 @@ export function PlayersPanel({
   onSort,
   onArrayMove,
 }: Props) {
+  const { t } = useTranslation()
   const [draftName, setDraftName] = useState('')
   const [draftGender, setDraftGender] = useState<Gender>('F')
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -181,7 +184,7 @@ export function PlayersPanel({
         <input
           ref={nameInputRef}
           type="text"
-          placeholder="Name eingeben…"
+          placeholder={t('players.namePlaceholder')}
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
@@ -192,7 +195,7 @@ export function PlayersPanel({
             type="button"
             onClick={() => setDraftGender('F')}
             aria-pressed={draftGender === 'F'}
-            aria-label="Dame"
+            aria-label={t('gender.female')}
             className={
               'inline-flex items-center gap-1 px-3 text-sm min-h-[44px] ' +
               (draftGender === 'F'
@@ -201,13 +204,13 @@ export function PlayersPanel({
             }
           >
             <span aria-hidden>♀</span>
-            <span>Dame</span>
+            <span>{t('gender.female')}</span>
           </button>
           <button
             type="button"
             onClick={() => setDraftGender('M')}
             aria-pressed={draftGender === 'M'}
-            aria-label="Herr"
+            aria-label={t('gender.male')}
             className={
               'inline-flex items-center gap-1 px-3 text-sm min-h-[44px] border-l border-border-strong ' +
               (draftGender === 'M'
@@ -216,7 +219,7 @@ export function PlayersPanel({
             }
           >
             <span aria-hidden>♂</span>
-            <span>Herr</span>
+            <span>{t('gender.male')}</span>
           </button>
         </div>
         <button
@@ -224,13 +227,13 @@ export function PlayersPanel({
           onClick={submit}
           className="btn-primary"
         >
-          Hinzufügen
+          {t('common.add')}
         </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
         <span>
-          {players.length} Spieler:innen ({counts.F} Damen, {counts.M} Herren)
+          {t('players.count', { count: players.length, women: counts.F, men: counts.M })}
         </span>
         <div className="flex-1" />
         <button
@@ -238,36 +241,36 @@ export function PlayersPanel({
           onClick={() => onSort('name')}
           className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
-          Sortieren A→Z
+          {t('common.sortAZ')}
         </button>
         <button
           type="button"
           onClick={() => onSort('women-first')}
           className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
-          Damen zuerst
+          {t('players.sortWomenFirst')}
         </button>
         <button
           type="button"
           onClick={() => onSort('men-first')}
           className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
         >
-          Herren zuerst
+          {t('players.sortMenFirst')}
         </button>
       </div>
 
       {players.length === 0 ? (
         <EmptyState
           icon="🎾"
-          title="Noch keine Spieler:innen"
-          description={'Tippe oben einen Namen ein und wähle Dame/Herr — dann „Hinzufügen". Per Drag-and-Drop kannst du die Reihenfolge ändern.'}
+          title={t('players.empty.title')}
+          description={t('players.empty.description')}
           action={
             <button
               type="button"
               onClick={() => nameInputRef.current?.focus()}
               className="btn-primary"
             >
-              Erste:n Spieler:in anlegen
+              {t('players.empty.action')}
             </button>
           }
         />

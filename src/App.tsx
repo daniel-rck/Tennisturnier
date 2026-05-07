@@ -7,12 +7,14 @@ import { SetupPanel } from './components/SetupPanel'
 import { PlayersPanel } from './components/PlayersPanel'
 import { SchedulePanel } from './components/SchedulePanel'
 import { RankingPanel } from './components/RankingPanel'
+import { StatisticsPanel } from './components/StatisticsPanel'
 import { PrintView } from './components/PrintView'
 import { EntriesPanel } from './components/EntriesPanel'
 import { GroupsPanel } from './components/GroupsPanel'
 import { BracketPanel } from './components/BracketPanel'
 import { SyncPanel } from './components/SyncPanel'
 import { ThemeToggle } from './components/ThemeToggle'
+import { LocaleToggle } from './components/LocaleToggle'
 import { InstallPrompt } from './components/InstallPrompt'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { OfflineBanner } from './components/OfflineBanner'
@@ -20,6 +22,7 @@ import { PrivacyDialog } from './components/PrivacyDialog'
 import { OnboardingDialog } from './components/OnboardingDialog'
 import { useConfirm } from './hooks/useConfirm'
 import { useToast } from './hooks/useToast'
+import { useTranslation } from './i18n'
 
 const ONBOARDING_KEY = 'tennisturnier:welcomeDismissed'
 
@@ -42,9 +45,11 @@ type Tab =
   | 'groups'
   | 'bracket'
   | 'ranking'
+  | 'statistics'
   | 'print'
 
 function App() {
+  const { t: tr } = useTranslation()
   const t = useTournament()
   const sync = useSync({
     tournament: t.tournament,
@@ -103,18 +108,23 @@ function App() {
         t.setSchedule(result.rounds)
         setWarnings(result.warnings)
         if (result.warnings.length === 0) {
-          toast({ variant: 'success', title: 'Spielplan erstellt' })
+          toast({ variant: 'success', title: tr('toast.scheduleCreated') })
         } else {
           toast({
             variant: 'info',
-            title: 'Spielplan erstellt',
-            description: `${result.warnings.length} Hinweis${result.warnings.length === 1 ? '' : 'e'} – siehe Liste.`,
+            title: tr('toast.scheduleCreated'),
+            description: tr(
+              result.warnings.length === 1
+                ? 'toast.scheduleHints'
+                : 'toast.scheduleHintsPlural',
+              { count: result.warnings.length },
+            ),
           })
         }
       } catch (err) {
         toast({
           variant: 'error',
-          title: 'Spielplan konnte nicht erstellt werden',
+          title: tr('toast.scheduleFailed'),
           description: err instanceof Error ? err.message : undefined,
         })
       } finally {
@@ -163,41 +173,42 @@ function App() {
     } catch {
       toast({
         variant: 'error',
-        title: 'Import fehlgeschlagen',
-        description: 'Datei konnte nicht gelesen werden — gültige JSON-Datei erwartet.',
+        title: tr('toast.importFailed'),
+        description: tr('toast.importFailedDesc'),
       })
       return
     }
     const ok = await confirm({
-      title: 'Turnier laden?',
-      description: `„${next.name}" laden — das aktuelle Turnier wird überschrieben.`,
-      confirmLabel: 'Laden',
+      title: tr('toast.loadConfirm.title'),
+      description: tr('toast.loadConfirm.description', { name: next.name }),
+      confirmLabel: tr('toast.loadConfirm.button'),
       destructive: true,
     })
     if (ok) {
       t.snapshot()
       t.replaceTournament(next)
-      toast({ variant: 'success', title: 'Turnier geladen' })
+      toast({ variant: 'success', title: tr('toast.loaded') })
     }
   }
 
   const tabs: { id: Tab; label: string }[] = (() => {
     const f = t.tournament.format
     const list: { id: Tab; label: string }[] = [
-      { id: 'setup', label: 'Einstellungen' },
+      { id: 'setup', label: tr('tab.setup') },
     ]
     if (f === 'rotation') {
-      list.push({ id: 'players', label: 'Spieler:innen' })
-      list.push({ id: 'schedule', label: 'Spielplan' })
+      list.push({ id: 'players', label: tr('tab.players') })
+      list.push({ id: 'schedule', label: tr('tab.schedule') })
     } else {
-      list.push({ id: 'entries', label: 'Teams' })
+      list.push({ id: 'entries', label: tr('tab.entries') })
       if (f === 'groups' || f === 'groups-ko')
-        list.push({ id: 'groups', label: 'Gruppen' })
+        list.push({ id: 'groups', label: tr('tab.groups') })
       if (f === 'knockout' || f === 'groups-ko')
-        list.push({ id: 'bracket', label: 'Bracket' })
+        list.push({ id: 'bracket', label: tr('tab.bracket') })
     }
-    list.push({ id: 'ranking', label: 'Siegerehrung' })
-    list.push({ id: 'print', label: 'Drucken' })
+    list.push({ id: 'ranking', label: tr('tab.ranking') })
+    list.push({ id: 'statistics', label: tr('tab.statistics') })
+    list.push({ id: 'print', label: tr('tab.print') })
     return list
   })()
 
@@ -232,18 +243,21 @@ function App() {
           </span>
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-bold leading-tight">
-              Tennisturnier-Planer
+              {tr('app.title')}
             </h1>
             <p className="text-xs text-emerald-100 truncate">
-              {t.tournament.name || 'Vereinsturnier'}
+              {t.tournament.name || tr('app.defaultName')}
             </p>
           </div>
           <div className="flex items-center gap-1">
             {sync.role !== 'none' && (
               <span
                 role="status"
-                title={`${sync.role === 'owner' ? 'Sync' : 'Viewer'} · ${sync.error ?? sync.status}`}
-                aria-label={`Sync-Status: ${sync.status} (${sync.role === 'owner' ? 'Owner' : 'Viewer'})`}
+                title={`${sync.role === 'owner' ? tr('app.role.owner') : tr('app.role.viewer')} · ${sync.error ?? sync.status}`}
+                aria-label={tr('app.syncStatusLabel', {
+                  status: sync.status,
+                  role: sync.role === 'owner' ? tr('app.role.owner') : tr('app.role.viewer'),
+                })}
                 className={
                   'inline-block h-2.5 w-2.5 rounded-full mx-1 transition-colors duration-300 ' +
                   (sync.status === 'live'
@@ -255,17 +269,18 @@ function App() {
               />
             )}
             <InstallPrompt />
+            <LocaleToggle />
             <ThemeToggle />
             <button
               type="button"
               onClick={t.undo}
               disabled={!t.canUndo || !isOwner}
-              title={isOwner ? 'Rückgängig (Strg/Cmd+Z)' : 'Im Viewer-Modus deaktiviert'}
-              aria-label="Rückgängig"
+              title={isOwner ? tr('app.undoTitle') : tr('app.undoDisabledTitle')}
+              aria-label={tr('app.undo')}
               className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-emerald-100 hover:text-white hover:bg-emerald-600 disabled:text-emerald-400 disabled:cursor-not-allowed disabled:hover:bg-transparent text-base"
             >
               <span aria-hidden>↶</span>
-              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-sm">Rückgängig</span>
+              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-sm">{tr('app.undo')}</span>
             </button>
           </div>
         </div>
@@ -389,19 +404,20 @@ function App() {
               onResetReveal={t.resetReveal}
             />
           )}
+          {tab === 'statistics' && <StatisticsPanel tournament={t.tournament} />}
           {tab === 'print' && <PrintView tournament={t.tournament} />}
         </div>
       </main>
 
       <footer className="no-print text-center text-xs text-fg-muted py-4 space-y-1">
         <div>
-          Lokal im Browser gespeichert · keine Daten verlassen dein Gerät ·{' '}
+          {tr('app.tagline')} ·{' '}
           <button
             type="button"
             onClick={() => setPrivacyOpen(true)}
             className="underline hover:text-fg"
           >
-            Datenschutz
+            {tr('app.privacyLink')}
           </button>
         </div>
         <div className="opacity-70">

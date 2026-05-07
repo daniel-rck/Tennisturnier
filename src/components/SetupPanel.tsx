@@ -1,11 +1,12 @@
 import type { EntryFormat, Format, Mode } from '../types'
 import {
-  ENTRY_FORMAT_LABELS,
-  FORMAT_LABELS,
-  MODE_LABELS,
+  ENTRY_FORMAT_KEYS,
+  FORMAT_KEYS,
+  MODE_KEYS,
 } from '../types'
 import { parsePositiveInt } from '../utils/parseScore'
 import { useConfirm } from '../hooks/useConfirm'
+import { useTranslation, type TranslationKey } from '../i18n'
 
 interface Props {
   name: string
@@ -33,6 +34,13 @@ interface Props {
   onReset: () => void
   onExport: () => void
   onImport: (f: File) => void
+}
+
+const FORMAT_HINT_KEYS: Record<Format, TranslationKey> = {
+  rotation: 'setup.formatHint.rotation',
+  groups: 'setup.formatHint.groups',
+  knockout: 'setup.formatHint.knockout',
+  'groups-ko': 'setup.formatHint.groups-ko',
 }
 
 export function SetupPanel({
@@ -63,11 +71,12 @@ export function SetupPanel({
   onImport,
 }: Props) {
   const confirm = useConfirm()
+  const { t } = useTranslation()
   return (
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-fg mb-1">
-          Turniername
+          {t('setup.tournamentName')}
         </label>
         <input
           type="text"
@@ -79,10 +88,10 @@ export function SetupPanel({
 
       <div>
         <label className="block text-sm font-medium text-fg mb-2">
-          Turnierformat
+          {t('setup.format')}
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {(Object.keys(FORMAT_LABELS) as Format[]).map((f) => (
+          {(Object.keys(FORMAT_KEYS) as Format[]).map((f) => (
             <button
               key={f}
               type="button"
@@ -94,26 +103,19 @@ export function SetupPanel({
                   : 'border-border-strong hover:border-brand-hover')
               }
             >
-              {FORMAT_LABELS[f]}
+              {t(FORMAT_KEYS[f])}
             </button>
           ))}
         </div>
         <p className="text-xs text-fg-muted mt-1">
-          {format === 'rotation' &&
-            'Wechselturnier mit rotierenden Mixed-Doppeln. Jede Runde alle Plätze besetzt.'}
-          {format === 'groups' &&
-            'Gruppenphase mit Jeder-gegen-Jeden in jeder Gruppe. Tabelle pro Gruppe.'}
-          {format === 'knockout' &&
-            'KO-System ab Runde 1. Bracket mit Freilosen, falls die Anzahl Teilnehmer keine 2er-Potenz ist.'}
-          {format === 'groups-ko' &&
-            'Gruppenphase + Endrunde im KO. Die besten N pro Gruppe steigen ins Bracket auf.'}
+          {t(FORMAT_HINT_KEYS[format])}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-fg mb-1">
-            Anzahl Plätze
+            {t('setup.courts')}
           </label>
           <input
             type="number"
@@ -128,7 +130,7 @@ export function SetupPanel({
         {format === 'rotation' && (
           <div>
             <label className="block text-sm font-medium text-fg mb-1">
-              Anzahl Runden
+              {t('setup.rounds')}
             </label>
             <input
               type="number"
@@ -145,10 +147,10 @@ export function SetupPanel({
       {format === 'rotation' && (
         <div>
           <label className="block text-sm font-medium text-fg mb-2">
-            Doppel-Modus
+            {t('setup.doublesMode')}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
+            {(Object.keys(MODE_KEYS) as Mode[]).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -160,7 +162,7 @@ export function SetupPanel({
                     : 'border-border-strong hover:border-brand-hover')
                 }
               >
-                {MODE_LABELS[m]}
+                {t(MODE_KEYS[m])}
               </button>
             ))}
           </div>
@@ -176,11 +178,10 @@ export function SetupPanel({
               onChange={(e) => onAllowPartialFinalRound(e.target.checked)}
               className="rounded border-border-strong text-brand focus:ring-brand"
             />
-            Letzte Runde ggf. nur teilweise füllen, damit alle gleich oft spielen
+            {t('setup.partialFinal')}
           </label>
           <p className="text-xs text-fg-muted mt-1 ml-6">
-            Überzählige Runden werden weggelassen, falls schon alle gleich oft
-            gespielt haben.
+            {t('setup.partialFinalHint')}
           </p>
         </div>
       )}
@@ -194,11 +195,10 @@ export function SetupPanel({
               onChange={(e) => onPerGenderRanking(e.target.checked)}
               className="rounded border-border-strong text-brand focus:ring-brand"
             />
-            Zusätzlich Damen- und Herren-Rangliste anzeigen
+            {t('setup.perGenderRanking')}
           </label>
           <p className="text-xs text-fg-muted mt-1 ml-6">
-            In der Siegerehrung erscheinen neben der Gesamtwertung getrennte
-            Tabellen pro Geschlecht.
+            {t('setup.perGenderRankingHint')}
           </p>
         </div>
       )}
@@ -206,10 +206,10 @@ export function SetupPanel({
       {(format === 'groups' || format === 'knockout' || format === 'groups-ko') && (
         <div>
           <label className="block text-sm font-medium text-fg mb-2">
-            Teilnehmer-Format
+            {t('setup.entryFormat')}
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(ENTRY_FORMAT_LABELS) as EntryFormat[]).map((f) => (
+            {(Object.keys(ENTRY_FORMAT_KEYS) as EntryFormat[]).map((f) => (
               <button
                 key={f}
                 type="button"
@@ -221,7 +221,7 @@ export function SetupPanel({
                     : 'border-border-strong hover:border-brand-hover')
                 }
               >
-                {ENTRY_FORMAT_LABELS[f]}
+                {t(ENTRY_FORMAT_KEYS[f])}
               </button>
             ))}
           </div>
@@ -232,7 +232,7 @@ export function SetupPanel({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-fg mb-1">
-              Anzahl Gruppen
+              {t('setup.groupCount')}
             </label>
             <input
               type="number"
@@ -248,7 +248,7 @@ export function SetupPanel({
           {format === 'groups-ko' && (
             <div>
               <label className="block text-sm font-medium text-fg mb-1">
-                Aufsteiger pro Gruppe
+                {t('setup.advancePerGroup')}
               </label>
               <input
                 type="number"
@@ -276,10 +276,10 @@ export function SetupPanel({
               onChange={(e) => onThirdPlaceMatch(e.target.checked)}
               className="rounded border-border-strong text-brand focus:ring-brand"
             />
-            Spiel um Platz 3 austragen
+            {t('setup.thirdPlace')}
           </label>
           <p className="text-xs text-fg-muted mt-1 ml-6">
-            Halbfinal-Verlierer spielen den dritten Platz aus.
+            {t('setup.thirdPlaceHint')}
           </p>
         </div>
       )}
@@ -291,10 +291,10 @@ export function SetupPanel({
             onClick={onExport}
             className="rounded border border-border-strong px-3 py-1.5 text-sm hover:border-brand-hover"
           >
-            Exportieren (JSON)
+            {t('setup.exportJson')}
           </button>
           <label className="rounded border border-border-strong px-3 py-1.5 text-sm hover:border-brand-hover cursor-pointer">
-            Importieren
+            {t('setup.import')}
             <input
               type="file"
               accept="application/json,.json"
@@ -311,17 +311,16 @@ export function SetupPanel({
           type="button"
           onClick={async () => {
             const ok = await confirm({
-              title: 'Turnier zurücksetzen?',
-              description:
-                'Spieler:innen, Teams und Spielplan gehen verloren.',
-              confirmLabel: 'Zurücksetzen',
+              title: t('setup.resetConfirm.title'),
+              description: t('setup.resetConfirm.description'),
+              confirmLabel: t('setup.resetConfirm.button'),
               destructive: true,
             })
             if (ok) onReset()
           }}
           className="text-sm text-danger-fg hover:opacity-80 underline"
         >
-          Turnier zurücksetzen
+          {t('setup.reset')}
         </button>
       </div>
     </div>

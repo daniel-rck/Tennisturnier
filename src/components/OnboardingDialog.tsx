@@ -1,36 +1,37 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation, type TranslationKey } from '../i18n'
 
-interface Slide {
+interface SlideKey {
   key: string
   icon: string
-  title: string
-  body: string
+  titleKey: TranslationKey
+  bodyKey: TranslationKey
 }
 
-const SLIDES: Slide[] = [
+const SLIDES: SlideKey[] = [
   {
     key: 'welcome',
     icon: '🎾',
-    title: 'Willkommen zum Tennisturnier-Planer',
-    body: 'Spielplan, Rundentimer, Ergebnis-Eingabe und Siegerehrung — alles im Browser, ohne Anmeldung.',
+    titleKey: 'onboarding.welcome.title',
+    bodyKey: 'onboarding.welcome.body',
   },
   {
     key: 'formats',
     icon: '🏆',
-    title: 'Vier Turnierformate',
-    body: 'Wechselturnier (Mixed/Damen/Herren/Frei), Gruppenphase, KO oder Gruppen + KO. Du wählst das Format auf der Setup-Seite aus.',
+    titleKey: 'onboarding.formats.title',
+    bodyKey: 'onboarding.formats.body',
   },
   {
     key: 'privacy',
     icon: '🔒',
-    title: 'Deine Daten bleiben hier',
-    body: 'Lokal im Browser gespeichert — nichts verlässt dein Gerät. Optional: Live-Sync per Code zwischen Geräten, z.B. Eingabe am Handy, Anzeige auf dem TV.',
+    titleKey: 'onboarding.privacy.title',
+    bodyKey: 'onboarding.privacy.body',
   },
   {
     key: 'start',
     icon: '🚀',
-    title: 'Bereit?',
-    body: 'Lege Spieler:innen oder Teams an, generiere den Spielplan und trage Ergebnisse ein. Die Siegerehrung berechnet sich automatisch.',
+    titleKey: 'onboarding.start.title',
+    bodyKey: 'onboarding.start.body',
   },
 ]
 
@@ -40,13 +41,13 @@ interface Props {
 }
 
 export function OnboardingDialog({ onDone, onImport }: Props) {
+  const { t } = useTranslation()
   const [step, setStep] = useState(0)
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const slide = SLIDES[step]
   const isFirst = step === 0
   const isLast = step === SLIDES.length - 1
 
-  // ESC closes the onboarding (treated as "skip").
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onDone()
@@ -55,7 +56,6 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
     return () => window.removeEventListener('keydown', handler)
   }, [onDone])
 
-  // Move keyboard focus to the dialog when it opens / when the step changes.
   useEffect(() => {
     dialogRef.current?.focus()
   }, [step])
@@ -77,9 +77,9 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
             {slide.icon}
           </div>
           <h2 id="onboarding-title" className="text-2xl font-bold mb-2">
-            {slide.title}
+            {t(slide.titleKey)}
           </h2>
-          <p className="text-fg-muted text-base leading-relaxed">{slide.body}</p>
+          <p className="text-fg-muted text-base leading-relaxed">{t(slide.bodyKey)}</p>
         </div>
 
         <div className="flex items-center gap-1.5 justify-center pb-4" aria-hidden>
@@ -102,7 +102,7 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
                 className="btn-ghost"
               >
-                Zurück
+                {t('onboarding.back')}
               </button>
             )}
             <button
@@ -110,7 +110,7 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
               onClick={onDone}
               className="text-sm text-fg-muted hover:text-fg underline px-2 min-h-[44px]"
             >
-              Überspringen
+              {t('onboarding.skip')}
             </button>
           </div>
           {!isLast ? (
@@ -120,14 +120,14 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
               className="btn-primary"
               autoFocus
             >
-              Weiter
+              {t('onboarding.next')}
               <span aria-hidden>→</span>
             </button>
           ) : (
             <div className="flex gap-2">
               {onImport && (
                 <label className="btn-secondary cursor-pointer">
-                  Turnier importieren
+                  {t('onboarding.import')}
                   <input
                     type="file"
                     accept="application/json,.json"
@@ -149,7 +149,7 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
                 className="btn-primary"
                 autoFocus
               >
-                Loslegen
+                {t('onboarding.go')}
               </button>
             </div>
           )}

@@ -10,6 +10,7 @@ import {
 import { groupLetter } from '../knockoutScheduler'
 import { parsePositiveInt } from '../utils/parseScore'
 import { useConfirm } from '../hooks/useConfirm'
+import { useTranslation } from '../i18n'
 import { ScoreInput } from './ScoreInput'
 import { EmptyState } from './EmptyState'
 
@@ -36,6 +37,7 @@ export function GroupsPanel({
   onReshuffle,
 }: Props) {
   const confirm = useConfirm()
+  const { t } = useTranslation()
   // Initialize group assignment lazily on first visit when there are entries.
   useEffect(() => {
     if (
@@ -112,8 +114,8 @@ export function GroupsPanel({
     return (
       <EmptyState
         icon="👥"
-        title="Noch keine Teilnehmer:innen"
-        description="Lege zuerst Teilnehmer:innen auf der Teams-Seite an, dann werden hier automatisch Gruppen gebildet."
+        title={t('groups.empty.title')}
+        description={t('groups.empty.description')}
       />
     )
   }
@@ -122,7 +124,7 @@ export function GroupsPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm flex items-center gap-2">
-          Anzahl Gruppen
+          {t('setup.groupCount')}
           <input
             type="number"
             min={1}
@@ -137,8 +139,10 @@ export function GroupsPanel({
           />
         </label>
         <span className="text-sm text-fg-muted">
-          {tournament.entries.length} Teilnehmer · auf {tournament.groupCount}{' '}
-          Gruppen verteilt
+          {t('groups.summary', {
+            count: tournament.entries.length,
+            groups: tournament.groupCount,
+          })}
         </span>
         <button
           type="button"
@@ -148,10 +152,9 @@ export function GroupsPanel({
             )
             if (hasScores) {
               const ok = await confirm({
-                title: 'Gruppen neu auslosen?',
-                description:
-                  'Alle bisher eingetragenen Ergebnisse gehen verloren.',
-                confirmLabel: 'Neu auslosen',
+                title: t('groups.reshuffleConfirm.title'),
+                description: t('groups.reshuffleConfirm.description'),
+                confirmLabel: t('groups.reshuffleConfirm.button'),
                 destructive: true,
               })
               if (!ok) return
@@ -160,7 +163,7 @@ export function GroupsPanel({
           }}
           className="rounded border border-border-strong px-2 py-1 text-sm hover:border-brand-hover"
         >
-          Gruppen neu auslosen
+          {t('groups.reshuffle')}
         </button>
       </div>
 
@@ -187,7 +190,10 @@ export function GroupsPanel({
             className="rounded-md border border-border bg-surface p-3"
           >
             <h3 className="font-semibold mb-2">
-              Gruppe {groupLetter(groupNum)} ({group.length} Teams)
+              {t('groups.groupHeading', {
+                letter: groupLetter(groupNum),
+                count: group.length,
+              })}
             </h3>
 
             <StandingsTable standings={standings} />
@@ -195,7 +201,7 @@ export function GroupsPanel({
             <details className="group">
               <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
                 <span aria-hidden className="inline-block transition-transform group-open:rotate-90">▸</span>
-                {matches.length} Spiele
+                {t('groups.matches', { count: matches.length })}
               </summary>
               <div className="mt-2 space-y-1">
                 {matches.map((m) => (
@@ -224,6 +230,7 @@ function GroupMatchRow({
   entries: Entry[]
   onScore: Props['onScore']
 }) {
+  const { t } = useTranslation()
   const byId = new Map(entries.map((e) => [e.id, e]))
   const a = byId.get(match.entryA)?.name ?? '?'
   const b = byId.get(match.entryB)?.name ?? '?'
@@ -250,7 +257,7 @@ function GroupMatchRow({
         onChange={(scoreA) =>
           onScore(match.group, match.matchIndex, scoreA, match.scoreB)
         }
-        ariaLabel={`Score ${a}`}
+        ariaLabel={t('schedule.scoreAria', { team: a })}
       />
       <span className="text-fg-subtle text-xs">:</span>
       <ScoreInput
@@ -258,7 +265,7 @@ function GroupMatchRow({
         onChange={(scoreB) =>
           onScore(match.group, match.matchIndex, match.scoreA, scoreB)
         }
-        ariaLabel={`Score ${b}`}
+        ariaLabel={t('schedule.scoreAria', { team: b })}
       />
       <span className="truncate text-right" title={b}>{b}</span>
     </div>
@@ -283,6 +290,7 @@ interface Standing {
 }
 
 function StandingsTable({ standings }: { standings: Standing[] }) {
+  const { t } = useTranslation()
   const [bodyRef] = useAutoAnimate<HTMLTableSectionElement>()
   return (
     <div className="overflow-x-auto mb-3">
@@ -290,24 +298,32 @@ function StandingsTable({ standings }: { standings: Standing[] }) {
         <thead>
           <tr className="text-left text-fg-muted text-xs 2xl:text-sm">
             <th className="px-1 py-1 w-10">#</th>
-            <th className="px-1 py-1">Name</th>
-            <th className="px-1 py-1 text-right" title="Spiele">
-              <abbr title="Spiele" className="no-underline">Sp</abbr>
+            <th className="px-1 py-1">{t('ranking.col.name')}</th>
+            <th className="px-1 py-1 text-right" title={t('ranking.col.played')}>
+              <abbr title={t('ranking.col.played')} className="no-underline">
+                {t('ranking.col.playedShort')}
+              </abbr>
             </th>
-            <th className="px-1 py-1 text-right" title="Siege">
-              <abbr title="Siege" className="no-underline">S</abbr>
+            <th className="px-1 py-1 text-right" title={t('ranking.col.wins')}>
+              <abbr title={t('ranking.col.wins')} className="no-underline">
+                {t('ranking.col.winsShort')}
+              </abbr>
             </th>
-            <th className="px-1 py-1 text-right" title="Unentschieden">
-              <abbr title="Unentschieden" className="no-underline">U</abbr>
+            <th className="px-1 py-1 text-right" title={t('ranking.col.draws')}>
+              <abbr title={t('ranking.col.draws')} className="no-underline">
+                {t('ranking.col.drawsShort')}
+              </abbr>
             </th>
-            <th className="px-1 py-1 text-right" title="Niederlagen">
-              <abbr title="Niederlagen" className="no-underline">N</abbr>
+            <th className="px-1 py-1 text-right" title={t('ranking.col.losses')}>
+              <abbr title={t('ranking.col.losses')} className="no-underline">
+                {t('ranking.col.lossesShort')}
+              </abbr>
             </th>
-            <th className="px-1 py-1 text-right" title="Gewonnene : verlorene Games">
-              Spiele
+            <th className="px-1 py-1 text-right" title={t('ranking.col.gamesTitle')}>
+              {t('ranking.col.gamesShort')}
             </th>
-            <th className="px-1 py-1 text-right" title="Differenz aus +/–">
-              Diff
+            <th className="px-1 py-1 text-right" title={t('ranking.col.diffTitle')}>
+              {t('ranking.col.diff')}
             </th>
           </tr>
         </thead>
