@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import type { EntryFormat, Format, Mode } from '../types'
 import { ENTRY_FORMAT_KEYS, FORMAT_KEYS, MODE_KEYS } from '../types'
-import { parsePositiveInt } from '../utils/parseScore'
 import { useTranslation, type TranslationKey } from '../i18n'
 import { Card } from './ui/Card'
 import { Button } from './ui/Button'
 import { SegmentedControl } from './ui/SegmentedControl'
+import { NumberInput } from './ui/NumberInput'
 
 interface Props {
   name: string
@@ -392,12 +392,11 @@ function NumberField({
   return (
     <div>
       <label className="block text-sm font-medium text-fg mb-1">{label}</label>
-      <input
-        type="number"
+      <NumberInput
+        value={value}
         min={min}
         max={max}
-        value={value}
-        onChange={(e) => onChange(parsePositiveInt(e.target.value, value))}
+        onChange={onChange}
         className="w-full rounded-md border border-border-strong bg-surface px-3 py-2.5 tabular focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none"
       />
     </div>
