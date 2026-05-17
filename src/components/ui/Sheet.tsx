@@ -49,19 +49,17 @@ export function Sheet({
       }}
       className={[
         'p-0 bg-transparent backdrop:bg-black/40 backdrop:backdrop-blur-sm',
-        variant === 'bottom'
-          ? 'fixed left-0 right-0 bottom-0 top-auto m-0 w-full max-w-full sm:left-1/2 sm:-translate-x-1/2 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2'
-          : 'fixed inset-0 m-auto',
+        'fixed inset-0 m-0 w-full h-full max-w-full max-h-full',
         'overflow-visible',
       ].join(' ')}
       aria-labelledby={title ? 'sheet-title' : undefined}
     >
       <div
         className={[
-          'bg-surface text-fg shadow-elevated animate-slide-up max-h-[90vh] overflow-y-auto',
+          'bg-surface text-fg shadow-elevated animate-slide-up overflow-y-auto',
           variant === 'bottom'
-            ? 'rounded-t-card sm:rounded-card sm:max-w-full'
-            : 'rounded-card',
+            ? 'absolute left-0 right-0 bottom-0 max-h-[90vh] rounded-t-card sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[480px] sm:max-w-[calc(100vw-2rem)] sm:max-h-[85vh] sm:rounded-card'
+            : 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-md max-h-[85vh] rounded-card',
         ].join(' ')}
         style={variant === 'bottom' ? { paddingBottom: 'env(safe-area-inset-bottom)' } : undefined}
       >

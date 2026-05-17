@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
 import { useSync } from './hooks/useSync'
 import { generateSchedule } from './scheduler'
-import { migrate } from './storage'
+import { loadTournament, migrate } from './storage'
 import { SetupWizard } from './components/SetupWizard'
 import { PlayersPanel } from './components/PlayersPanel'
 import { SchedulePanel } from './components/SchedulePanel'
@@ -70,17 +70,25 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => !readOnboardingDone())
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  // Phase + sub-tab state — phase derives from data on first render, then user-controlled.
-  const initialPhase = useMemo(() => inferPhase(t.tournament), [])  // eslint-disable-line react-hooks/exhaustive-deps
-  const [phase, setPhase] = useState<PhaseId>(initialPhase)
+  // Phase + sub-tab state. We peek synchronously into localStorage so the
+  // first render lands on the right phase (useTournament hydrates in an
+  // effect, which would otherwise leave us on 'prep' for one paint).
+  const [phase, setPhase] = useState<PhaseId>(() => {
+    try {
+      return inferPhase(loadTournament())
+    } catch {
+      return 'prep'
+    }
+  })
   const [subTab, setSubTab] = useState<string>('')
 
-  // Smart re-default: when phase becomes invalid (e.g. user clears tournament),
-  // step back to prep.
+  // Smart re-default: when phase becomes invalid (e.g. user reset / imported
+  // an empty tournament), step back to prep.
   useEffect(() => {
     const inferred = inferPhase(t.tournament)
-    if (phase === 'live' && inferred === 'prep') setPhase('prep')
-    if (phase === 'results' && inferred === 'prep') setPhase('prep')
+    if ((phase === 'live' || phase === 'results') && inferred === 'prep') {
+      setPhase('prep')
+    }
   }, [t.tournament, phase])
 
   // Derived: sub-tabs per phase

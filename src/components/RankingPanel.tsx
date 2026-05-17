@@ -174,7 +174,6 @@ function RankingSection({
 
 function rowToPodiumEntry(r: RotationRow): PodiumEntry {
   return {
-    rank: r.rank as 1 | 2 | 3,
     name: r.name,
     subtitle: `${r.wins} S · ${r.diff > 0 ? '+' : ''}${r.diff}`,
   }
