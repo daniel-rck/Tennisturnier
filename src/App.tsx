@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
 import { useSync } from './hooks/useSync'
 import { generateSchedule } from './scheduler'
 import { migrate } from './storage'
-import { SetupPanel } from './components/SetupPanel'
+import { SetupWizard } from './components/SetupWizard'
 import { PlayersPanel } from './components/PlayersPanel'
 import { SchedulePanel } from './components/SchedulePanel'
 import { RankingPanel } from './components/RankingPanel'
@@ -12,14 +12,13 @@ import { PrintView } from './components/PrintView'
 import { EntriesPanel } from './components/EntriesPanel'
 import { GroupsPanel } from './components/GroupsPanel'
 import { BracketPanel } from './components/BracketPanel'
-import { SyncPanel } from './components/SyncPanel'
-import { ThemeToggle } from './components/ThemeToggle'
-import { LocaleToggle } from './components/LocaleToggle'
+import { Dashboard } from './components/Dashboard'
+import { SettingsSheet } from './components/SettingsSheet'
 import { InstallPrompt } from './components/InstallPrompt'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { OfflineBanner } from './components/OfflineBanner'
-import { PrivacyDialog } from './components/PrivacyDialog'
 import { OnboardingDialog } from './components/OnboardingDialog'
+import { PhaseNav, SubNav, type PhaseId } from './components/ui/PhaseNav'
 import { useConfirm } from './hooks/useConfirm'
 import { useToast } from './hooks/useToast'
 import { useTranslation } from './i18n'
@@ -31,22 +30,28 @@ function readOnboardingDone(): boolean {
   try {
     return window.localStorage.getItem(ONBOARDING_KEY) === '1'
   } catch {
-    // localStorage blocked (privacy mode, sandbox) — show the dialog every
-    // session; dismissal still works in-memory.
     return false
   }
 }
 
-type Tab =
-  | 'setup'
-  | 'players'
-  | 'entries'
-  | 'schedule'
-  | 'groups'
-  | 'bracket'
-  | 'ranking'
-  | 'statistics'
-  | 'print'
+function inferPhase(t: ReturnType<typeof useTournament>['tournament']): PhaseId {
+  const f = t.format
+  if (f === 'rotation') {
+    if (t.schedule.length === 0) return 'prep'
+    const all = t.schedule.flatMap((r) => r.matches)
+    const allDone = all.length > 0 && all.every((m) => m.scoreA != null && m.scoreB != null)
+    return allDone ? 'results' : 'live'
+  }
+  if (f === 'groups') {
+    if (t.entries.length < 2 || t.groupSchedule.length === 0) return 'prep'
+    const allDone = t.groupSchedule.every((m) => m.scoreA != null && m.scoreB != null)
+    return allDone ? 'results' : 'live'
+  }
+  // knockout / groups-ko
+  if (t.entries.length < 2 || t.bracket.length === 0) return 'prep'
+  const allDone = t.bracket.every((m) => m.scoreA != null && m.scoreB != null)
+  return allDone ? 'results' : 'live'
+}
 
 function App() {
   const { t: tr } = useTranslation()
@@ -56,25 +61,61 @@ function App() {
     setSync: t.setSync,
     applyRemote: t.replaceTournament,
   })
-  const [tab, setTab] = useState<Tab>('setup')
-  const [warnings, setWarnings] = useState<string[]>([])
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [privacyOpen, setPrivacyOpen] = useState(false)
-  const closePrivacy = useCallback(() => setPrivacyOpen(false), [])
-  const [showOnboarding, setShowOnboarding] = useState(
-    () => !readOnboardingDone(),
-  )
-  const finishOnboarding = useCallback(() => {
-    try {
-      window.localStorage.setItem(ONBOARDING_KEY, '1')
-    } catch {
-      // ignore — in-memory dismissal still works for this session
-    }
-    setShowOnboarding(false)
-  }, [])
   const isOwner = sync.role !== 'viewer'
   const confirm = useConfirm()
   const { toast } = useToast()
+
+  const [warnings, setWarnings] = useState<string[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(() => !readOnboardingDone())
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Phase + sub-tab state — phase derives from data on first render, then user-controlled.
+  const initialPhase = useMemo(() => inferPhase(t.tournament), [])  // eslint-disable-line react-hooks/exhaustive-deps
+  const [phase, setPhase] = useState<PhaseId>(initialPhase)
+  const [subTab, setSubTab] = useState<string>('')
+
+  // Smart re-default: when phase becomes invalid (e.g. user clears tournament),
+  // step back to prep.
+  useEffect(() => {
+    const inferred = inferPhase(t.tournament)
+    if (phase === 'live' && inferred === 'prep') setPhase('prep')
+    if (phase === 'results' && inferred === 'prep') setPhase('prep')
+  }, [t.tournament, phase])
+
+  // Derived: sub-tabs per phase
+  const subTabs = useMemo(() => {
+    const f = t.tournament.format
+    if (phase === 'prep') {
+      const tabs = [{ id: 'setup', label: tr('tab.setup') }]
+      if (f === 'rotation') tabs.push({ id: 'players', label: tr('tab.players') })
+      else tabs.push({ id: 'entries', label: tr('tab.entries') })
+      return tabs
+    }
+    if (phase === 'live') {
+      const tabs = [{ id: 'overview', label: tr('tab.overview') }]
+      if (f === 'rotation') tabs.push({ id: 'schedule', label: tr('tab.schedule') })
+      if (f === 'groups' || f === 'groups-ko')
+        tabs.push({ id: 'groups', label: tr('tab.groups') })
+      if (f === 'knockout' || f === 'groups-ko')
+        tabs.push({ id: 'bracket', label: tr('tab.bracket') })
+      tabs.push({ id: 'statistics', label: tr('tab.statistics') })
+      return tabs
+    }
+    // results
+    return [
+      { id: 'ranking', label: tr('tab.ranking') },
+      { id: 'statistics', label: tr('tab.statistics') },
+      { id: 'print', label: tr('tab.print') },
+    ]
+  }, [phase, t.tournament.format, tr])
+
+  // Reset sub-tab to first valid when phase changes or list changes
+  useEffect(() => {
+    if (!subTabs.some((s) => s.id === subTab)) {
+      setSubTab(subTabs[0]?.id ?? '')
+    }
+  }, [subTabs, subTab])
 
   // Auto-join via ?join=<code> URL param — runs once on first mount.
   const joinedRef = useRef(false)
@@ -88,7 +129,6 @@ function App() {
       .joinSession(code)
       .catch(() => {})
       .finally(() => {
-        // Strip ?join= from the URL so a refresh doesn't re-join over local state.
         params.delete('join')
         const next = `${window.location.pathname}${
           params.toString() ? '?' + params.toString() : ''
@@ -98,9 +138,8 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleGenerate = () => {
+  const handleGenerate = useCallback(() => {
     setIsGenerating(true)
-    // Yield to paint so the spinner shows before blocking compute kicks in.
     window.setTimeout(() => {
       try {
         t.snapshot()
@@ -121,6 +160,8 @@ function App() {
             ),
           })
         }
+        // Move to live phase after generating
+        setPhase('live')
       } catch (err) {
         toast({
           variant: 'error',
@@ -131,11 +172,12 @@ function App() {
         setIsGenerating(false)
       }
     }, 0)
-  }
+  }, [t, toast, tr])
 
   const handleReset = () => {
     t.snapshot()
     t.reset()
+    setPhase('prep')
   }
 
   const handleReshuffle = () => {
@@ -144,7 +186,6 @@ function App() {
   }
 
   const handleExport = () => {
-    // Strip ownerToken from export — it's device-bound and would let the recipient hijack the sync.
     const exportable = t.tournament.sync
       ? { ...t.tournament, sync: { ...t.tournament.sync, ownerToken: undefined } }
       : t.tournament
@@ -187,35 +228,20 @@ function App() {
     if (ok) {
       t.snapshot()
       t.replaceTournament(next)
+      // re-infer phase from new data
+      setPhase(inferPhase(next))
       toast({ variant: 'success', title: tr('toast.loaded') })
     }
   }
 
-  const tabs: { id: Tab; label: string }[] = (() => {
-    const f = t.tournament.format
-    const list: { id: Tab; label: string }[] = [
-      { id: 'setup', label: tr('tab.setup') },
-    ]
-    if (f === 'rotation') {
-      list.push({ id: 'players', label: tr('tab.players') })
-      list.push({ id: 'schedule', label: tr('tab.schedule') })
-    } else {
-      list.push({ id: 'entries', label: tr('tab.entries') })
-      if (f === 'groups' || f === 'groups-ko')
-        list.push({ id: 'groups', label: tr('tab.groups') })
-      if (f === 'knockout' || f === 'groups-ko')
-        list.push({ id: 'bracket', label: tr('tab.bracket') })
+  const finishOnboarding = useCallback(() => {
+    try {
+      window.localStorage.setItem(ONBOARDING_KEY, '1')
+    } catch {
+      // ignore
     }
-    list.push({ id: 'ranking', label: tr('tab.ranking') })
-    list.push({ id: 'statistics', label: tr('tab.statistics') })
-    list.push({ id: 'print', label: tr('tab.print') })
-    return list
-  })()
-
-  // If selected tab disappeared after format change, fall back to setup
-  useEffect(() => {
-    if (!tabs.some((tt) => tt.id === tab)) setTab('setup')
-  }, [tabs, tab])
+    setShowOnboarding(false)
+  }, [])
 
   // Keyboard shortcut: Ctrl/Cmd+Z triggers undo (when not editing form fields)
   useEffect(() => {
@@ -233,91 +259,78 @@ function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [t])
 
+  const phases: { id: PhaseId; label: string; icon: string }[] = [
+    { id: 'prep', label: tr('phase.prep'), icon: '⚙' },
+    { id: 'live', label: tr('phase.live'), icon: '▶' },
+    { id: 'results', label: tr('phase.results'), icon: '🏆' },
+  ]
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-surface-muted">
       <OfflineBanner />
-      <header className="no-print bg-emerald-700 text-white">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
-          <span className="text-2xl" aria-hidden>
-            🎾
-          </span>
+
+      {/* Header */}
+      <header className="no-print sticky top-0 z-10 bg-court-pattern text-cream backdrop-blur-sm">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+          <TennisLogo />
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold leading-tight">
-              {tr('app.title')}
-            </h1>
-            <p className="text-xs text-emerald-100 truncate">
+            <h1 className="serif text-lg font-semibold leading-tight tracking-tight truncate">
               {t.tournament.name || tr('app.defaultName')}
+            </h1>
+            <p className="text-[11px] text-cream/70 uppercase tracking-wider truncate">
+              {tr('app.title')}
             </p>
           </div>
           <div className="flex items-center gap-1">
             {sync.role !== 'none' && (
-              <span
-                role="status"
-                title={`${sync.role === 'owner' ? tr('app.role.owner') : tr('app.role.viewer')} · ${sync.error ?? sync.status}`}
-                aria-label={tr('app.syncStatusLabel', {
-                  status: sync.status,
-                  role: sync.role === 'owner' ? tr('app.role.owner') : tr('app.role.viewer'),
-                })}
-                className={
-                  'inline-block h-2.5 w-2.5 rounded-full mx-1 transition-colors duration-300 ' +
-                  (sync.status === 'live'
-                    ? 'bg-emerald-300'
-                    : sync.status === 'connecting'
-                      ? 'bg-amber-300 animate-pulse'
-                      : 'bg-rose-400')
-                }
+              <SyncIndicator
+                status={sync.status}
+                role={sync.role}
+                label={tr(sync.role === 'owner' ? 'app.role.owner' : 'app.role.viewer')}
               />
             )}
             <InstallPrompt />
-            <LocaleToggle />
-            <ThemeToggle />
             <button
               type="button"
               onClick={t.undo}
               disabled={!t.canUndo || !isOwner}
               title={isOwner ? tr('app.undoTitle') : tr('app.undoDisabledTitle')}
               aria-label={tr('app.undo')}
-              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-emerald-100 hover:text-white hover:bg-emerald-600 disabled:text-emerald-400 disabled:cursor-not-allowed disabled:hover:bg-transparent text-base"
+              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-cream/85 hover:text-cream hover:bg-white/10 disabled:text-cream/30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
             >
-              <span aria-hidden>↶</span>
-              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-sm">{tr('app.undo')}</span>
+              <span aria-hidden className="text-lg">↶</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label={tr('settings.openMenu')}
+              title={tr('settings.openMenu')}
+              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-cream/85 hover:text-cream hover:bg-white/10 transition-colors"
+            >
+              <span aria-hidden className="text-lg">⋯</span>
             </button>
           </div>
         </div>
-        <nav className="max-w-3xl mx-auto px-2 flex gap-0.5 overflow-x-auto">
-          {tabs.map((tt) => (
-            <button
-              key={tt.id}
-              type="button"
-              onClick={() => setTab(tt.id)}
-              aria-current={tab === tt.id ? 'page' : undefined}
-              className={
-                'px-4 py-2.5 text-sm whitespace-nowrap min-h-[44px] border-b-2 transition rounded-t ' +
-                (tab === tt.id
-                  ? 'border-white font-semibold bg-emerald-800/50'
-                  : 'border-transparent text-emerald-100 hover:text-white hover:bg-emerald-600/40')
-              }
-            >
-              {tt.label}
-            </button>
-          ))}
-        </nav>
+
+        {/* Desktop/tablet: phase nav inline in header */}
+        <div className="max-w-3xl mx-auto px-4 pb-3 hidden sm:flex justify-center">
+          <PhaseNav current={phase} onChange={setPhase} phases={phases} variant="top" />
+        </div>
       </header>
 
-      <main className="flex-1">
-        <div key={tab} className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-          {tab === 'setup' && (
-            <div className="space-y-6">
-              <SyncPanel
-                tournament={t.tournament}
-                status={sync.status}
-                role={sync.role}
-                error={sync.error}
-                onCreate={sync.createSession}
-                onJoin={sync.joinSession}
-                onLeave={sync.leaveSession}
-              />
-              <SetupPanel
+      {/* Sub-tabs */}
+      <div className="bg-surface border-b border-border sticky top-[60px] sm:top-[108px] z-[5]">
+        <div className="max-w-3xl mx-auto px-4">
+          <SubNav current={subTab} onChange={setSubTab} tabs={subTabs} />
+        </div>
+      </div>
+
+      {/* Main content */}
+      <main className="flex-1 pb-24 sm:pb-8">
+        <div key={`${phase}-${subTab}`} className="max-w-3xl mx-auto px-4 py-5 animate-fade-in">
+          {/* PREP PHASE */}
+          {phase === 'prep' && subTab === 'setup' && (
+            <SetupWizard
               name={t.tournament.name}
               format={t.tournament.format}
               entryFormat={t.tournament.entryFormat}
@@ -340,13 +353,13 @@ function App() {
               onAdvancePerGroup={t.setAdvancePerGroup}
               onThirdPlaceMatch={t.setThirdPlaceMatch}
               onPerGenderRanking={t.setPerGenderRanking}
-              onReset={handleReset}
-              onExport={handleExport}
-              onImport={handleImport}
-              />
-            </div>
+              onFinish={() => {
+                const next = subTabs.find((s) => s.id !== 'setup')
+                if (next) setSubTab(next.id)
+              }}
+            />
           )}
-          {tab === 'players' && (
+          {phase === 'prep' && subTab === 'players' && (
             <PlayersPanel
               players={t.tournament.players}
               onAdd={t.addPlayer}
@@ -356,7 +369,7 @@ function App() {
               onArrayMove={t.setPlayersOrder}
             />
           )}
-          {tab === 'entries' && (
+          {phase === 'prep' && subTab === 'entries' && (
             <EntriesPanel
               entries={t.tournament.entries}
               entryFormat={t.tournament.entryFormat}
@@ -367,7 +380,29 @@ function App() {
               onSortByName={t.sortEntriesByName}
             />
           )}
-          {tab === 'schedule' && (
+
+          {/* LIVE PHASE */}
+          {phase === 'live' && subTab === 'overview' && (
+            <Dashboard
+              tournament={t.tournament}
+              isOwner={isOwner}
+              onTimerMinutes={t.setTimerMinutes}
+              onBellVariant={t.setBellVariant}
+              onMatchScore={t.setMatchScore}
+              onGroupScore={t.setGroupScore}
+              onBracketScore={t.setBracketScore}
+              onGotoSetup={() => setPhase('prep')}
+              onGotoSchedule={() => {
+                const target =
+                  t.tournament.format === 'rotation' ? 'schedule'
+                    : t.tournament.format === 'knockout' ? 'bracket'
+                      : 'groups'
+                setSubTab(target)
+              }}
+              onGenerate={handleGenerate}
+            />
+          )}
+          {phase === 'live' && subTab === 'schedule' && (
             <SchedulePanel
               tournament={t.tournament}
               onGenerate={handleGenerate}
@@ -378,7 +413,7 @@ function App() {
               isGenerating={isGenerating}
             />
           )}
-          {tab === 'groups' && (
+          {phase === 'live' && subTab === 'groups' && (
             <GroupsPanel
               tournament={t.tournament}
               onSetGroupSchedule={t.setGroupSchedule}
@@ -388,14 +423,19 @@ function App() {
               onReshuffle={handleReshuffle}
             />
           )}
-          {tab === 'bracket' && (
+          {phase === 'live' && subTab === 'bracket' && (
             <BracketPanel
               tournament={t.tournament}
               onSetBracket={t.setBracket}
               onScore={t.setBracketScore}
             />
           )}
-          {tab === 'ranking' && (
+          {phase === 'live' && subTab === 'statistics' && (
+            <StatisticsPanel tournament={t.tournament} />
+          )}
+
+          {/* RESULTS PHASE */}
+          {phase === 'results' && subTab === 'ranking' && (
             <RankingPanel
               tournament={t.tournament}
               isOwner={isOwner}
@@ -404,32 +444,98 @@ function App() {
               onResetReveal={t.resetReveal}
             />
           )}
-          {tab === 'statistics' && <StatisticsPanel tournament={t.tournament} />}
-          {tab === 'print' && <PrintView tournament={t.tournament} />}
+          {phase === 'results' && subTab === 'statistics' && (
+            <StatisticsPanel tournament={t.tournament} />
+          )}
+          {phase === 'results' && subTab === 'print' && (
+            <PrintView tournament={t.tournament} />
+          )}
         </div>
       </main>
 
-      <footer className="no-print text-center text-xs text-fg-muted py-4 space-y-1">
-        <div>
-          {tr('app.tagline')} ·{' '}
-          <button
-            type="button"
-            onClick={() => setPrivacyOpen(true)}
-            className="underline hover:text-fg"
-          >
-            {tr('app.privacyLink')}
-          </button>
-        </div>
+      {/* Mobile bottom nav */}
+      <PhaseNav current={phase} onChange={setPhase} phases={phases} variant="bottom" />
+
+      <footer className="no-print text-center text-xs text-fg-subtle py-4 pb-20 sm:pb-4">
         <div className="opacity-70">
-          v{__APP_VERSION__} · {__BUILD_DATE__}
+          {tr('app.tagline')}
         </div>
       </footer>
-      <PrivacyDialog open={privacyOpen} onClose={closePrivacy} />
+
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        tournament={t.tournament}
+        isOwner={isOwner}
+        syncStatus={sync.status}
+        syncRole={sync.role}
+        syncError={sync.error}
+        onSyncCreate={sync.createSession}
+        onSyncJoin={sync.joinSession}
+        onSyncLeave={sync.leaveSession}
+        onExport={handleExport}
+        onImport={handleImport}
+        onReset={handleReset}
+      />
       <UpdatePrompt />
       {showOnboarding && (
         <OnboardingDialog onDone={finishOnboarding} onImport={handleImport} />
       )}
     </div>
+  )
+}
+
+function TennisLogo() {
+  return (
+    <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-cream/15 border border-cream/20 shrink-0">
+      <svg
+        viewBox="0 0 24 24"
+        className="h-6 w-6"
+        aria-hidden
+        fill="none"
+      >
+        <circle cx="12" cy="12" r="10" fill="#e5f04a" stroke="#1a3a2e" strokeWidth="1.5" />
+        <path
+          d="M3.5 8.5 c 4 1.5 9 1.5 17 0"
+          stroke="#1a3a2e"
+          strokeWidth="1.2"
+          fill="none"
+        />
+        <path
+          d="M3.5 15.5 c 4 -1.5 9 -1.5 17 0"
+          stroke="#1a3a2e"
+          strokeWidth="1.2"
+          fill="none"
+        />
+      </svg>
+    </span>
+  )
+}
+
+function SyncIndicator({
+  status,
+  role,
+}: {
+  status: 'disabled' | 'connecting' | 'live' | 'offline' | 'error'
+  role: 'none' | 'owner' | 'viewer'
+  label: string
+}) {
+  const color =
+    status === 'live'
+      ? 'bg-emerald-300'
+      : status === 'connecting'
+        ? 'bg-amber-300 animate-pulse'
+        : 'bg-rose-400'
+  return (
+    <span
+      role="status"
+      className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5"
+    >
+      <span className={`inline-block h-2 w-2 rounded-full ${color}`} />
+      <span className="text-[10px] uppercase tracking-wider font-semibold text-cream/85">
+        {role === 'viewer' ? 'View' : 'Live'}
+      </span>
+    </span>
   )
 }
 

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <g fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.9">
+    <!-- Court outer rectangle -->
+    <rect x="20" y="40" width="200" height="160" />
+    <!-- Service boxes -->
+    <line x1="20" y1="80" x2="220" y2="80" />
+    <line x1="20" y1="160" x2="220" y2="160" />
+    <!-- Center service line -->
+    <line x1="120" y1="80" x2="120" y2="160" />
+    <!-- Center net -->
+    <line x1="20" y1="120" x2="220" y2="120" stroke-width="2.5" />
+    <!-- Center marks -->
+    <line x1="120" y1="35" x2="120" y2="45" />
+    <line x1="120" y1="195" x2="120" y2="205" />
+    <!-- Singles sidelines -->
+    <line x1="40" y1="40" x2="40" y2="200" stroke-dasharray="4,4" opacity="0.55" />
+    <line x1="200" y1="40" x2="200" y2="200" stroke-dasharray="4,4" opacity="0.55" />
+  </g>
+</svg>

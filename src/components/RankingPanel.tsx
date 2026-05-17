@@ -16,6 +16,10 @@ import type { RotationRanking } from '../ranking'
 import { useTranslation } from '../i18n'
 import { RevealPanel } from './RevealPanel'
 import { EmptyState } from './EmptyState'
+import { Podium, type PodiumEntry } from './Podium'
+import { Card } from './ui/Card'
+import { Button } from './ui/Button'
+import { Avatar } from './ui/Avatar'
 
 function groupsFor(t: Tournament): Entry[][] {
   if (t.groupAssignment.length === t.groupCount) {
@@ -55,19 +59,22 @@ export function RankingPanel({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {f === 'rotation' && isOwner && onSetRevealActive && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => onSetRevealActive(true)}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm text-white font-medium hover:bg-brand-hover"
-          >
-            {t('ranking.startReveal')}
-          </button>
-        </div>
+        <Card variant="elevated" className="bg-gold-soft border-gold/40 p-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="text-3xl shrink-0" aria-hidden>🎉</div>
+            <div className="flex-1 min-w-[10rem]">
+              <div className="serif font-semibold text-fg">{t('reveal.heading')}</div>
+              <p className="text-xs text-fg-muted">{t('reveal.controllerHint')}</p>
+            </div>
+            <Button variant="gold" size="md" onClick={() => onSetRevealActive(true)}>
+              {t('ranking.startReveal')}
+            </Button>
+          </div>
+        </Card>
       )}
-      {f === 'rotation' && <RotationRanking tournament={tournament} />}
+      {f === 'rotation' && <RotationRankingView tournament={tournament} />}
       {f === 'groups' && <GroupsRanking tournament={tournament} />}
       {f === 'knockout' && <KnockoutRanking tournament={tournament} />}
       {f === 'groups-ko' && <GroupsKoRanking tournament={tournament} />}
@@ -77,7 +84,7 @@ export function RankingPanel({
 
 type RotationRow = RotationRanking
 
-function RotationRanking({ tournament }: Props) {
+function RotationRankingView({ tournament }: Props) {
   const { t } = useTranslation()
   const rows = useMemo(
     () => computeRotationRanking(tournament.schedule, tournament.players),
@@ -122,49 +129,55 @@ function RotationRanking({ tournament }: Props) {
       />
     )
 
-  const podium = rows.slice(0, 3)
-
   return (
     <div className="space-y-6">
-      <div className="text-sm text-fg-muted">
+      <p className="text-xs text-fg-muted">
         {t('ranking.matchesProgress', { done: completed, total })}
         {completed < total && t('ranking.liveSuffix')}
-      </div>
-      <section className="space-y-4">
-        {showPerGender && (
-          <h3 className="text-base font-semibold text-fg">
-            {t('ranking.overall')}
-          </h3>
-        )}
-        {podium.length >= 3 && <Podium podium={podium.map(rowToPodium)} />}
-        <RankingTable rows={rows.map(rowToTableRow)} />
-      </section>
-      {showPerGender && (
-        <GenderRanking title={t('ranking.women')} rows={womenRows} />
+      </p>
+      <RankingSection
+        title={showPerGender ? t('ranking.overall') : undefined}
+        rows={rows}
+      />
+      {showPerGender && womenRows.length > 0 && (
+        <RankingSection title={t('ranking.women')} rows={womenRows} />
       )}
-      {showPerGender && (
-        <GenderRanking title={t('ranking.men')} rows={menRows} />
+      {showPerGender && menRows.length > 0 && (
+        <RankingSection title={t('ranking.men')} rows={menRows} />
       )}
     </div>
   )
 }
 
-function GenderRanking({
+function RankingSection({
   title,
   rows,
 }: {
-  title: string
+  title?: string
   rows: RotationRow[]
 }) {
-  if (rows.length === 0) return null
   const podium = rows.slice(0, 3)
   return (
     <section className="space-y-4">
-      <h3 className="text-base font-semibold text-fg">{title}</h3>
-      {podium.length >= 3 && <Podium podium={podium.map(rowToPodium)} />}
+      {title && (
+        <h2 className="serif text-xl font-semibold border-b border-border pb-1.5">
+          {title}
+        </h2>
+      )}
+      {podium.length >= 3 && (
+        <Podium entries={podium.map(rowToPodiumEntry)} size="compact" />
+      )}
       <RankingTable rows={rows.map(rowToTableRow)} />
     </section>
   )
+}
+
+function rowToPodiumEntry(r: RotationRow): PodiumEntry {
+  return {
+    rank: r.rank as 1 | 2 | 3,
+    name: r.name,
+    subtitle: `${r.wins} S · ${r.diff > 0 ? '+' : ''}${r.diff}`,
+  }
 }
 
 function rowToTableRow(r: RotationRow): TableRow {
@@ -221,11 +234,8 @@ function GroupsRanking({ tournament }: Props) {
         )
         const standings = groupStandings(group, matches)
         return (
-          <div
-            key={gi}
-            className="rounded-md border border-border bg-surface p-3"
-          >
-            <h3 className="font-semibold mb-2">
+          <Card key={gi} variant="base" className="p-4">
+            <h3 className="serif font-semibold mb-3">
               {t('ranking.groupHeading', { letter: groupLetter(groupNum) })}
             </h3>
             <RankingTable
@@ -241,7 +251,7 @@ function GroupsRanking({ tournament }: Props) {
                 diff: s.diff,
               }))}
             />
-          </div>
+          </Card>
         )
       })}
     </div>
@@ -306,11 +316,8 @@ function GroupsKoRanking({ tournament }: Props) {
             )
             const standings = groupStandings(group, matches)
             return (
-              <div
-                key={gi}
-                className="rounded-md border border-border bg-surface p-3"
-              >
-                <h3 className="font-semibold mb-2">
+              <Card key={gi} variant="base" className="p-4">
+                <h3 className="serif font-semibold mb-2">
                   {t('ranking.groupHeading', { letter: groupLetter(groupNum) })}
                 </h3>
                 <RankingTable
@@ -326,7 +333,7 @@ function GroupsKoRanking({ tournament }: Props) {
                     diff: s.diff,
                   }))}
                 />
-              </div>
+              </Card>
             )
           })}
         </div>
@@ -356,94 +363,40 @@ function BracketSummary({
   return (
     <div className="space-y-4">
       {champion ? (
-        <div className="rounded-md bg-brand-soft border border-emerald-300 p-4 text-center">
-          <div className="text-3xl mb-1">🏆</div>
-          <div className="text-xs text-brand font-medium uppercase tracking-wide">
+        <Card variant="hero" className="bg-court-pattern text-cream text-center p-6">
+          <div className="text-5xl mb-2 animate-gold-glow inline-block rounded-full px-4 py-2">🏆</div>
+          <div className="text-xs uppercase tracking-wider font-semibold text-cream/80">
             {t('ranking.champion')}
           </div>
-          <div className="text-2xl font-bold text-brand-soft-fg">
+          <div className="serif text-3xl sm:text-4xl font-semibold mt-1">
             {champion}
           </div>
-        </div>
+        </Card>
       ) : (
-        <div className="rounded-md border border-dashed border-border-strong bg-surface-muted px-4 py-3 text-center text-sm text-fg-muted">
+        <div className="rounded-card border border-dashed border-border-strong bg-surface-muted px-4 py-3 text-center text-sm text-fg-muted">
           {t('ranking.finalPending')}
         </div>
       )}
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-md border border-border p-3">
-          <div className="text-xs text-fg-muted mb-1">{t('ranking.finalist')}</div>
-          <div className="font-semibold">{runnerUp ?? t('common.dash')}</div>
-        </div>
-        <div className="rounded-md border border-border p-3">
-          <div className="text-xs text-fg-muted mb-1">
+        <Card variant="base" className="p-3">
+          <div className="text-xs uppercase tracking-wider text-fg-muted mb-1">
+            {t('ranking.finalist')}
+          </div>
+          <div className="serif font-semibold text-base">
+            {runnerUp ?? t('common.dash')}
+          </div>
+        </Card>
+        <Card variant="base" className="p-3">
+          <div className="text-xs uppercase tracking-wider text-fg-muted mb-1">
             {t('ranking.semiLosers')}
           </div>
-          <div className="font-semibold">
+          <div className="serif font-semibold text-base">
             {thirds.length > 0 ? thirds.join(', ') : t('common.dash')}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   )
-}
-
-interface PodiumRow {
-  name: string
-  wins: number
-  diff: number
-}
-
-function rowToPodium(r: RotationRow): PodiumRow {
-  return { name: r.name, wins: r.wins, diff: r.diff }
-}
-
-function Podium({ podium }: { podium: PodiumRow[] }) {
-  return (
-    <div className="grid grid-cols-3 gap-2 items-end">
-      <PodiumStep row={podium[1]} place={2} height="h-24" tone="bg-slate-300" />
-      <PodiumStep row={podium[0]} place={1} height="h-32" tone="bg-warn-bg" />
-      <PodiumStep row={podium[2]} place={3} height="h-20" tone="bg-orange-300" />
-    </div>
-  )
-}
-
-function PodiumStep({
-  row,
-  place,
-  height,
-  tone,
-}: {
-  row: PodiumRow
-  place: number
-  height: string
-  tone: string
-}) {
-  const { t } = useTranslation()
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="text-2xl">{medal(place)}</div>
-      <div className="font-semibold text-center text-sm">{row.name}</div>
-      <div className="text-xs text-fg-muted">
-        {t('ranking.podiumWinsDiff', {
-          wins: row.wins,
-          diff: (row.diff > 0 ? '+' : '') + row.diff,
-        })}
-      </div>
-      <div
-        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-fg`}
-      >
-        {place}
-      </div>
-    </div>
-  )
-}
-
-function medal(rank: number): string {
-  if (rank === 1) return '🥇'
-  if (rank === 2) return '🥈'
-  if (rank === 3) return '🥉'
-  return ''
 }
 
 interface TableRow {
@@ -458,64 +411,83 @@ interface TableRow {
   diff: number
 }
 
+function medal(rank: number): string {
+  if (rank === 1) return '🥇'
+  if (rank === 2) return '🥈'
+  if (rank === 3) return '🥉'
+  return ''
+}
+
 function RankingTable({ rows }: { rows: TableRow[] }) {
   const { t } = useTranslation()
   return (
-    <div className="overflow-x-auto rounded-md border border-border bg-surface">
+    <Card variant="base" className="overflow-x-auto p-0">
       <table className="w-full text-sm 2xl:text-lg">
         <thead>
-          <tr className="bg-surface-sunken text-fg text-left">
-            <th className="px-2 py-2 w-10">#</th>
-            <th className="px-2 py-2">{t('ranking.col.name')}</th>
-            <th className="px-2 py-2 text-right" title={t('ranking.col.played')}>
+          <tr className="bg-surface-sunken text-fg-muted text-left text-xs uppercase tracking-wider">
+            <th className="px-3 py-2 font-semibold w-12">#</th>
+            <th className="px-3 py-2 font-semibold">{t('ranking.col.name')}</th>
+            <th className="px-2 py-2 font-semibold text-right" title={t('ranking.col.played')}>
               <abbr title={t('ranking.col.played')} className="no-underline">
                 {t('ranking.col.playedShort')}
               </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title={t('ranking.col.wins')}>
+            <th className="px-2 py-2 font-semibold text-right" title={t('ranking.col.wins')}>
               <abbr title={t('ranking.col.wins')} className="no-underline">
                 {t('ranking.col.winsShort')}
               </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title={t('ranking.col.draws')}>
+            <th className="px-2 py-2 font-semibold text-right" title={t('ranking.col.draws')}>
               <abbr title={t('ranking.col.draws')} className="no-underline">
                 {t('ranking.col.drawsShort')}
               </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title={t('ranking.col.losses')}>
+            <th className="px-2 py-2 font-semibold text-right" title={t('ranking.col.losses')}>
               <abbr title={t('ranking.col.losses')} className="no-underline">
                 {t('ranking.col.lossesShort')}
               </abbr>
             </th>
-            <th className="px-2 py-2 text-right" title={t('ranking.col.gamesTitle')}>
+            <th className="px-2 py-2 font-semibold text-right" title={t('ranking.col.gamesTitle')}>
               {t('ranking.col.games')}
             </th>
-            <th className="px-2 py-2 text-right" title={t('ranking.col.diffTitle')}>
+            <th className="px-3 py-2 font-semibold text-right" title={t('ranking.col.diffTitle')}>
               {t('ranking.col.diff')}
             </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-t border-border">
-              <td className="px-2 py-1.5 2xl:py-3 font-semibold">
-                {medal(r.rank)} {r.rank}.
+            <tr
+              key={i}
+              className={[
+                'border-t border-border transition-colors hover:bg-surface-muted',
+                r.rank === 1 ? 'bg-gold-soft/30' : '',
+              ].join(' ')}
+            >
+              <td className="px-3 py-2 2xl:py-3 tabular">
+                <span className="inline-flex items-center gap-1 font-semibold">
+                  {r.rank <= 3 && <span aria-hidden>{medal(r.rank)}</span>}
+                  {r.rank}.
+                </span>
               </td>
-              <td className="px-2 py-1.5 2xl:py-3">{r.name}</td>
-              <td className="px-2 py-1.5 2xl:py-3 text-right">{r.played}</td>
-              <td className="px-2 py-1.5 2xl:py-3 text-right text-brand">
+              <td className="px-3 py-2 2xl:py-3 flex items-center gap-2">
+                <Avatar name={r.name} size="xs" />
+                <span className="truncate">{r.name}</span>
+              </td>
+              <td className="px-2 py-2 2xl:py-3 text-right tabular">{r.played}</td>
+              <td className="px-2 py-2 2xl:py-3 text-right tabular text-brand font-semibold">
                 {r.wins}
               </td>
-              <td className="px-2 py-1.5 2xl:py-3 text-right text-fg-muted">
+              <td className="px-2 py-2 2xl:py-3 text-right tabular text-fg-muted">
                 {r.draws}
               </td>
-              <td className="px-2 py-1.5 2xl:py-3 text-right text-danger-fg">
+              <td className="px-2 py-2 2xl:py-3 text-right tabular text-danger-fg">
                 {r.losses}
               </td>
-              <td className="px-2 py-1.5 2xl:py-3 text-right tabular-nums">
+              <td className="px-2 py-2 2xl:py-3 text-right tabular">
                 {r.for}:{r.against}
               </td>
-              <td className="px-2 py-1.5 2xl:py-3 text-right tabular-nums font-medium">
+              <td className="px-3 py-2 2xl:py-3 text-right tabular font-medium">
                 {r.diff > 0 ? '+' : ''}
                 {r.diff}
               </td>
@@ -523,6 +495,6 @@ function RankingTable({ rows }: { rows: TableRow[] }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </Card>
   )
 }

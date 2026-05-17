@@ -21,6 +21,7 @@ import type { Gender, Player } from '../types'
 import { useConfirm } from '../hooks/useConfirm'
 import { useTranslation } from '../i18n'
 import { EmptyState } from './EmptyState'
+import { Avatar, Button, Card, Pill, Sheet } from './ui'
 
 interface Props {
   players: Player[]
@@ -31,13 +32,15 @@ interface Props {
   onArrayMove: (newOrder: Player[]) => void
 }
 
-interface RowProps {
+function PlayerRow({
+  player,
+  onUpdate,
+  onRemove,
+}: {
   player: Player
   onUpdate: Props['onUpdate']
   onRemove: Props['onRemove']
-}
-
-function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
+}) {
   const confirm = useConfirm()
   const { t } = useTranslation()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -51,55 +54,28 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 rounded-md border border-border bg-surface p-2"
+      className="flex items-center gap-2 rounded-card border border-border bg-surface p-2 shadow-card"
     >
       <button
         type="button"
-        className="icon-btn cursor-grab active:cursor-grabbing touch-none text-fg-subtle"
+        className="inline-flex items-center justify-center min-w-[28px] min-h-[44px] rounded-md cursor-grab active:cursor-grabbing touch-none text-fg-subtle hover:text-fg hover:bg-surface-sunken"
         aria-label={t('common.move')}
         {...attributes}
         {...listeners}
       >
         <DragHandleIcon />
       </button>
+      <Avatar name={player.name} gender={player.gender} size="md" />
       <input
         type="text"
         value={player.name}
         onChange={(e) => onUpdate(player.id, { name: e.target.value })}
-        className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+        className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
       />
-      <div className="flex rounded-md border border-border-strong overflow-hidden text-xs">
-        <button
-          type="button"
-          onClick={() => onUpdate(player.id, { gender: 'F' })}
-          aria-pressed={player.gender === 'F'}
-          aria-label={t('gender.female')}
-          className={
-            'inline-flex items-center gap-1 px-3 min-h-[40px] ' +
-            (player.gender === 'F'
-              ? 'bg-pink-100 text-pink-800 font-medium dark:bg-pink-900/40 dark:text-pink-200'
-              : 'bg-surface text-fg-muted hover:bg-surface-muted')
-          }
-        >
-          <span aria-hidden>♀</span>
-          <span>{t('gender.female')}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onUpdate(player.id, { gender: 'M' })}
-          aria-pressed={player.gender === 'M'}
-          aria-label={t('gender.male')}
-          className={
-            'inline-flex items-center gap-1 px-3 min-h-[40px] border-l border-border-strong ' +
-            (player.gender === 'M'
-              ? 'bg-sky-100 text-sky-800 font-medium dark:bg-sky-900/40 dark:text-sky-200'
-              : 'bg-surface text-fg-muted hover:bg-surface-muted')
-          }
-        >
-          <span aria-hidden>♂</span>
-          <span>{t('gender.male')}</span>
-        </button>
-      </div>
+      <GenderToggle
+        value={player.gender}
+        onChange={(g) => onUpdate(player.id, { gender: g })}
+      />
       <button
         type="button"
         onClick={async () => {
@@ -110,7 +86,7 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
           })
           if (ok) onRemove(player.id)
         }}
-        className="icon-btn hover:text-danger-fg hover:bg-danger-bg/30"
+        className="inline-flex items-center justify-center min-w-[40px] min-h-[44px] rounded-md text-fg-subtle hover:text-danger-fg hover:bg-danger-bg/40 transition-colors"
         aria-label={t('common.remove')}
       >
         ✕
@@ -119,15 +95,55 @@ function PlayerRow({ player, onUpdate, onRemove }: RowProps) {
   )
 }
 
+function GenderToggle({
+  value,
+  onChange,
+}: {
+  value: Gender
+  onChange: (g: Gender) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div
+      role="group"
+      aria-label="Geschlecht"
+      className="inline-flex items-center rounded-full bg-surface-sunken p-0.5 text-xs"
+    >
+      <button
+        type="button"
+        onClick={() => onChange('F')}
+        aria-pressed={value === 'F'}
+        aria-label={t('gender.female')}
+        className={[
+          'inline-flex items-center justify-center min-h-[36px] min-w-[36px] rounded-full px-2.5 font-semibold transition-colors',
+          value === 'F'
+            ? 'bg-clay text-white shadow-sm'
+            : 'text-fg-muted hover:text-fg',
+        ].join(' ')}
+      >
+        ♀
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('M')}
+        aria-pressed={value === 'M'}
+        aria-label={t('gender.male')}
+        className={[
+          'inline-flex items-center justify-center min-h-[36px] min-w-[36px] rounded-full px-2.5 font-semibold transition-colors',
+          value === 'M'
+            ? 'bg-court text-cream shadow-sm'
+            : 'text-fg-muted hover:text-fg',
+        ].join(' ')}
+      >
+        ♂
+      </button>
+    </div>
+  )
+}
+
 function DragHandleIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
       <circle cx="5" cy="3" r="1.4" />
       <circle cx="5" cy="8" r="1.4" />
       <circle cx="5" cy="13" r="1.4" />
@@ -149,6 +165,7 @@ export function PlayersPanel({
   const { t } = useTranslation()
   const [draftName, setDraftName] = useState('')
   const [draftGender, setDraftGender] = useState<Gender>('F')
+  const [bulkOpen, setBulkOpen] = useState(false)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
@@ -169,6 +186,7 @@ export function PlayersPanel({
     if (!draftName.trim()) return
     onAdd(draftName, draftGender)
     setDraftName('')
+    nameInputRef.current?.focus()
   }
 
   const counts = {
@@ -180,84 +198,49 @@ export function PlayersPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <input
-          ref={nameInputRef}
-          type="text"
-          placeholder={t('players.namePlaceholder')}
-          value={draftName}
-          onChange={(e) => setDraftName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="flex-1 min-w-[12rem] min-h-[44px] rounded-md border border-border-strong px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"
-        />
-        <div className="flex rounded-md border border-border-strong overflow-hidden">
+      {/* Sticky add-bar */}
+      <Card variant="flat" className="p-3 space-y-2 sticky top-[112px] sm:top-[160px] z-[4]">
+        <div className="flex gap-2">
+          <input
+            ref={nameInputRef}
+            type="text"
+            placeholder={t('players.namePlaceholder')}
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
+            className="flex-1 min-w-0 min-h-[44px] rounded-md border border-border-strong bg-surface px-3 py-2 focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none"
+          />
+          <GenderToggle value={draftGender} onChange={setDraftGender} />
+          <Button onClick={submit} variant="primary" size="md">
+            {t('common.add')}
+          </Button>
+        </div>
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="text-fg-muted">
+            <span className="font-semibold text-fg tabular">{players.length}</span>{' '}
+            · <span className="text-clay">♀ {counts.F}</span> ·{' '}
+            <span className="text-court">♂ {counts.M}</span>
+          </span>
           <button
             type="button"
-            onClick={() => setDraftGender('F')}
-            aria-pressed={draftGender === 'F'}
-            aria-label={t('gender.female')}
-            className={
-              'inline-flex items-center gap-1 px-3 text-sm min-h-[44px] ' +
-              (draftGender === 'F'
-                ? 'bg-pink-100 text-pink-800 font-medium dark:bg-pink-900/40 dark:text-pink-200'
-                : 'bg-surface text-fg-muted hover:bg-surface-muted')
-            }
+            onClick={() => setBulkOpen(true)}
+            className="text-brand hover:underline font-medium"
           >
-            <span aria-hidden>♀</span>
-            <span>{t('gender.female')}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setDraftGender('M')}
-            aria-pressed={draftGender === 'M'}
-            aria-label={t('gender.male')}
-            className={
-              'inline-flex items-center gap-1 px-3 text-sm min-h-[44px] border-l border-border-strong ' +
-              (draftGender === 'M'
-                ? 'bg-sky-100 text-sky-800 font-medium dark:bg-sky-900/40 dark:text-sky-200'
-                : 'bg-surface text-fg-muted hover:bg-surface-muted')
-            }
-          >
-            <span aria-hidden>♂</span>
-            <span>{t('gender.male')}</span>
+            + {t('players.bulkImport')}
           </button>
         </div>
-        <button
-          type="button"
-          onClick={submit}
-          className="btn-primary"
-        >
-          {t('common.add')}
-        </button>
-      </div>
+      </Card>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
-        <span>
-          {t('players.count', { count: players.length, women: counts.F, men: counts.M })}
-        </span>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => onSort('name')}
-          className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
-        >
-          {t('common.sortAZ')}
-        </button>
-        <button
-          type="button"
-          onClick={() => onSort('women-first')}
-          className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
-        >
-          {t('players.sortWomenFirst')}
-        </button>
-        <button
-          type="button"
-          onClick={() => onSort('men-first')}
-          className="rounded-md border border-border-strong px-3 py-1.5 min-h-[36px] hover:border-brand-hover"
-        >
-          {t('players.sortMenFirst')}
-        </button>
-      </div>
+      {players.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-fg-subtle">
+            Sort
+          </span>
+          <SortPill onClick={() => onSort('name')}>A→Z</SortPill>
+          <SortPill onClick={() => onSort('women-first')}>♀ first</SortPill>
+          <SortPill onClick={() => onSort('men-first')}>♂ first</SortPill>
+        </div>
+      )}
 
       {players.length === 0 ? (
         <EmptyState
@@ -265,13 +248,9 @@ export function PlayersPanel({
           title={t('players.empty.title')}
           description={t('players.empty.description')}
           action={
-            <button
-              type="button"
-              onClick={() => nameInputRef.current?.focus()}
-              className="btn-primary"
-            >
+            <Button onClick={() => nameInputRef.current?.focus()}>
               {t('players.empty.action')}
-            </button>
+            </Button>
           }
         />
       ) : (
@@ -297,6 +276,104 @@ export function PlayersPanel({
           </SortableContext>
         </DndContext>
       )}
+
+      <BulkImportSheet
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onAdd={onAdd}
+        defaultGender={draftGender}
+      />
     </div>
+  )
+}
+
+function SortPill({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center rounded-full bg-surface-sunken hover:bg-surface-muted px-3 py-1 text-xs font-medium text-fg-muted hover:text-fg transition-colors min-h-[32px]"
+    >
+      {children}
+    </button>
+  )
+}
+
+function BulkImportSheet({
+  open,
+  onClose,
+  onAdd,
+  defaultGender,
+}: {
+  open: boolean
+  onClose: () => void
+  onAdd: (name: string, gender: Gender) => void
+  defaultGender: Gender
+}) {
+  const { t } = useTranslation()
+  const [raw, setRaw] = useState('')
+
+  const parsed = raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const parts = line.split(/[;,]/).map((s) => s.trim())
+      const name = parts[0] ?? ''
+      const tag = (parts[1] ?? '').toLowerCase()
+      const gender: Gender = tag === 'm' || tag === 'h' ? 'M' : tag === 'f' || tag === 'w' || tag === 'd' ? 'F' : defaultGender
+      return { name, gender }
+    })
+    .filter((p) => p.name.length > 0)
+
+  const submit = () => {
+    parsed.forEach((p) => onAdd(p.name, p.gender))
+    setRaw('')
+    onClose()
+  }
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={t('players.bulkImport.title')}
+      description={t('players.bulkImport.description')}
+    >
+      <div className="space-y-3">
+        <textarea
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          placeholder={t('players.bulkImport.placeholder')}
+          rows={8}
+          className="w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm font-mono focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none resize-y"
+        />
+        {parsed.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+            {parsed.slice(0, 12).map((p, i) => (
+              <Pill key={`${p.name}-${i}`} tone={p.gender === 'F' ? 'gold' : 'brand'}>
+                {p.name} {p.gender === 'F' ? '♀' : '♂'}
+              </Pill>
+            ))}
+            {parsed.length > 12 && (
+              <Pill tone="neutral">+{parsed.length - 12}</Pill>
+            )}
+          </div>
+        )}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="ghost" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={submit} disabled={parsed.length === 0}>
+            {t('players.bulkImport.add', { count: parsed.length })}
+          </Button>
+        </div>
+      </div>
+    </Sheet>
   )
 }

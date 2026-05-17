@@ -1,16 +1,34 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { Tournament } from '../types'
 import { computePlayerStats, type PlayerStat } from '../statistics'
 import { useTranslation } from '../i18n'
 import { EmptyState } from './EmptyState'
+import { Card } from './ui/Card'
+import { Avatar } from './ui/Avatar'
+import { StatBar } from './ui/StatBar'
+import { TogglePill } from './ui/Pill'
 
 interface Props {
   tournament: Tournament
 }
 
+type SortBy = 'wins' | 'winRate' | 'diff' | 'played'
+
 export function StatisticsPanel({ tournament }: Props) {
   const { t } = useTranslation()
   const rows = useMemo(() => computePlayerStats(tournament), [tournament])
+  const [sortBy, setSortBy] = useState<SortBy>('wins')
+
+  const sorted = useMemo(() => {
+    const next = rows.slice()
+    next.sort((a, b) => {
+      if (sortBy === 'wins') return b.wins - a.wins || b.diff - a.diff
+      if (sortBy === 'winRate') return b.winRate - a.winRate || b.played - a.played
+      if (sortBy === 'diff') return b.diff - a.diff
+      return b.played - a.played
+    })
+    return next
+  }, [rows, sortBy])
 
   if (rows.length === 0) {
     return (
@@ -22,63 +40,56 @@ export function StatisticsPanel({ tournament }: Props) {
     )
   }
 
+  const maxWins = Math.max(1, ...rows.map((r) => r.wins))
+  const maxPlayed = Math.max(1, ...rows.map((r) => r.played))
+  const totalMatches = rows.reduce((acc, r) => acc + r.played, 0) / 2 // each match counted twice if doubles, but coarse OK
+  const totalWins = rows.reduce((acc, r) => acc + r.wins, 0)
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-fg-muted">{t('statistics.intro')}</p>
+      {/* Header strip with global stats */}
+      <Card variant="flat" className="p-3.5 flex items-center justify-around gap-4 text-center flex-wrap">
+        <Stat label="Spieler:innen" value={rows.length} />
+        <Divider />
+        <Stat label="Matches" value={Math.round(totalMatches)} />
+        <Divider />
+        <Stat label="Siege gesamt" value={totalWins} />
+      </Card>
 
-      <div className="overflow-x-auto rounded-md border border-border bg-surface">
-        <table className="w-full text-sm 2xl:text-base">
-          <thead>
-            <tr className="bg-surface-sunken text-fg text-left">
-              <th className="px-2 py-2">{t('statistics.col.player')}</th>
-              <th className="px-2 py-2 text-right">{t('statistics.col.played')}</th>
-              <th className="px-2 py-2 text-right">{t('statistics.col.wnl')}</th>
-              <th className="px-2 py-2 text-right">{t('statistics.col.winRate')}</th>
-              <th className="px-2 py-2 text-right tabular-nums">
-                {t('statistics.col.gamesFor')}/{t('statistics.col.gamesAgainst')}
-              </th>
-              <th className="px-2 py-2 text-right">{t('statistics.col.diff')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.playerId} className="border-t border-border">
-                <td className="px-2 py-1.5 font-medium">{r.name}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{r.played}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">
-                  <span className="text-brand">{r.wins}</span>
-                  <span className="text-fg-subtle">/</span>
-                  <span className="text-fg-muted">{r.draws}</span>
-                  <span className="text-fg-subtle">/</span>
-                  <span className="text-danger-fg">{r.losses}</span>
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">
-                  {Math.round(r.winRate * 100)}%
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">
-                  {r.gamesFor}:{r.gamesAgainst}
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums font-medium">
-                  {r.diff > 0 ? '+' : ''}
-                  {r.diff}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Sort pills */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[11px] uppercase tracking-wider font-semibold text-fg-subtle mr-1">
+          Sort
+        </span>
+        <TogglePill active={sortBy === 'wins'} onClick={() => setSortBy('wins')}>
+          Siege
+        </TogglePill>
+        <TogglePill active={sortBy === 'winRate'} onClick={() => setSortBy('winRate')}>
+          Quote
+        </TogglePill>
+        <TogglePill active={sortBy === 'diff'} onClick={() => setSortBy('diff')}>
+          Differenz
+        </TogglePill>
+        <TogglePill active={sortBy === 'played'} onClick={() => setSortBy('played')}>
+          Matches
+        </TogglePill>
       </div>
 
+      {/* Player stat cards */}
       <div className="grid gap-3 sm:grid-cols-2">
-        {rows.map((r) => (
-          <PartnerCard key={r.playerId} row={r} />
+        {sorted.map((r) => (
+          <PlayerStatCard
+            key={r.playerId}
+            row={r}
+            maxWins={maxWins}
+            maxPlayed={maxPlayed}
+          />
         ))}
       </div>
 
-      <details className="text-xs text-fg-muted rounded-md border border-border bg-surface">
-        <summary className="cursor-pointer list-none px-3 py-2 hover:text-fg">
-          <span aria-hidden className="inline-block transition-transform mr-2">
-            ▸
-          </span>
+      <details className="text-xs text-fg-muted rounded-card border border-border bg-surface">
+        <summary className="cursor-pointer list-none px-3 py-2.5 hover:text-fg">
+          <span aria-hidden className="inline-block transition-transform mr-2">▸</span>
           {t('statistics.legendTitle')}
         </summary>
         <ul className="px-4 pb-3 space-y-1 list-disc list-inside">
@@ -93,33 +104,91 @@ export function StatisticsPanel({ tournament }: Props) {
   )
 }
 
-function PartnerCard({ row }: { row: PlayerStat }) {
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="serif text-2xl font-semibold tabular leading-none">{value}</div>
+      <div className="text-[11px] uppercase tracking-wider text-fg-subtle mt-1">{label}</div>
+    </div>
+  )
+}
+
+function Divider() {
+  return <span className="w-px h-8 bg-border" aria-hidden />
+}
+
+function PlayerStatCard({
+  row,
+  maxWins,
+  maxPlayed,
+}: {
+  row: PlayerStat
+  maxWins: number
+  maxPlayed: number
+}) {
   const { t } = useTranslation()
   return (
-    <div className="rounded-md border border-border bg-surface p-3 text-sm">
-      <p className="font-semibold mb-2">{row.name}</p>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-        <dt className="text-fg-muted">{t('statistics.col.bestPartner')}</dt>
-        <dd className="text-fg">
-          {row.bestPartner
-            ? t('statistics.partnerSummary', {
-                name: row.bestPartner.name,
-                wins: row.bestPartner.wins,
-                played: row.bestPartner.played,
-              })
-            : t('statistics.noPartner')}
-        </dd>
-        <dt className="text-fg-muted">{t('statistics.col.bestOpponent')}</dt>
-        <dd className="text-fg">
-          {row.bestOpponent
-            ? t('statistics.opponentSummary', {
-                name: row.bestOpponent.name,
-                wins: row.bestOpponent.wins,
-                played: row.bestOpponent.played,
-              })
-            : t('statistics.noPartner')}
-        </dd>
-      </dl>
-    </div>
+    <Card variant="base" className="p-3.5 space-y-3">
+      <div className="flex items-center gap-2.5">
+        <Avatar name={row.name} size="md" />
+        <div className="min-w-0 flex-1">
+          <div className="serif font-semibold text-base truncate" title={row.name}>
+            {row.name}
+          </div>
+          <div className="text-xs text-fg-muted tabular">
+            {row.played} Matches · {Math.round(row.winRate * 100)}% Quote
+          </div>
+        </div>
+        <div
+          className={[
+            'serif font-bold text-xl tabular shrink-0 px-2 py-0.5 rounded-md',
+            row.diff > 0
+              ? 'text-brand bg-brand-soft'
+              : row.diff < 0
+                ? 'text-danger-fg bg-danger-bg'
+                : 'text-fg-muted bg-surface-sunken',
+          ].join(' ')}
+        >
+          {row.diff > 0 ? '+' : ''}
+          {row.diff}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <StatBar label="Siege" value={row.wins} max={maxWins} tone="brand" />
+        <StatBar label="Matches" value={row.played} max={maxPlayed} tone="silver" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border">
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-fg-subtle">
+            🤝 {t('statistics.col.bestPartner')}
+          </div>
+          <div className="text-fg truncate" title={row.bestPartner?.name ?? ''}>
+            {row.bestPartner
+              ? t('statistics.partnerSummary', {
+                  name: row.bestPartner.name,
+                  wins: row.bestPartner.wins,
+                  played: row.bestPartner.played,
+                })
+              : t('statistics.noPartner')}
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-fg-subtle">
+            ⚔️ {t('statistics.col.bestOpponent')}
+          </div>
+          <div className="text-fg truncate" title={row.bestOpponent?.name ?? ''}>
+            {row.bestOpponent
+              ? t('statistics.opponentSummary', {
+                  name: row.bestOpponent.name,
+                  wins: row.bestOpponent.wins,
+                  played: row.bestOpponent.played,
+                })
+              : t('statistics.noPartner')}
+          </div>
+        </div>
+      </div>
+    </Card>
   )
 }
