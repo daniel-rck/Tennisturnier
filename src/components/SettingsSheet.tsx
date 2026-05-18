@@ -71,7 +71,30 @@ export function SettingsSheet({
 
           {isOwner && (
             <Section title={t('settings.data')}>
-              <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: t('settings.newTournamentConfirm.title'),
+                    description: t('settings.newTournamentConfirm.description'),
+                    confirmLabel: t('settings.newTournamentConfirm.button'),
+                    destructive: true,
+                  })
+                  if (ok) {
+                    onReset()
+                    onClose()
+                  }
+                }}
+                className="w-full text-left rounded-card border border-border-strong bg-surface hover:border-brand-hover hover:bg-surface-muted transition-colors p-3 group"
+              >
+                <div className="font-semibold text-fg group-hover:text-brand transition-colors">
+                  {t('settings.newTournament')}
+                </div>
+                <div className="text-xs text-fg-muted mt-0.5">
+                  {t('settings.newTournamentHint')}
+                </div>
+              </button>
+              <div className="flex flex-wrap gap-2 pt-1">
                 <Button variant="secondary" size="sm" onClick={onExport}>
                   {t('settings.export')}
                 </Button>
@@ -92,24 +115,6 @@ export function SettingsSheet({
                   />
                 </label>
               </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  const ok = await confirm({
-                    title: t('setup.resetConfirm.title'),
-                    description: t('setup.resetConfirm.description'),
-                    confirmLabel: t('setup.resetConfirm.button'),
-                    destructive: true,
-                  })
-                  if (ok) {
-                    onReset()
-                    onClose()
-                  }
-                }}
-                className="text-sm text-danger-fg hover:opacity-80 underline mt-2"
-              >
-                {t('settings.reset')}
-              </button>
             </Section>
           )}
 
