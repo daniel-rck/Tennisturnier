@@ -10,6 +10,7 @@ export const de = {
   'app.syncStatusLabel': 'Sync-Status: {status} ({role})',
   'app.role.owner': 'Owner',
   'app.role.viewer': 'Viewer',
+  'header.new': 'Neu',
 
   // Tabs
   'tab.setup': 'Einstellungen',

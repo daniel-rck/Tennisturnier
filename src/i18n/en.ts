@@ -12,6 +12,7 @@ export const en: Record<TranslationKey, string> = {
   'app.syncStatusLabel': 'Sync status: {status} ({role})',
   'app.role.owner': 'Owner',
   'app.role.viewer': 'Viewer',
+  'header.new': 'New',
 
   // Tabs
   'tab.setup': 'Settings',

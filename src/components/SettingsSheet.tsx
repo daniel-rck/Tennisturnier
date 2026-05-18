@@ -1,6 +1,5 @@
 import type { Tournament } from '../types'
 import type { SyncRole, SyncStatus } from '../hooks/useSync'
-import { useConfirm } from '../hooks/useConfirm'
 import { useTranslation } from '../i18n'
 import { Sheet, Button } from './ui'
 import { ThemeToggle } from './ThemeToggle'
@@ -22,7 +21,6 @@ interface Props {
   onSyncLeave: () => void
   onExport: () => void
   onImport: (file: File) => void
-  onReset: () => void
 }
 
 export function SettingsSheet({
@@ -38,10 +36,8 @@ export function SettingsSheet({
   onSyncLeave,
   onExport,
   onImport,
-  onReset,
 }: Props) {
   const { t } = useTranslation()
-  const confirm = useConfirm()
   const [privacyOpen, setPrivacyOpen] = useState(false)
 
   return (
@@ -71,30 +67,7 @@ export function SettingsSheet({
 
           {isOwner && (
             <Section title={t('settings.data')}>
-              <button
-                type="button"
-                onClick={async () => {
-                  const ok = await confirm({
-                    title: t('settings.newTournamentConfirm.title'),
-                    description: t('settings.newTournamentConfirm.description'),
-                    confirmLabel: t('settings.newTournamentConfirm.button'),
-                    destructive: true,
-                  })
-                  if (ok) {
-                    onReset()
-                    onClose()
-                  }
-                }}
-                className="w-full text-left rounded-card border border-border-strong bg-surface hover:border-brand-hover hover:bg-surface-muted transition-colors p-3 group"
-              >
-                <div className="font-semibold text-fg group-hover:text-brand transition-colors">
-                  {t('settings.newTournament')}
-                </div>
-                <div className="text-xs text-fg-muted mt-0.5">
-                  {t('settings.newTournamentHint')}
-                </div>
-              </button>
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" size="sm" onClick={onExport}>
                   {t('settings.export')}
                 </Button>

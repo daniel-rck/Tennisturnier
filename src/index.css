@@ -9,8 +9,8 @@
   --color-surface-muted: #f5efe0;    /* Ivory — secondary surface */
   --color-surface-sunken: #ede5d0;   /* Deeper cream — sunken bg */
   --color-fg: #1a1a1a;
-  --color-fg-muted: #5a5a5a;
-  --color-fg-subtle: #8a8a8a;
+  --color-fg-muted: #4a4a4a;
+  --color-fg-subtle: #6a6a6a;
   --color-border: #e5dfd0;
   --color-border-strong: #c9c2a8;
 
@@ -108,8 +108,8 @@
     --color-surface-muted: #0f1314;
     --color-surface-sunken: #0a0d0e;
     --color-fg: #ede5cf;
-    --color-fg-muted: #9a9079;
-    --color-fg-subtle: #6a6356;
+    --color-fg-muted: #b8b09a;
+    --color-fg-subtle: #908874;
     --color-border: #2a3128;
     --color-border-strong: #404538;
 

@@ -188,6 +188,17 @@ function App() {
     setPhase('prep')
   }
 
+  const handleNewTournament = useCallback(async () => {
+    const ok = await confirm({
+      title: tr('settings.newTournamentConfirm.title'),
+      description: tr('settings.newTournamentConfirm.description'),
+      confirmLabel: tr('settings.newTournamentConfirm.button'),
+      destructive: true,
+    })
+    if (ok) handleReset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tr])
+
   const handleReshuffle = () => {
     t.snapshot()
     t.reshuffleGroups()
@@ -307,6 +318,17 @@ function App() {
               className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-cream/85 hover:text-cream hover:bg-white/10 disabled:text-cream/30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
             >
               <span aria-hidden className="text-lg">↶</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleNewTournament}
+              disabled={!isOwner}
+              aria-label={tr('settings.newTournament')}
+              title={tr('settings.newTournament')}
+              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-cream/85 hover:text-cream hover:bg-white/10 disabled:text-cream/30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+            >
+              <span aria-hidden className="text-lg leading-none">＋</span>
+              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-sm">{tr('header.new')}</span>
             </button>
             <button
               type="button"
@@ -494,7 +516,6 @@ function App() {
         onSyncLeave={sync.leaveSession}
         onExport={handleExport}
         onImport={handleImport}
-        onReset={handleReset}
       />
       <UpdatePrompt />
       {showOnboarding && (
