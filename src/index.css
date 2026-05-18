@@ -4,57 +4,98 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @theme {
-  --color-surface: #ffffff;
-  --color-surface-muted: #f8fafc;
-  --color-surface-sunken: #f1f5f9;
-  --color-fg: #0f172a;
-  --color-fg-muted: #475569;
-  --color-fg-subtle: #64748b;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
-  --color-brand: #047857;
-  --color-brand-hover: #065f46;
-  --color-brand-soft: #d1fae5;
-  --color-brand-soft-fg: #065f46;
-  --color-warn-bg: #fef3c7;
-  --color-warn-fg: #92400e;
-  --color-danger-bg: #fee2e2;
-  --color-danger-fg: #b91c1c;
+  /* Centre Court palette — Wimbledon-inspired premium. */
+  --color-surface: #faf7f0;          /* Wimbledon cream — primary surface */
+  --color-surface-muted: #f5efe0;    /* Ivory — secondary surface */
+  --color-surface-sunken: #ede5d0;   /* Deeper cream — sunken bg */
+  --color-fg: #1a1a1a;
+  --color-fg-muted: #4a4a4a;
+  --color-fg-subtle: #6a6a6a;
+  --color-border: #e5dfd0;
+  --color-border-strong: #c9c2a8;
 
+  /* Brand = dark Wimbledon green */
+  --color-brand: #1a3a2e;
+  --color-brand-hover: #0f2620;
+  --color-brand-soft: #e8f0ec;
+  --color-brand-soft-fg: #0f2620;
+
+  /* Secondary court colors */
+  --color-court: #1a3a2e;
+  --color-court-deep: #0f2620;
+  --color-court-soft: #e8f0ec;
+  --color-grass: #4a7c59;
+  --color-cream: #faf7f0;
+  --color-ivory: #f5efe0;
+
+  /* Accent / status */
+  --color-clay: #c97b5f;
+  --color-clay-soft: #faeae1;
+  --color-gold: #c9a961;
+  --color-gold-soft: #f7f0d8;
+  --color-silver: #a8a8a8;
+  --color-bronze: #b8783e;
+  --color-warn-bg: #faeae1;
+  --color-warn-fg: #8a4a2a;
+  --color-danger-bg: #f5d6d6;
+  --color-danger-fg: #a02828;
+
+  /* Typography */
+  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Radius */
+  --radius-card: 16px;
+  --radius-sm: 8px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.04);
+  --shadow-elevated: 0 4px 8px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.08);
+  --shadow-court: 0 8px 32px rgb(26 58 46 / 0.16);
+
+  /* Animations */
   --animate-fade-in: fade-in 150ms ease-out both;
   --animate-scale-fade-in: scale-fade-in 120ms ease-out both;
   --animate-slide-in-right: slide-in-right 180ms ease-out both;
+  --animate-slide-up: slide-up 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-pulse-brand: pulse-brand 600ms ease-out both;
+  --animate-score-pop: score-pop 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-live-pulse: live-pulse 2s ease-in-out infinite;
+  --animate-gold-glow: gold-glow 3s ease-in-out infinite;
 }
 
 @utility btn-primary {
   @apply inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white min-h-[44px];
-  @apply hover:bg-brand-hover;
+  @apply hover:bg-brand-hover transition-colors;
   @apply disabled:bg-surface-sunken disabled:text-fg-subtle disabled:border disabled:border-dashed disabled:border-border-strong disabled:cursor-not-allowed;
 }
 
 @utility btn-secondary {
   @apply inline-flex items-center justify-center gap-2 rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-fg min-h-[44px];
-  @apply hover:border-brand-hover;
+  @apply hover:border-brand-hover hover:bg-surface-muted transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 @utility btn-danger {
   @apply inline-flex items-center justify-center gap-2 rounded-md bg-danger-fg px-4 py-2 text-sm font-medium text-white min-h-[44px];
-  @apply hover:opacity-90;
+  @apply hover:opacity-90 transition-opacity;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 @utility btn-ghost {
   @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm text-fg-muted min-h-[44px];
-  @apply hover:text-fg hover:bg-surface-sunken;
+  @apply hover:text-fg hover:bg-surface-sunken transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 @utility icon-btn {
   @apply inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-fg-muted;
-  @apply hover:text-fg hover:bg-surface-sunken;
+  @apply hover:text-fg hover:bg-surface-sunken transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 @layer base {
@@ -63,49 +104,91 @@
   }
   :root[data-theme='dark'] {
     color-scheme: dark;
-    --color-surface: #1e293b;
-    --color-surface-muted: #0f172a;
-    --color-surface-sunken: #0b1220;
-    --color-fg: #e2e8f0;
-    --color-fg-muted: #94a3b8;
-    --color-fg-subtle: #64748b;
-    --color-border: #334155;
-    --color-border-strong: #475569;
-    --color-brand: #10b981;
-    --color-brand-hover: #34d399;
-    --color-brand-soft: #064e3b;
-    --color-brand-soft-fg: #6ee7b7;
-    --color-warn-bg: #422006;
-    --color-warn-fg: #fcd34d;
-    --color-danger-bg: #450a0a;
-    --color-danger-fg: #fca5a5;
+    --color-surface: #14191a;
+    --color-surface-muted: #0f1314;
+    --color-surface-sunken: #0a0d0e;
+    --color-fg: #ede5cf;
+    --color-fg-muted: #b8b09a;
+    --color-fg-subtle: #908874;
+    --color-border: #2a3128;
+    --color-border-strong: #404538;
+
+    --color-brand: #5fa87a;
+    --color-brand-hover: #7bbf94;
+    --color-brand-soft: #18261d;
+    --color-brand-soft-fg: #a3d5b8;
+
+    --color-court: #5fa87a;
+    --color-court-deep: #1a2e22;
+    --color-court-soft: #18261d;
+    --color-grass: #6fb086;
+    --color-cream: #ede5cf;
+    --color-ivory: #d8d0b8;
+
+    --color-clay: #d18968;
+    --color-clay-soft: #2a1a12;
+    --color-gold: #d4b76e;
+    --color-gold-soft: #2a2310;
+    --color-silver: #c4c4c4;
+    --color-bronze: #c89060;
+    --color-warn-bg: #2a1812;
+    --color-warn-fg: #e89978;
+    --color-danger-bg: #2a0e0e;
+    --color-danger-fg: #f08a8a;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
+    --shadow-elevated: 0 4px 8px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.3);
+    --shadow-court: 0 8px 32px rgb(0 0 0 / 0.5);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {
       color-scheme: dark;
-      --color-surface: #1e293b;
-      --color-surface-muted: #0f172a;
-      --color-surface-sunken: #0b1220;
-      --color-fg: #e2e8f0;
-      --color-fg-muted: #94a3b8;
-      --color-fg-subtle: #64748b;
-      --color-border: #334155;
-      --color-border-strong: #475569;
-      --color-brand: #10b981;
-      --color-brand-hover: #34d399;
-      --color-brand-soft: #064e3b;
-      --color-brand-soft-fg: #6ee7b7;
-      --color-warn-bg: #422006;
-      --color-warn-fg: #fcd34d;
-      --color-danger-bg: #450a0a;
-      --color-danger-fg: #fca5a5;
+      --color-surface: #14191a;
+      --color-surface-muted: #0f1314;
+      --color-surface-sunken: #0a0d0e;
+      --color-fg: #ede5cf;
+      --color-fg-muted: #b8b09a;
+      --color-fg-subtle: #908874;
+      --color-border: #2a3128;
+      --color-border-strong: #404538;
+
+      --color-brand: #5fa87a;
+      --color-brand-hover: #7bbf94;
+      --color-brand-soft: #18261d;
+      --color-brand-soft-fg: #a3d5b8;
+
+      --color-court: #5fa87a;
+      --color-court-deep: #1a2e22;
+      --color-court-soft: #18261d;
+      --color-grass: #6fb086;
+      --color-cream: #ede5cf;
+      --color-ivory: #d8d0b8;
+
+      --color-clay: #d18968;
+      --color-clay-soft: #2a1a12;
+      --color-gold: #d4b76e;
+      --color-gold-soft: #2a2310;
+      --color-silver: #c4c4c4;
+      --color-bronze: #b8845a;
+      --color-warn-bg: #2a1812;
+      --color-warn-fg: #e89978;
+      --color-danger-bg: #2a0e0e;
+      --color-danger-fg: #f08a8a;
+
+      --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.3);
+      --shadow-elevated: 0 4px 8px rgb(0 0 0 / 0.5), 0 12px 32px rgb(0 0 0 / 0.4);
+      --shadow-court: 0 8px 32px rgb(0 0 0 / 0.6);
     }
   }
   body {
     @apply bg-surface-muted text-fg antialiased;
-    font-family:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-      Cantarell, sans-serif;
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  h1, h2, h3, .serif {
+    font-family: var(--font-serif);
+    font-feature-settings: 'ss01';
+    letter-spacing: -0.01em;
   }
   :focus-visible {
     outline: 2px solid var(--color-brand);
@@ -126,14 +209,51 @@
   from { opacity: 0; transform: translateX(20px) }
   to   { opacity: 1; transform: translateX(0) }
 }
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
 @keyframes pulse-brand {
   0%, 100% { background-color: transparent }
   50%      { background-color: var(--color-brand-soft) }
 }
+@keyframes score-pop {
+  0%   { transform: scale(1) }
+  50%  { transform: scale(1.18) }
+  100% { transform: scale(1) }
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgb(220 38 38 / 0.45) }
+  50%      { opacity: 0.85; box-shadow: 0 0 0 8px rgb(220 38 38 / 0) }
+}
+@keyframes gold-glow {
+  0%, 100% { box-shadow: 0 0 24px rgb(201 169 97 / 0.4), 0 0 48px rgb(201 169 97 / 0.2) }
+  50%      { box-shadow: 0 0 32px rgb(201 169 97 / 0.7), 0 0 64px rgb(201 169 97 / 0.35) }
+}
+
+/* Court pattern — subtle background lines for hero/header */
+.bg-court-pattern {
+  background-image:
+    linear-gradient(135deg, #0a1f17 0%, #051410 100%);
+  position: relative;
+  isolation: isolate;
+}
+.bg-court-pattern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("/court-pattern.svg");
+  background-size: 240px 240px;
+  background-repeat: repeat;
+  opacity: 0.06;
+  z-index: -1;
+  pointer-events: none;
+}
 
 /* Reveal-Modus im Vollbild — Header + Footer ausblenden, mehr Platz für die Bühne. */
 html[data-reveal-fullscreen='true'] header.no-print,
-html[data-reveal-fullscreen='true'] footer.no-print {
+html[data-reveal-fullscreen='true'] footer.no-print,
+html[data-reveal-fullscreen='true'] nav.no-print {
   display: none;
 }
 html[data-reveal-fullscreen='true'] main > div {

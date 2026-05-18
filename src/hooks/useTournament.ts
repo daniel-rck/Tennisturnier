@@ -30,15 +30,19 @@ const newId = () =>
 const UNDO_LIMIT = 10
 
 export function useTournament() {
-  const [tournament, setTournament] = useState<Tournament>(defaultTournament)
-  const hydrated = useRef(false)
+  // Synchronous lazy init so the first render already sees persisted data —
+  // avoids a one-frame "empty default tournament" flash that confused phase
+  // inference in App.tsx.
+  const [tournament, setTournament] = useState<Tournament>(() => {
+    try {
+      return loadTournament()
+    } catch {
+      return defaultTournament()
+    }
+  })
+  const hydrated = useRef(true)
   const undoStackRef = useRef<Tournament[]>([])
   const [undoDepth, setUndoDepth] = useState(0)
-
-  useEffect(() => {
-    setTournament(loadTournament())
-    hydrated.current = true
-  }, [])
 
   // Debounce localStorage writes by ~250ms to avoid serializing the whole
   // tournament on every keystroke when typing player names.

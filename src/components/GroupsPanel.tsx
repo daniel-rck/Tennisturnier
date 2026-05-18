@@ -8,7 +8,7 @@ import {
   roundRobin,
 } from '../groupScheduler'
 import { groupLetter } from '../knockoutScheduler'
-import { parsePositiveInt } from '../utils/parseScore'
+import { NumberInput } from './ui/NumberInput'
 import { useConfirm } from '../hooks/useConfirm'
 import { useTranslation } from '../i18n'
 import { ScoreInput } from './ScoreInput'
@@ -125,16 +125,11 @@ export function GroupsPanel({
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm flex items-center gap-2">
           {t('setup.groupCount')}
-          <input
-            type="number"
+          <NumberInput
+            value={tournament.groupCount}
             min={1}
             max={8}
-            value={tournament.groupCount}
-            onChange={(e) =>
-              onSetGroupCount(
-                parsePositiveInt(e.target.value, tournament.groupCount),
-              )
-            }
+            onChange={onSetGroupCount}
             className="w-16 rounded-md border border-border-strong px-2 py-1"
           />
         </label>

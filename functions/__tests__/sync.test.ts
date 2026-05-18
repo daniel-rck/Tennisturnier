@@ -68,7 +68,12 @@ describe('helpers', () => {
     expect(h1).toBe(h2)
     expect(h1).toHaveLength(64)
     expect(constantTimeEqual(h1, h2)).toBe(true)
-    expect(constantTimeEqual(h1, h1.slice(0, 63) + '0')).toBe(false)
+    // Flip the last hex char to something deterministic-different. Picking a
+    // fixed substitute would 1-in-16 collide with the real last char and turn
+    // this assertion into a flake.
+    const last = h1[63]
+    const other = last === '0' ? '1' : '0'
+    expect(constantTimeEqual(h1, h1.slice(0, 63) + other)).toBe(false)
   })
 })
 

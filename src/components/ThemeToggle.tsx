@@ -17,21 +17,28 @@ const NEXT: Record<Theme, Theme> = {
   system: 'light',
 }
 
-export function ThemeToggle({ className = '' }: { className?: string }) {
+interface Props {
+  className?: string
+  /** "header" = cream-on-court header styling, "default" = neutral surface styling */
+  appearance?: 'header' | 'default'
+}
+
+export function ThemeToggle({ className = '', appearance = 'default' }: Props) {
   const { theme, cycle } = useTheme()
   const { t } = useTranslation()
   const current = t(LABEL_KEYS[theme])
   const next = t(LABEL_KEYS[NEXT[theme]])
+  const base =
+    appearance === 'header'
+      ? 'text-cream/85 hover:text-cream hover:bg-white/10'
+      : 'text-fg-muted hover:text-fg hover:bg-surface-sunken'
   return (
     <button
       type="button"
       onClick={cycle}
       title={t('theme.title', { current, next })}
       aria-label={t('theme.label', { current })}
-      className={
-        'inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-emerald-100 hover:text-white hover:bg-emerald-600 leading-none ' +
-        className
-      }
+      className={`inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md leading-none transition-colors ${base} ${className}`}
     >
       <span aria-hidden className="text-lg">
         {ICONS[theme]}

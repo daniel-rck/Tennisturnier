@@ -6,8 +6,8 @@ import {
   unlockAudio,
 } from '../bell'
 import type { BellVariant } from '../types'
-import { parsePositiveInt } from '../utils/parseScore'
 import { useTranslation, type TranslationKey } from '../i18n'
+import { NumberInput } from './ui/NumberInput'
 
 interface Props {
   minutes: number
@@ -187,20 +187,12 @@ export function RoundTimer({
         </label>
         <label className="text-sm text-fg-muted flex items-center gap-2">
           {t('timer.duration')}
-          <input
-            type="number"
+          <NumberInput
+            value={minutes}
             min={1}
             max={120}
-            value={minutes}
             disabled={running}
-            onChange={(e) =>
-              onMinutesChange(
-                Math.max(
-                  1,
-                  Math.min(120, parsePositiveInt(e.target.value, minutes)),
-                ),
-              )
-            }
+            onChange={onMinutesChange}
             className="w-16 rounded-md border border-border-strong px-2 py-1 min-h-[40px] disabled:bg-surface-sunken"
           />
           {t('timer.minutes')}

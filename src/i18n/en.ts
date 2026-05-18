@@ -12,6 +12,7 @@ export const en: Record<TranslationKey, string> = {
   'app.syncStatusLabel': 'Sync status: {status} ({role})',
   'app.role.owner': 'Owner',
   'app.role.viewer': 'Viewer',
+  'header.new': 'New',
 
   // Tabs
   'tab.setup': 'Settings',
@@ -23,6 +24,85 @@ export const en: Record<TranslationKey, string> = {
   'tab.ranking': 'Ranking',
   'tab.statistics': 'Statistics',
   'tab.print': 'Print',
+  'tab.overview': 'Overview',
+
+  // Phases (top-level navigation)
+  'phase.prep': 'Setup',
+  'phase.live': 'Live',
+  'phase.results': 'Results',
+  'phase.prep.short': 'Setup',
+  'phase.live.short': 'Live',
+  'phase.results.short': 'Result',
+
+  // Dashboard
+  'dashboard.title': 'Overview',
+  'dashboard.subtitle': 'Live tournament status',
+  'dashboard.currentRound': 'Round {n} of {total}',
+  'dashboard.currentRoundShort': 'Round {n}',
+  'dashboard.allMatches': 'Matches total',
+  'dashboard.progress': '{done} / {total} recorded',
+  'dashboard.matchesDone': '{done} matches played',
+  'dashboard.matchesLeft': '{count} pending',
+  'dashboard.noResults': 'No results yet',
+  'dashboard.scheduleButton': 'Generate schedule',
+  'dashboard.viewAll': 'View all rounds →',
+  'dashboard.resting': 'Resting this round',
+  'dashboard.empty.title': 'Tournament not started yet',
+  'dashboard.empty.description': 'Switch to Setup, add players, then generate the schedule.',
+  'dashboard.empty.action': 'Go to Setup',
+  'dashboard.nextRound': 'Next round',
+
+  // Setup wizard
+  'wizard.step.format': 'Format',
+  'wizard.step.details': 'Details',
+  'wizard.step.players': 'Players',
+  'wizard.title.format': 'Which tournament format?',
+  'wizard.title.details': 'Tournament details',
+  'wizard.title.players': 'Who is playing?',
+  'wizard.next': 'Next →',
+  'wizard.back': '← Back',
+  'wizard.finish': 'Done — let\'s go',
+  'wizard.format.rotation.desc': 'Rotating doubles · everyone plays every round',
+  'wizard.format.groups.desc': 'Round-robin within groups · clear standings',
+  'wizard.format.knockout.desc': 'Direct knockout · every match counts',
+  'wizard.format.groups-ko.desc': 'Group phase + KO finals · the classic',
+
+  // Settings sheet
+  'settings.title': 'Settings',
+  'settings.appearance': 'Appearance',
+  'settings.appearance.theme': 'Theme',
+  'settings.appearance.language': 'Language',
+  'settings.sync': 'Live sync',
+  'settings.data': 'Tournament',
+  'settings.export': 'Export (JSON)',
+  'settings.import': 'Import',
+  'settings.reset': 'Reset tournament',
+  'settings.newTournament': '+ Start new tournament',
+  'settings.newTournamentHint': 'Discards the current tournament and starts an empty one. Tip: export first.',
+  'settings.newTournamentConfirm.title': 'Start new tournament?',
+  'settings.newTournamentConfirm.description': 'Players, schedule and results of the current tournament will be discarded. This cannot be undone.',
+  'settings.newTournamentConfirm.button': 'Discard current',
+  'settings.about': 'About',
+  'settings.aboutVersion': 'Version {version}',
+  'settings.openMenu': 'Open settings',
+
+  // Bulk import
+  'players.bulkImport': 'Add multiple at once',
+  'players.bulkImport.title': 'Paste multiple players',
+  'players.bulkImport.description': 'One name per line. Optionally add „;m" or „;f" for gender (e.g. „Anna;f").',
+  'players.bulkImport.placeholder': 'Anna\nBen;m\nCarla;f\n…',
+  'players.bulkImport.add': 'Add {count}',
+  'entries.bulkImport.title': 'Paste multiple teams',
+  'entries.bulkImport.descriptionDoubles': 'One team per line, members separated by „&" or „+" (e.g. „Anna & Ben").',
+  'entries.bulkImport.descriptionSingles': 'One name per line.',
+  'entries.bulkImport.placeholderDoubles': 'Anna & Ben\nCarla & Dan\n…',
+  'entries.bulkImport.placeholderSingles': 'Anna\nBen\nCarla\n…',
+
+  // Score sheet
+  'scoreSheet.title': '{teamA} vs. {teamB}',
+  'scoreSheet.teamAScore': 'Score {team}',
+  'scoreSheet.clear': 'Clear score',
+  'scoreSheet.done': 'Done',
 
   // Common
   'common.cancel': 'Cancel',

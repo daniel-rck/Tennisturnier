@@ -140,9 +140,12 @@ function RevealStage({
   }, [tournament.reveal.steps, tab])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <div className="absolute inset-0 -z-10 rounded-card overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-soft/30 via-transparent to-gold-soft/30" />
+      </div>
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-2xl 2xl:text-5xl font-bold">{t('reveal.heading')}</h2>
+        <h2 className="serif text-2xl sm:text-3xl 2xl:text-5xl font-semibold">{t('reveal.heading')}</h2>
         <div className="flex items-center gap-2">
           {fullscreenSupported && (
             <button
@@ -235,7 +238,7 @@ function PodiumStage({
         entry={podium[1]}
         visible={isVisible(step, 2)}
         height="h-32 2xl:h-64"
-        tone="bg-slate-300"
+        tone="bg-surface-sunken border-t-4 border-silver"
         medal="🥈"
       />
       <PodiumColumn
@@ -243,7 +246,7 @@ function PodiumStage({
         entry={podium[0]}
         visible={isVisible(step, 1)}
         height="h-44 2xl:h-80"
-        tone="bg-warn-bg"
+        tone="bg-gold-soft border-t-4 border-gold animate-gold-glow"
         medal="🥇"
       />
       <PodiumColumn
@@ -251,7 +254,7 @@ function PodiumStage({
         entry={podium[2]}
         visible={isVisible(step, 3)}
         height="h-24 2xl:h-48"
-        tone="bg-orange-300"
+        tone="bg-clay-soft border-t-4 border-bronze"
         medal="🥉"
       />
     </div>
@@ -284,16 +287,16 @@ function PodiumColumn({
       }
     >
       <div className="text-4xl 2xl:text-7xl">{visible ? medal : ' '}</div>
-      <div className="font-semibold text-center text-base 2xl:text-3xl min-h-[1.5rem]">
+      <div className="serif font-semibold text-center text-lg sm:text-2xl 2xl:text-4xl min-h-[1.5rem]">
         {visible ? entry.name : ' '}
       </div>
-      <div className="text-xs 2xl:text-xl text-fg-muted min-h-[1rem]">
+      <div className="text-xs 2xl:text-xl text-fg-muted tabular min-h-[1rem]">
         {visible
           ? t('reveal.podiumStat', { wins: entry.wins, diff: (entry.diff > 0 ? '+' : '') + entry.diff })
           : ' '}
       </div>
       <div
-        className={`w-full ${height} ${tone} rounded-t-md flex items-center justify-center font-bold text-2xl 2xl:text-5xl text-fg shadow`}
+        className={`w-full ${height} ${tone} rounded-t-card flex items-center justify-center serif font-bold text-3xl 2xl:text-6xl text-fg shadow-card`}
       >
         {place}
       </div>
