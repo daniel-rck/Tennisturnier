@@ -5,70 +5,84 @@
 <h1 align="center">Tennisturnier-Planer</h1>
 
 <p align="center">
-  Browserbasierte Web-App für kleine Tennisturniere – Spielplan, Rundentimer, Ergebnis-Eingabe, Siegerehrung. Keine Anmeldung, offlinefähig.
+  Browserbasierte Web-App für kleine Tennisturniere – Spielplan, Rundentimer, Ergebnis-Eingabe, Siegerehrung.<br/>
+  Keine Anmeldung, offlinefähig, mit optionalem Live-Sync zwischen Geräten.
+</p>
+
+<p align="center">
+  <a href="https://github.com/daniel-rck/tennisturnier/actions/workflows/ci.yml"><img src="https://github.com/daniel-rck/tennisturnier/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT" /></a>
+  <a href="https://tennisturnier.daniel-rck.workers.dev/"><img src="https://img.shields.io/badge/demo-live-blueviolet?logo=cloudflare&logoColor=white" alt="Live Demo" /></a>
+  <br/>
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.9" />
+  <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite 7" />
+  <img src="https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind 4" />
+  <img src="https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Workers" />
 </p>
 
 ---
 
-## Was das ist
+## 🎾 Live ausprobieren
 
-Du gibst Plätze, Spieler:innen und Modus an und bekommst einen Spielplan, in dem in jeder Runde alle Plätze besetzt sind und möglichst niemand zweimal mit derselben Person gespielt hat. Während der Runde läuft optional ein Timer, der mit einer Glocke das Ende ankündigt. Nach den Spielen trägst du Ergebnisse ein, und die App rechnet eine Siegerehrung mit Podium.
+**→ [tennisturnier.daniel-rck.workers.dev](https://tennisturnier.daniel-rck.workers.dev/)**
 
-Alles läuft im Browser. Daten bleiben standardmäßig auf deinem Gerät (`localStorage`). Optional kann ein Turnier per Share-Code zwischen Geräten live synchronisiert werden — z. B. Eingabe am Handy, Anzeige auf dem Vereinsheim-TV.
+Direkt im Browser starten – nichts installieren, keine Anmeldung. Daten bleiben auf deinem Gerät, optional via 6-stelligem Code zwischen Geräten teilen.
 
 ## Features
 
-- **Formate:** Wechselturnier (Mixed, Damen, Herren, Frei), Gruppen, KO, Gruppen + KO
-- **Spielplan-Generator:** füllt jede Runde alle Plätze, minimiert Partner- und Gegner-Wiederholungen, verteilt Pausen fair, optional Teilrunde damit alle gleich oft spielen
-- **Drag-and-Drop-Sortierung** der Spielerliste, Auto-Sortierung (A→Z, Damen/Herren zuerst)
-- **Rundentimer** mit synthetisierter Glocke (Web Audio, kein Asset-Download)
-- **Ergebnis-Eingabe** direkt am Match
-- **Siegerehrung** mit Podium 🥇🥈🥉, optional getrennt nach Damen/Herren beim Mixed-Turnier; Reveal-Modus mit Konfetti & Fanfare für die Show im Vereinsheim
-- **Live-Sync** zwischen Geräten per 6-stelligem Code (opt-in, ~3 s Latenz, QR-Code zum Beitreten)
-- **Druckansicht** für Aushang am Schwarzen Brett
-- **PWA / Offline:** installierbar auf Handy und Desktop
+- 🎯 **Formate:** Wechselturnier (Mixed, Damen, Herren, Frei), Gruppen, KO, Gruppen + KO
+- 🧮 **Spielplan-Generator:** alle Plätze besetzt, Partner- & Gegner-Wiederholungen minimiert, faire Pausen
+- ✋ **Drag-and-Drop** Spielerliste mit Auto-Sortierung
+- ⏱️ **Rundentimer** mit synthetisierter Glocke (Web Audio, kein Asset-Download)
+- 📝 **Ergebnis-Eingabe** direkt am Match
+- 🏆 **Siegerehrung** mit Podium, optional getrennt nach Damen/Herren – Reveal-Modus mit Konfetti & Fanfare
+- 🔄 **Live-Sync** zwischen Geräten per 6-stelligem Code + QR (~3 s Latenz, opt-in)
+- 🖨️ **Druckansicht** für den Aushang
+- 📱 **PWA / Offline:** installierbar auf Handy & Desktop
 
----
-
-## Tech-Stack
-
-| | |
-|---|---|
-| Framework | React 19 + TypeScript |
-| Build | Vite 7, Tailwind CSS 4 |
-| PWA | `vite-plugin-pwa` mit Workbox |
-| Hosting | Cloudflare Workers (Workers Builds, Git-Integration) mit Static Assets + KV |
-| Speicher | `localStorage` (lokal), Cloudflare KV (optional, für Live-Sync) |
-
-## Lokal entwickeln
+## Quick Start (Entwickler)
 
 ```bash
 bun install
-bun run dev      # http://localhost:5173/  (Vite, ohne Sync-Backend)
-bun run build
-bun run lint
-bun test
+bun run dev          # http://localhost:5173/
 ```
 
-Sync-Backend lokal mittesten (Worker + Static Assets + KV-Mock):
+Mit Sync-Backend (Worker + KV-Mock) lokal:
 
 ```bash
-bunx wrangler dev   # http://localhost:8787  (SPA + API)
+bunx wrangler dev    # http://localhost:8787
 ```
+
+## Scripts
+
+| Befehl | Zweck |
+|---|---|
+| `bun run dev` | Vite Dev-Server (ohne Sync-Backend) |
+| `bun run build` | Production-Build (`dist/`) |
+| `bun run lint` | ESLint über alle TS/TSX-Dateien |
+| `bun run test` | Vitest einmalig ausführen |
+| `bun run preview` | Production-Build lokal previewen |
+
+## Tech-Stack
+
+React 19 · TypeScript 5.9 · Vite 7 · Tailwind 4 · vite-plugin-pwa · Cloudflare Workers (Static Assets + KV) · Vitest · ESLint 9 · Bun
+
+## Architektur
+
+Der Spielplan-Generator (`src/scheduler.ts`) arbeitet greedy pro Runde: Spieler:innen-Auswahl nach Pausen-Saldo → Paarbildung per bipartitem Matching (Mixed) bzw. Perfect Matching → Court-Verteilung minimiert wiederholte Gegner. Persistenz lokal via `localStorage` (`src/storage.ts`); Live-Sync optional über `functions/api/sync/*` gegen Cloudflare KV.
 
 ## Deployment
 
-Cloudflare Workers Builds baut und deployt bei jedem Push automatisch via Git-Integration:
+Cloudflare Workers Builds deployt automatisch bei jedem Push auf `main`. Detaillierte Einrichtung (KV-Namespace, Bindings, Domain) → siehe **[SETUP.md](SETUP.md)**.
 
-1. *Workers & Pages → Create → Import a repository* → Repo wählen. Cloudflare erkennt `wrangler.toml` automatisch.
-2. *Worker → Storage → KV → Create namespace*, dann *Settings → Bindings → Add → KV*, Variable `TOURNAMENTS` auf den Namespace setzen. (Ohne dieses Binding läuft die App statisch ohne Live-Sync.)
-3. Optional: *Settings → Domains & Routes* für eine Custom Domain.
+## Mitmachen
 
-Jeder Push auf `main` deployt zur Production; Branches/PRs bekommen Preview-URLs. PR-CI (Lint + Tests + Build) läuft separat als GitHub Action.
+Pull Requests sind willkommen! Bitte vorher [CONTRIBUTING.md](CONTRIBUTING.md) lesen – dort stehen Setup, Branch- und Commit-Konventionen sowie die PR-Checkliste.
 
-## Algorithmus (kurz)
+## Changelog
 
-Der Spielplan-Generator (`src/scheduler.ts`) arbeitet greedy pro Runde: Spieler:innen-Auswahl nach Pausen-Saldo → Paarbildung per bipartitem Matching (Mixed) bzw. Perfect Matching → Court-Verteilung minimiert wiederholte Gegner-Begegnungen. Im Test mit 4F + 4M, 2 Plätzen, 4 Runden Mixed: 0 Partner-Wiederholungen, jede Frau spielt mit jedem Mann genau einmal.
+Alle Änderungen werden in [CHANGELOG.md](CHANGELOG.md) im Keep-a-Changelog-Format dokumentiert.
 
 ## Lizenz
 
