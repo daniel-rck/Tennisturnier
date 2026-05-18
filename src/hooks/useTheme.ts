@@ -34,7 +34,7 @@ function effectiveScheme(theme: Theme): 'light' | 'dark' {
 
 function syncThemeColorMeta(theme: Theme): void {
   const scheme = effectiveScheme(theme)
-  const color = scheme === 'dark' ? '#0f172a' : '#15803d'
+  const color = scheme === 'dark' ? '#051410' : '#0a1f17'
   document
     .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
     .forEach((m) => {
