@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 Setup & Deployment-Anleitung
+    url: https://github.com/daniel-rck/tennisturnier/blob/main/SETUP.md
+    about: Detaillierte Cloudflare-Konfiguration (KV-Namespace, Bindings, Domain).
+  - name: 🤝 Contributing-Leitfaden
+    url: https://github.com/daniel-rck/tennisturnier/blob/main/CONTRIBUTING.md
+    about: Setup für Entwickler, Branch-Konventionen, PR-Checkliste.
