@@ -31,6 +31,11 @@ interface Props {
   onRemove: (id: string) => void
   onReorder: (entries: Entry[]) => void
   onSortByName: () => void
+  onContinue?: () => void
+  continueLabel?: string
+  continueDisabledHint?: string
+  /** Minimum entries needed before onContinue becomes active. Defaults to 2. */
+  minEntries?: number
 }
 
 function EntryRow({
@@ -152,6 +157,10 @@ export function EntriesPanel({
   onRemove,
   onReorder,
   onSortByName,
+  onContinue,
+  continueLabel,
+  continueDisabledHint,
+  minEntries = 2,
 }: Props) {
   const { t } = useTranslation()
   const memberCount = entryFormat === 'singles' ? 1 : 2
@@ -297,6 +306,63 @@ export function EntriesPanel({
         onAdd={onAdd}
         entryFormat={entryFormat}
       />
+
+      {onContinue && (
+        <ContinueBar
+          count={entries.length}
+          minimum={minEntries}
+          onContinue={onContinue}
+          label={continueLabel}
+          disabledHint={continueDisabledHint}
+        />
+      )}
+    </div>
+  )
+}
+
+function ContinueBar({
+  count,
+  minimum,
+  onContinue,
+  label,
+  disabledHint,
+}: {
+  count: number
+  minimum: number
+  onContinue: () => void
+  label?: string
+  disabledHint?: string
+}) {
+  const { t } = useTranslation()
+  const ready = count >= minimum
+  const fallbackLabel = label ?? t('wizard.finish')
+  return (
+    <div
+      className="sticky bottom-[68px] sm:bottom-4 z-[5]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="rounded-card border border-border bg-surface/95 backdrop-blur-md shadow-elevated p-3 flex items-center gap-3">
+        <div className="flex-1 min-w-0 text-sm">
+          {ready ? (
+            <span className="text-fg-muted">
+              <span className="font-semibold text-fg tabular">{count}</span> Teams bereit
+            </span>
+          ) : (
+            <span className="text-fg-muted">
+              {disabledHint ?? t('schedule.minPlayersWarning')}{' '}
+              <span className="tabular">({count}/{minimum})</span>
+            </span>
+          )}
+        </div>
+        <Button
+          variant={ready ? 'primary' : 'secondary'}
+          onClick={onContinue}
+          disabled={!ready}
+          size="md"
+        >
+          {fallbackLabel}
+        </Button>
+      </div>
     </div>
   )
 }

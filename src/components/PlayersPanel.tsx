@@ -30,6 +30,13 @@ interface Props {
   onRemove: (id: string) => void
   onSort: (criterion: 'name' | 'women-first' | 'men-first') => void
   onArrayMove: (newOrder: Player[]) => void
+  /** Optional continue CTA — appears as a sticky footer once the minimum
+   *  number of players is reached. Wires up the "go to next phase" flow. */
+  onContinue?: () => void
+  continueLabel?: string
+  continueDisabledHint?: string
+  /** Minimum players needed before onContinue becomes active. Defaults to 4. */
+  minPlayers?: number
 }
 
 function PlayerRow({
@@ -161,6 +168,10 @@ export function PlayersPanel({
   onRemove,
   onSort,
   onArrayMove,
+  onContinue,
+  continueLabel,
+  continueDisabledHint,
+  minPlayers = 4,
 }: Props) {
   const { t } = useTranslation()
   const [draftName, setDraftName] = useState('')
@@ -283,6 +294,64 @@ export function PlayersPanel({
         onAdd={onAdd}
         defaultGender={draftGender}
       />
+
+      {onContinue && (
+        <ContinueBar
+          count={players.length}
+          minimum={minPlayers}
+          onContinue={onContinue}
+          label={continueLabel}
+          disabledHint={continueDisabledHint}
+        />
+      )}
+    </div>
+  )
+}
+
+function ContinueBar({
+  count,
+  minimum,
+  onContinue,
+  label,
+  disabledHint,
+}: {
+  count: number
+  minimum: number
+  onContinue: () => void
+  label?: string
+  disabledHint?: string
+}) {
+  const { t } = useTranslation()
+  const ready = count >= minimum
+  const fallbackLabel = label ?? t('wizard.finish')
+  return (
+    <div
+      className="sticky bottom-[68px] sm:bottom-4 z-[5]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="rounded-card border border-border bg-surface/95 backdrop-blur-md shadow-elevated p-3 flex items-center gap-3">
+        <div className="flex-1 min-w-0 text-sm">
+          {ready ? (
+            <span className="text-fg-muted">
+              <span className="font-semibold text-fg tabular">{count}</span>{' '}
+              Teilnehmer:innen bereit
+            </span>
+          ) : (
+            <span className="text-fg-muted">
+              {disabledHint ?? t('schedule.minPlayersWarning')}{' '}
+              <span className="tabular">({count}/{minimum})</span>
+            </span>
+          )}
+        </div>
+        <Button
+          variant={ready ? 'primary' : 'secondary'}
+          onClick={onContinue}
+          disabled={!ready}
+          size="md"
+        >
+          {fallbackLabel}
+        </Button>
+      </div>
     </div>
   )
 }

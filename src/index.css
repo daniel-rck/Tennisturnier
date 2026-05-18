@@ -234,7 +234,7 @@
 /* Court pattern — subtle background lines for hero/header */
 .bg-court-pattern {
   background-image:
-    linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-hover) 100%);
+    linear-gradient(135deg, #0a1f17 0%, #051410 100%);
   position: relative;
   isolation: isolate;
 }
@@ -245,7 +245,7 @@
   background-image: url("/court-pattern.svg");
   background-size: 240px 240px;
   background-repeat: repeat;
-  opacity: 0.08;
+  opacity: 0.06;
   z-index: -1;
   pointer-events: none;
 }

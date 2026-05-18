@@ -375,6 +375,15 @@ function App() {
               onRemove={t.removePlayer}
               onSort={t.sortPlayersBy}
               onArrayMove={t.setPlayersOrder}
+              onContinue={() => {
+                if (t.tournament.schedule.length === 0) handleGenerate()
+                else setPhase('live')
+              }}
+              continueLabel={
+                t.tournament.schedule.length === 0
+                  ? tr('dashboard.scheduleButton')
+                  : tr('phase.live')
+              }
             />
           )}
           {phase === 'prep' && subTab === 'entries' && (
@@ -386,6 +395,8 @@ function App() {
               onRemove={t.removeEntry}
               onReorder={t.setEntriesOrder}
               onSortByName={t.sortEntriesByName}
+              onContinue={() => setPhase('live')}
+              continueLabel={tr('phase.live')}
             />
           )}
 
