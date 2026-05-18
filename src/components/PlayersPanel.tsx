@@ -138,7 +138,7 @@ function GenderToggle({
         className={[
           'inline-flex items-center justify-center min-h-[36px] min-w-[36px] rounded-full px-2.5 font-semibold transition-colors',
           value === 'M'
-            ? 'bg-court text-cream shadow-sm'
+            ? 'bg-court text-white shadow-sm'
             : 'text-fg-muted hover:text-fg',
         ].join(' ')}
       >
