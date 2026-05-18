@@ -48,10 +48,9 @@ const FORMAT_ICONS: Record<Format, string> = {
   'groups-ko': '🏆',
 }
 
-type Step = 0 | 1 | 2
+type Step = 0 | 1
 
 export function SetupWizard(props: Props) {
-  const { t } = useTranslation()
   const [step, setStep] = useState<Step>(0)
 
   return (
@@ -71,65 +70,62 @@ export function SetupWizard(props: Props) {
         <StepDetails
           {...props}
           onBack={() => setStep(0)}
-          onNext={() => setStep(2)}
+          onFinish={props.onFinish}
         />
-      )}
-      {step === 2 && (
-        <StepPlayers onBack={() => setStep(1)} onFinish={props.onFinish} />
       )}
     </div>
   )
+}
 
-  function Stepper({ step }: { step: Step }) {
-    const labels: TranslationKey[] = [
-      'wizard.step.format',
-      'wizard.step.details',
-      'wizard.step.players',
-    ]
-    return (
-      <ol className="flex items-center gap-2" aria-label="Wizard steps">
-        {labels.map((label, i) => {
-          const reached = step >= (i as Step)
-          const current = step === i
-          return (
-            <li key={label} className="flex-1 flex items-center gap-2 min-w-0">
-              <div
-                aria-current={current ? 'step' : undefined}
+function Stepper({ step }: { step: Step }) {
+  const { t } = useTranslation()
+  const labels: TranslationKey[] = [
+    'wizard.step.format',
+    'wizard.step.details',
+  ]
+  return (
+    <ol className="flex items-center gap-2" aria-label="Wizard steps">
+      {labels.map((label, i) => {
+        const reached = step >= (i as Step)
+        const current = step === i
+        return (
+          <li key={label} className="flex-1 flex items-center gap-2 min-w-0">
+            <div
+              aria-current={current ? 'step' : undefined}
+              className={[
+                'flex items-center gap-2 min-w-0',
+                reached ? 'text-fg' : 'text-fg-subtle',
+              ].join(' ')}
+            >
+              <span
                 className={[
-                  'flex items-center gap-2 min-w-0',
-                  reached ? 'text-fg' : 'text-fg-subtle',
+                  'inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-semibold shrink-0',
+                  current
+                    ? 'bg-brand text-white'
+                    : reached
+                      ? 'bg-brand-soft text-brand-soft-fg'
+                      : 'bg-surface-sunken text-fg-subtle',
                 ].join(' ')}
               >
-                <span
-                  className={[
-                    'inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-semibold shrink-0',
-                    current
-                      ? 'bg-brand text-white'
-                      : reached
-                        ? 'bg-brand-soft text-brand-soft-fg'
-                        : 'bg-surface-sunken text-fg-subtle',
-                  ].join(' ')}
-                >
-                  {i + 1}
-                </span>
-                <span className="text-xs font-medium uppercase tracking-wider truncate">
-                  {t(label)}
-                </span>
-              </div>
-              {i < labels.length - 1 && (
-                <span
-                  aria-hidden
-                  className={`h-px flex-1 ${
-                    step > (i as Step) ? 'bg-brand-soft' : 'bg-border'
-                  }`}
-                />
-              )}
-            </li>
-          )
-        })}
-      </ol>
-    )
-  }
+                {i + 1}
+              </span>
+              <span className="text-xs font-medium uppercase tracking-wider truncate">
+                {t(label)}
+              </span>
+            </div>
+            {i < labels.length - 1 && (
+              <span
+                aria-hidden
+                className={`h-px flex-1 ${
+                  step > (i as Step) ? 'bg-brand-soft' : 'bg-border'
+                }`}
+              />
+            )}
+          </li>
+        )
+      })}
+    </ol>
+  )
 }
 
 function StepFormat({
@@ -208,7 +204,7 @@ function StepFormat({
 }
 
 function StepDetails(
-  props: Props & { onBack: () => void; onNext: () => void },
+  props: Props & { onBack: () => void; onFinish: () => void },
 ) {
   const { t } = useTranslation()
   const {
@@ -232,7 +228,7 @@ function StepDetails(
     onThirdPlaceMatch,
     onPerGenderRanking,
     onBack,
-    onNext,
+    onFinish,
   } = props
 
   return (
@@ -330,40 +326,6 @@ function StepDetails(
         </Card>
       )}
 
-      <div className="flex justify-between gap-2 pt-2">
-        <Button variant="ghost" onClick={onBack} size="lg">
-          {t('wizard.back')}
-        </Button>
-        <Button onClick={onNext} size="lg">
-          {t('wizard.next')}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function StepPlayers({
-  onBack,
-  onFinish,
-}: {
-  onBack: () => void
-  onFinish: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <div className="space-y-5">
-      <h2 className="serif text-2xl font-semibold">{t('wizard.title.players')}</h2>
-      <Card variant="hero" className="bg-court-pattern text-cream text-center p-8">
-        <div className="text-5xl mb-3 inline-block" aria-hidden>
-          🎾
-        </div>
-        <p className="serif text-xl font-semibold mb-2">
-          {t('wizard.finish')}
-        </p>
-        <p className="text-sm text-cream/80 max-w-md mx-auto">
-          {t('dashboard.empty.description')}
-        </p>
-      </Card>
       <div className="flex justify-between gap-2 pt-2">
         <Button variant="ghost" onClick={onBack} size="lg">
           {t('wizard.back')}
