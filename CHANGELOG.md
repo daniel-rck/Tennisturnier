@@ -10,6 +10,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Hinzugefügt
 - Badges, prägnanter README, CONTRIBUTING-Leitfaden, Issue- und PR-Templates
 
+### Geändert
+- Build-Stack: Upgrade auf Vite 8, `@vitejs/plugin-react` 6, `vite-plugin-pwa` 1.3 und Vitest 4
+
 ## [0.1.0] - 2026-05-18
 
 ### Hinzugefügt
