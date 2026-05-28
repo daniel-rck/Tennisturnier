@@ -12,6 +12,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geändert
 - Build-Stack: Upgrade auf Vite 8, `@vitejs/plugin-react` 6, `vite-plugin-pwa` 1.3 und Vitest 4
+- Vollständige Internationalisierung: Spielplan-/Gruppen-Warnungen, KO-Bracket-Platzhalter
+  und Sync-Fehlermeldungen werden nun übersetzt (vorher teils hartcodiert deutsch)
+- Kleineres Initial-Bundle (~21 % weniger gzip): `canvas-confetti`, `qrcode` und die
+  Drag-and-Drop-Panels (`@dnd-kit`) werden erst bei Bedarf nachgeladen
+
+### Behoben
+- Live-Sync: Netzwerkfehler beim Starten/Beitreten hängen nicht mehr dauerhaft im
+  Status „verbinde…“; Viewer-Polling schützt jetzt vor überlappenden Anfragen
+- Owner-Token wird in der Oberfläche maskiert dargestellt (Kopieren weiterhin möglich)
+- `parsePositiveInt` weist negative Eingaben korrekt ab (Fallback statt negativem Wert)
 
 ## [0.1.0] - 2026-05-18
 

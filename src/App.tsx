@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTournament } from './hooks/useTournament'
 import { useSync } from './hooks/useSync'
 import { generateSchedule } from './scheduler'
 import { loadTournament, migrate } from './storage'
 import { SetupWizard } from './components/SetupWizard'
-import { PlayersPanel } from './components/PlayersPanel'
 import { SchedulePanel } from './components/SchedulePanel'
 import { RankingPanel } from './components/RankingPanel'
 import { StatisticsPanel } from './components/StatisticsPanel'
 import { PrintView } from './components/PrintView'
-import { EntriesPanel } from './components/EntriesPanel'
 import { GroupsPanel } from './components/GroupsPanel'
 import { BracketPanel } from './components/BracketPanel'
 import { Dashboard } from './components/Dashboard'
@@ -22,6 +20,16 @@ import { PhaseNav, SubNav, type PhaseId } from './components/ui/PhaseNav'
 import { useConfirm } from './hooks/useConfirm'
 import { useToast } from './hooks/useToast'
 import { useTranslation } from './i18n'
+import { Spinner } from './components/Spinner'
+
+// Prep-phase panels pull in @dnd-kit (drag-and-drop) — lazy-load them so that
+// dependency stays out of the initial bundle for users who land mid-tournament.
+const PlayersPanel = lazy(() =>
+  import('./components/PlayersPanel').then((m) => ({ default: m.PlayersPanel })),
+)
+const EntriesPanel = lazy(() =>
+  import('./components/EntriesPanel').then((m) => ({ default: m.EntriesPanel })),
+)
 
 const ONBOARDING_KEY = 'tennisturnier:welcomeDismissed'
 
@@ -151,7 +159,7 @@ function App() {
     window.setTimeout(() => {
       try {
         t.snapshot()
-        const result = generateSchedule(t.tournament)
+        const result = generateSchedule(t.tournament, tr)
         t.setSchedule(result.rounds)
         setWarnings(result.warnings)
         if (result.warnings.length === 0) {
@@ -262,21 +270,24 @@ function App() {
     setShowOnboarding(false)
   }, [])
 
-  // Keyboard shortcut: Ctrl/Cmd+Z triggers undo (when not editing form fields)
+  // Keyboard shortcut: Ctrl/Cmd+Z triggers undo (when not editing form fields).
+  // Destructure the stable callback + flag so the listener only re-binds when
+  // undo availability actually changes (not on every render).
+  const { undo, canUndo } = t
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         const target = e.target as HTMLElement | null
         if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
-        if (t.canUndo) {
+        if (canUndo) {
           e.preventDefault()
-          t.undo()
+          undo()
         }
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [t])
+  }, [canUndo, undo])
 
   const phases: { id: PhaseId; label: string; icon: string }[] = [
     { id: 'prep', label: tr('phase.prep'), icon: '⚙' },
@@ -358,6 +369,13 @@ function App() {
       {/* Main content */}
       <main className="flex-1 pb-24 sm:pb-8">
         <div key={`${phase}-${subTab}`} className="max-w-3xl mx-auto px-4 py-5 animate-fade-in">
+          <Suspense
+            fallback={
+              <div className="py-16 flex justify-center">
+                <Spinner />
+              </div>
+            }
+          >
           {/* PREP PHASE */}
           {phase === 'prep' && subTab === 'setup' && (
             <SetupWizard
@@ -491,6 +509,7 @@ function App() {
           {phase === 'results' && subTab === 'print' && (
             <PrintView tournament={t.tournament} />
           )}
+          </Suspense>
         </div>
       </main>
 
@@ -554,7 +573,7 @@ function TennisLogo() {
 
 function SyncIndicator({
   status,
-  role,
+  label,
 }: {
   status: 'disabled' | 'connecting' | 'live' | 'offline' | 'error'
   role: 'none' | 'owner' | 'viewer'
@@ -573,7 +592,7 @@ function SyncIndicator({
     >
       <span className={`inline-block h-2 w-2 rounded-full ${color}`} />
       <span className="text-[10px] uppercase tracking-wider font-semibold text-cream/85">
-        {role === 'viewer' ? 'View' : 'Live'}
+        {label}
       </span>
     </span>
   )

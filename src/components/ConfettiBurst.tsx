@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import confetti from 'canvas-confetti'
 
 interface Props {
   /** Increment to retrigger. */
@@ -22,35 +21,47 @@ export function ConfettiBurst({ trigger, intensity = 'burst' }: Props) {
     ) {
       return
     }
-    if (intensity === 'burst') {
-      confetti({
-        particleCount: 120,
-        spread: 75,
-        origin: { y: 0.6 },
-        startVelocity: 45,
-      })
-      return
+    let cancelled = false
+    let raf = 0
+    // Lazy-load canvas-confetti so it stays out of the initial bundle — it is
+    // only ever needed during the award-ceremony reveal.
+    void import('canvas-confetti').then(({ default: confetti }) => {
+      if (cancelled) return
+      if (intensity === 'burst') {
+        confetti({
+          particleCount: 120,
+          spread: 75,
+          origin: { y: 0.6 },
+          startVelocity: 45,
+        })
+        return
+      }
+      // Shower: bursts from both lower corners, repeated for ~5s.
+      const end = Date.now() + 5000
+      const tick = () => {
+        if (cancelled) return
+        confetti({
+          particleCount: 6,
+          angle: 60,
+          spread: 55,
+          startVelocity: 60,
+          origin: { x: 0, y: 0.85 },
+        })
+        confetti({
+          particleCount: 6,
+          angle: 120,
+          spread: 55,
+          startVelocity: 60,
+          origin: { x: 1, y: 0.85 },
+        })
+        if (Date.now() < end) raf = requestAnimationFrame(tick)
+      }
+      tick()
+    })
+    return () => {
+      cancelled = true
+      if (raf) cancelAnimationFrame(raf)
     }
-    // Shower: bursts from both lower corners, repeated for ~5s.
-    const end = Date.now() + 5000
-    const tick = () => {
-      confetti({
-        particleCount: 6,
-        angle: 60,
-        spread: 55,
-        startVelocity: 60,
-        origin: { x: 0, y: 0.85 },
-      })
-      confetti({
-        particleCount: 6,
-        angle: 120,
-        spread: 55,
-        startVelocity: 60,
-        origin: { x: 1, y: 0.85 },
-      })
-      if (Date.now() < end) requestAnimationFrame(tick)
-    }
-    tick()
   }, [trigger, intensity])
 
   return null

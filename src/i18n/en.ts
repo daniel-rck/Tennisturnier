@@ -387,6 +387,31 @@ export const en: Record<TranslationKey, string> = {
   'sync.status.live': 'live',
   'sync.status.offline': 'offline',
   'sync.status.error': 'error',
+  'sync.copyToken': 'Copy token',
+  'sync.tokenCopied': 'Token copied',
+  'sync.error.network': 'Network error',
+  'sync.error.notFound': 'Code not found',
+  'sync.error.http': 'HTTP {status}',
+
+  // Scheduler & group warnings (returned as translated strings)
+  'warn.genderToWomen.one': 'Genders unbalanced — {count} man plays as a woman: {names}.',
+  'warn.genderToWomen.other': 'Genders unbalanced — {count} men play as women: {names}.',
+  'warn.genderToMen.one': 'Genders unbalanced — {count} woman plays as a man: {names}.',
+  'warn.genderToMen.other': 'Genders unbalanced — {count} women play as men: {names}.',
+  'warn.noCourts': 'Too few players for the “{mode}” mode. No court can be filled.',
+  'warn.courtsReduced': 'Only {possible} of {courts} courts can be filled — too few matching players for “{mode}”.',
+  'warn.partialFinalRound': 'Last round only partially filled so every player gets the same number of games.',
+  'warn.groupTooSmall': 'Each group should have at least 2 teams. With {count} participants in {groups} groups, a group will be empty or too small.',
+
+  // Bracket slot/match labels (resolved bracket placeholders)
+  'bracket.label.final': 'Final',
+  'bracket.label.thirdPlace': 'Third-place match',
+  'bracket.label.match': 'Match {m} (round {r})',
+  'bracket.label.winnerOf': 'Winner of {match}',
+  'bracket.label.loserOf': 'Loser of {match}',
+  'bracket.label.groupWinner': 'Group winner {letter}',
+  'bracket.label.groupRank': 'Group {letter} · {rank}.',
+  'bracket.label.bye': '🚶 Bye',
 
   // Confirm dialog defaults
   'confirm.cancel': 'Cancel',

@@ -385,6 +385,31 @@ export const de = {
   'sync.status.live': 'live',
   'sync.status.offline': 'offline',
   'sync.status.error': 'fehler',
+  'sync.copyToken': 'Token kopieren',
+  'sync.tokenCopied': 'Token kopiert',
+  'sync.error.network': 'Netzwerkfehler',
+  'sync.error.notFound': 'Code nicht gefunden',
+  'sync.error.http': 'HTTP {status}',
+
+  // Scheduler & group warnings (returned as translated strings)
+  'warn.genderToWomen.one': 'Geschlechter unausgeglichen — {count} Herr spielt als Dame: {names}.',
+  'warn.genderToWomen.other': 'Geschlechter unausgeglichen — {count} Herren spielen als Dame: {names}.',
+  'warn.genderToMen.one': 'Geschlechter unausgeglichen — {count} Dame spielt als Herr: {names}.',
+  'warn.genderToMen.other': 'Geschlechter unausgeglichen — {count} Damen spielen als Herr: {names}.',
+  'warn.noCourts': 'Zu wenige Spieler:innen für den Modus „{mode}“. Es kann kein Platz besetzt werden.',
+  'warn.courtsReduced': 'Nur {possible} von {courts} Plätzen können besetzt werden — zu wenige passende Spieler:innen für „{mode}“.',
+  'warn.partialFinalRound': 'Letzte Runde nur teilweise besetzt, damit alle Spieler:innen gleich oft spielen.',
+  'warn.groupTooSmall': 'Pro Gruppe sollten mindestens 2 Teams sein. Mit {count} Teilnehmern in {groups} Gruppen wird eine Gruppe leer oder zu klein.',
+
+  // Bracket slot/match labels (resolved bracket placeholders)
+  'bracket.label.final': 'Finale',
+  'bracket.label.thirdPlace': 'Spiel um Platz 3',
+  'bracket.label.match': 'Match {m} (Runde {r})',
+  'bracket.label.winnerOf': 'Sieger {match}',
+  'bracket.label.loserOf': 'Verlierer {match}',
+  'bracket.label.groupWinner': 'Gruppensieger {letter}',
+  'bracket.label.groupRank': 'Gruppe {letter} · {rank}.',
+  'bracket.label.bye': '🚶 Freilos',
 
   // Confirm dialog defaults
   'confirm.cancel': 'Abbrechen',

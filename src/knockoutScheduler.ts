@@ -1,4 +1,5 @@
 import type { BracketMatch, BracketSlot } from './types'
+import { germanFallback, type Translate } from './i18n/fallback'
 
 const newId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -120,6 +121,7 @@ export function resolveBracket(
   bracket: BracketMatch[],
   entryName: (id: string) => string,
   groupWinner?: (group: number, rank: number) => string | undefined,
+  tr: Translate = germanFallback,
 ): ResolvedBracketMatch[] {
   const winners = new Map<string, string | null>()
   const losers = new Map<string, string | null>()
@@ -132,13 +134,14 @@ export function resolveBracket(
         case 'feeder': {
           const map = s.loser ? losers : winners
           const w = map.get(s.matchId)
-          const labelPrefix = s.loser ? 'Verlierer' : 'Sieger'
           // Match not yet decided (or referenced before processing) — surface a
           // descriptive placeholder so spectators know who will end up here.
           if (w === undefined || w === null) {
             return {
               entryId: null,
-              label: `${labelPrefix} ${humanMatchLabel(s.matchId)}`,
+              label: tr(s.loser ? 'bracket.label.loserOf' : 'bracket.label.winnerOf', {
+                match: humanMatchLabel(s.matchId, tr),
+              }),
             }
           }
           return { entryId: w, label: entryName(w) }
@@ -148,16 +151,19 @@ export function resolveBracket(
           if (!id) {
             const placeholder =
               s.rank === 1
-                ? `Gruppensieger ${groupLetter(s.group)}`
-                : `Gruppe ${groupLetter(s.group)} · ${s.rank}.`
+                ? tr('bracket.label.groupWinner', { letter: groupLetter(s.group) })
+                : tr('bracket.label.groupRank', {
+                    letter: groupLetter(s.group),
+                    rank: s.rank,
+                  })
             return { entryId: null, label: placeholder }
           }
           return { entryId: id, label: entryName(id) }
         }
         case 'bye':
-          return { entryId: null, label: '🚶 Freilos' }
+          return { entryId: null, label: tr('bracket.label.bye') }
         case 'empty':
-          return { entryId: null, label: '—' }
+          return { entryId: null, label: tr('common.dash') }
       }
     },
   }
@@ -212,11 +218,14 @@ export function groupLetter(group: number): string {
 }
 
 /** Convert internal match IDs (e.g. "R1-M1", "F", "3P") into human-readable labels. */
-export function humanMatchLabel(matchId: string): string {
-  if (matchId === 'F') return 'Finale'
-  if (matchId === '3P') return 'Spiel um Platz 3'
+export function humanMatchLabel(
+  matchId: string,
+  tr: Translate = germanFallback,
+): string {
+  if (matchId === 'F') return tr('bracket.label.final')
+  if (matchId === '3P') return tr('bracket.label.thirdPlace')
   const m = /^R(\d+)-M(\d+)$/.exec(matchId)
-  if (m) return `Match ${m[2]} (Runde ${m[1]})`
+  if (m) return tr('bracket.label.match', { m: m[2], r: m[1] })
   return matchId
 }
 

@@ -261,7 +261,7 @@ function BracketPrint({ t }: { t: Tournament }) {
     })
     groupWinners = (g, r) => map.get(`${g}|${r}`)
   }
-  const resolved = resolveBracket(t.bracket, entryName, groupWinners)
+  const resolved = resolveBracket(t.bracket, entryName, groupWinners, tr)
   if (resolved.length === 0) return null
   const last = resolved[resolved.length - 1].round
   const rounds = new Map<number, typeof resolved>()
@@ -463,7 +463,7 @@ function KnockoutRankingPrint({ t }: { t: Tournament }) {
     })
     groupWinners = (g, r) => map.get(`${g}|${r}`)
   }
-  const resolved = resolveBracket(t.bracket, entryName, groupWinners)
+  const resolved = resolveBracket(t.bracket, entryName, groupWinners, tr)
   const podium = computeKnockoutPodium(resolved, entryName)
   if (!podium.champion) return null
   return (

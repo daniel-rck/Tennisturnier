@@ -1,4 +1,5 @@
 import type { Entry, GroupMatch } from './types'
+import { germanFallback, type Translate } from './i18n/fallback'
 
 export interface GroupAssignment {
   groups: Entry[][]
@@ -10,13 +11,12 @@ export interface GroupAssignment {
 export function assignGroups(
   entries: Entry[],
   groupCount: number,
+  tr: Translate = germanFallback,
 ): GroupAssignment {
   const warnings: string[] = []
   const n = entries.length
   if (n < groupCount * 2) {
-    warnings.push(
-      `Pro Gruppe sollten mindestens 2 Teams sein. Mit ${n} Teilnehmern in ${groupCount} Gruppen wird eine Gruppe leer oder zu klein.`,
-    )
+    warnings.push(tr('warn.groupTooSmall', { count: n, groups: groupCount }))
   }
   const groups: Entry[][] = Array.from({ length: groupCount }, () => [])
   for (let i = 0; i < n; i++) {
@@ -59,8 +59,9 @@ export function roundRobin(group: Entry[], groupNumber: number): GroupMatch[] {
 export function buildGroupSchedule(
   entries: Entry[],
   groupCount: number,
+  tr: Translate = germanFallback,
 ): { schedule: GroupMatch[]; groups: Entry[][]; warnings: string[] } {
-  const { groups, warnings } = assignGroups(entries, groupCount)
+  const { groups, warnings } = assignGroups(entries, groupCount, tr)
   const schedule: GroupMatch[] = []
   groups.forEach((g, idx) => schedule.push(...roundRobin(g, idx + 1)))
   return { schedule, groups, warnings }

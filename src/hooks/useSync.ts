@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SyncConfig, Tournament } from '../types'
+import { useTranslation, type TranslationKey } from '../i18n'
 
 export type SyncStatus = 'disabled' | 'connecting' | 'live' | 'offline' | 'error'
 export type SyncRole = 'none' | 'owner' | 'viewer'
@@ -54,6 +55,13 @@ export function useSync({
     : sync.ownerToken
       ? 'owner'
       : 'viewer'
+
+  const { t } = useTranslation()
+  // Async/long-lived paths (poll loop, push) capture `t` at effect-creation
+  // time — keep it in a ref so a mid-session language switch still localises
+  // freshly produced error messages.
+  const tRef = useRef(t)
+  tRef.current = t
 
   const [status, setStatus] = useState<SyncStatus>('disabled')
   const [error, setError] = useState<string | null>(null)
@@ -132,7 +140,7 @@ export function useSync({
       })
       if (!res.ok) {
         setStatus('error')
-        setError(await readErrorMessage(res))
+        setError(await readErrorMessage(res, tRef.current))
         return
       }
       const body = (await res.json()) as { version: number }
@@ -143,7 +151,7 @@ export function useSync({
       pushed = true
     } catch {
       setStatus('offline')
-      setError('Netzwerkfehler')
+      setError(tRef.current('sync.error.network'))
     } finally {
       pushInFlightRef.current = false
     }
@@ -167,15 +175,20 @@ export function useSync({
     let cancelled = false
     let timeoutId: number | null = null
     let backoff = POLL_INTERVAL_MS
+    // Guard against overlapping fetches when visibilitychange/online wake the
+    // loop while a request is still in flight.
+    let inFlight = false
 
     const poll = async (): Promise<void> => {
-      if (cancelled) return
+      if (cancelled || inFlight) return
       // Pause polling when tab is hidden — picks up again on visibilitychange.
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
         timeoutId = window.setTimeout(poll, POLL_INTERVAL_MS)
         return
       }
+      inFlight = true
       setStatus((s) => (s === 'live' ? s : 'connecting'))
+      let stop = false
       try {
         const url =
           versionRef.current > 0
@@ -196,20 +209,22 @@ export function useSync({
           setError(null)
         } else if (res.status === 404) {
           setStatus('error')
-          setError('Code nicht gefunden')
-          return // stop polling
+          setError(tRef.current('sync.error.notFound'))
+          stop = true // stop polling
         } else {
           setStatus('error')
-          setError(`HTTP ${res.status}`)
+          setError(tRef.current('sync.error.http', { status: res.status }))
           backoff = Math.min(backoff * 2, BACKOFF_MAX_MS)
         }
       } catch {
         if (cancelled) return
         setStatus('offline')
-        setError('Netzwerkfehler')
+        setError(tRef.current('sync.error.network'))
         backoff = Math.min(backoff * 2, BACKOFF_MAX_MS)
+      } finally {
+        inFlight = false
       }
-      if (!cancelled) timeoutId = window.setTimeout(poll, backoff)
+      if (!cancelled && !stop) timeoutId = window.setTimeout(poll, backoff)
     }
 
     const onVisibility = () => {
@@ -252,14 +267,22 @@ export function useSync({
   const createSession = useCallback(async (): Promise<string> => {
     setStatus('connecting')
     setError(null)
-    const res = await fetch('/api/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tournament: stripSync(tournament) }),
-    })
+    let res: Response
+    try {
+      res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tournament: stripSync(tournament) }),
+      })
+    } catch {
+      // Network failure — don't leave the UI stuck on 'connecting'.
+      setStatus('offline')
+      setError(t('sync.error.network'))
+      throw new Error('create_network_error')
+    }
     if (!res.ok) {
       setStatus('error')
-      setError(await readErrorMessage(res))
+      setError(await readErrorMessage(res, t))
       throw new Error(`create_failed_${res.status}`)
     }
     const body = (await res.json()) as CreateResponse
@@ -269,22 +292,30 @@ export function useSync({
     setStatus('live')
     return body.code
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournament])
+  }, [tournament, t])
 
   const joinSession = useCallback(
     async (code: string): Promise<void> => {
       const trimmed = code.trim().toUpperCase()
       setStatus('connecting')
       setError(null)
-      const res = await fetch(`/api/sync/${trimmed}`, { method: 'GET' })
+      let res: Response
+      try {
+        res = await fetch(`/api/sync/${trimmed}`, { method: 'GET' })
+      } catch {
+        // Network failure — surface it instead of hanging on 'connecting'.
+        setStatus('offline')
+        setError(t('sync.error.network'))
+        throw new Error('join_network_error')
+      }
       if (res.status === 404) {
         setStatus('error')
-        setError('Code nicht gefunden')
+        setError(t('sync.error.notFound'))
         throw new Error('not_found')
       }
       if (!res.ok) {
         setStatus('error')
-        setError(await readErrorMessage(res))
+        setError(await readErrorMessage(res, t))
         throw new Error(`join_failed_${res.status}`)
       }
       const body = (await res.json()) as ReadResponse
@@ -293,7 +324,7 @@ export function useSync({
       applyRemote({ ...body.tournament, sync: newSync })
       setStatus('live')
     },
-    [applyRemote],
+    [applyRemote, t],
   )
 
   const leaveSession = useCallback(() => {
@@ -328,7 +359,10 @@ export function useSync({
 }
 
 /** Reads `{message}` or `{error}` from a JSON error body, falling back to HTTP status. */
-async function readErrorMessage(res: Response): Promise<string> {
+async function readErrorMessage(
+  res: Response,
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string,
+): Promise<string> {
   try {
     const body = (await res.clone().json()) as { message?: string; error?: string }
     if (body?.message) return body.message
@@ -336,7 +370,7 @@ async function readErrorMessage(res: Response): Promise<string> {
   } catch {
     // Non-JSON body — fall through.
   }
-  return `HTTP ${res.status}`
+  return t('sync.error.http', { status: res.status })
 }
 
 /** Returns a tournament copy with `sync` stripped — never sent to server. */
