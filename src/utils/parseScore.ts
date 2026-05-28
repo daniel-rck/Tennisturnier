@@ -5,10 +5,11 @@ export function parseScore(v: string): number | undefined {
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined
 }
 
-/** Parse a positive integer setting input. Falls back to `fallback` if not finite. */
+/** Parse a positive integer setting input. Falls back to `fallback` if not
+ *  finite or negative (the function name promises non-negative output). */
 export function parsePositiveInt(v: string, fallback: number): number {
   if (v === '') return fallback
   const n = Number(v)
-  if (!Number.isFinite(n)) return fallback
+  if (!Number.isFinite(n) || n < 0) return fallback
   return Math.round(n)
 }

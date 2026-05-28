@@ -16,7 +16,7 @@
   <br/>
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19" />
   <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.9" />
-  <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite 7" />
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite 8" />
   <img src="https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind 4" />
   <img src="https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Workers" />
 </p>
@@ -66,7 +66,7 @@ bunx wrangler dev    # http://localhost:8787
 
 ## Tech-Stack
 
-React 19 · TypeScript 5.9 · Vite 7 · Tailwind 4 · vite-plugin-pwa · Cloudflare Workers (Static Assets + KV) · Vitest · ESLint 9 · Bun
+React 19 · TypeScript 5.9 · Vite 8 · Tailwind 4 · vite-plugin-pwa · Cloudflare Workers (Static Assets + KV) · Vitest · ESLint 9 · Bun
 
 ## Architektur
 

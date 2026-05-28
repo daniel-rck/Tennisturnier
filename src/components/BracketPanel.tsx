@@ -112,8 +112,8 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
   )
 
   const resolved = useMemo(
-    () => resolveBracket(tournament.bracket, entryName, groupWinners),
-    [tournament.bracket, entryName, groupWinners],
+    () => resolveBracket(tournament.bracket, entryName, groupWinners, t),
+    [tournament.bracket, entryName, groupWinners, t],
   )
 
   if (

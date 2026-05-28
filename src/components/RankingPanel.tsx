@@ -258,14 +258,15 @@ function GroupsRanking({ tournament }: Props) {
 }
 
 function KnockoutRanking({ tournament }: Props) {
+  const { t } = useTranslation()
   const entryName = useCallback(
     (id: string) =>
       tournament.entries.find((e) => e.id === id)?.name ?? '?',
     [tournament.entries],
   )
   const resolved = useMemo(
-    () => resolveBracket(tournament.bracket, entryName),
-    [tournament.bracket, entryName],
+    () => resolveBracket(tournament.bracket, entryName, undefined, t),
+    [tournament.bracket, entryName, t],
   )
   return <BracketSummary resolved={resolved} entryName={entryName} />
 }
@@ -294,10 +295,13 @@ function GroupsKoRanking({ tournament }: Props) {
   )
   const resolved = useMemo(
     () =>
-      resolveBracket(tournament.bracket, entryName, (g, r) =>
-        groupWinnerMap.get(`${g}|${r}`),
+      resolveBracket(
+        tournament.bracket,
+        entryName,
+        (g, r) => groupWinnerMap.get(`${g}|${r}`),
+        t,
       ),
-    [tournament.bracket, entryName, groupWinnerMap],
+    [tournament.bracket, entryName, groupWinnerMap, t],
   )
   return (
     <div className="space-y-6">

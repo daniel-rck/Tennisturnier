@@ -1,4 +1,6 @@
 import type { Match, Mode, Player, Round, Tournament } from './types'
+import { MODE_KEYS } from './types'
+import { germanFallback, type Translate } from './i18n/fallback'
 
 export interface ScheduleResult {
   rounds: Round[]
@@ -292,7 +294,10 @@ function applyRests(state: PairingState, all: Player[], played: Set<string>) {
   }
 }
 
-export function generateSchedule(t: Tournament): ScheduleResult {
+export function generateSchedule(
+  t: Tournament,
+  tr: Translate = germanFallback,
+): ScheduleResult {
   const warnings: string[] = []
   const womenRaw = t.players.filter((p) => p.gender === 'F')
   const menRaw = t.players.filter((p) => p.gender === 'M')
@@ -312,18 +317,20 @@ export function generateSchedule(t: Tournament): ScheduleResult {
         men = menRaw.slice(0, menRaw.length - reassignCount)
         women = [...womenRaw, ...moved]
         warnings.push(
-          `Geschlechter unausgeglichen — ${reassignCount} ${reassignCount === 1 ? 'Herr spielt' : 'Herren spielen'} als Dame: ${moved
-            .map((p) => p.name)
-            .join(', ')}.`,
+          tr(reassignCount === 1 ? 'warn.genderToWomen.one' : 'warn.genderToWomen.other', {
+            count: reassignCount,
+            names: moved.map((p) => p.name).join(', '),
+          }),
         )
       } else {
         const moved = womenRaw.slice(womenRaw.length - reassignCount)
         women = womenRaw.slice(0, womenRaw.length - reassignCount)
         men = [...menRaw, ...moved]
         warnings.push(
-          `Geschlechter unausgeglichen — ${reassignCount} ${reassignCount === 1 ? 'Dame spielt' : 'Damen spielen'} als Herr: ${moved
-            .map((p) => p.name)
-            .join(', ')}.`,
+          tr(reassignCount === 1 ? 'warn.genderToMen.one' : 'warn.genderToMen.other', {
+            count: reassignCount,
+            names: moved.map((p) => p.name).join(', '),
+          }),
         )
       }
     }
@@ -344,16 +351,16 @@ export function generateSchedule(t: Tournament): ScheduleResult {
   }
 
   if (courtsPossible <= 0) {
-    warnings.push(
-      `Zu wenige Spieler:innen für den Modus „${t.mode}“. Es kann kein Platz besetzt werden.`,
-    )
+    warnings.push(tr('warn.noCourts', { mode: tr(MODE_KEYS[t.mode]) }))
     return { rounds: [], warnings }
   }
   if (courtsPossible < t.courts) {
     warnings.push(
-      `Nur ${courtsPossible} von ${t.courts} Plätzen können besetzt werden — zu wenige passende Spieler:innen für „${labelMode(
-        t.mode,
-      )}“.`,
+      tr('warn.courtsReduced', {
+        possible: courtsPossible,
+        courts: t.courts,
+        mode: tr(MODE_KEYS[t.mode]),
+      }),
     )
   }
 
@@ -376,9 +383,7 @@ export function generateSchedule(t: Tournament): ScheduleResult {
       effectiveCourts < courtsPossible &&
       !partialWarned
     ) {
-      warnings.push(
-        'Letzte Runde nur teilweise besetzt, damit alle Spieler:innen gleich oft spielen.',
-      )
+      warnings.push(tr('warn.partialFinalRound'))
       partialWarned = true
     }
 
@@ -470,13 +475,4 @@ function targetTotalMatches(
     if ((4 * T) % P === 0) return T
   }
   return fallback
-}
-
-function labelMode(m: Mode): string {
-  return {
-    mixed: 'Gemischtes Doppel',
-    women: 'Damen-Doppel',
-    men: 'Herren-Doppel',
-    open: 'Freies Doppel',
-  }[m]
 }

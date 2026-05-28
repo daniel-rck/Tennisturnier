@@ -28,4 +28,9 @@ describe('parsePositiveInt', () => {
     expect(parsePositiveInt('3.4', 1)).toBe(3)
     expect(parsePositiveInt('3.6', 1)).toBe(4)
   })
+
+  it('returns fallback for negative input', () => {
+    expect(parsePositiveInt('-5', 2)).toBe(2)
+    expect(parsePositiveInt('-0.4', 9)).toBe(9)
+  })
 })

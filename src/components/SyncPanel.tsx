@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import QRCode from 'qrcode'
 import type { Tournament } from '../types'
 import type { SyncRole, SyncStatus } from '../hooks/useSync'
 import { Spinner } from './Spinner'
@@ -46,6 +45,20 @@ export function SyncPanel({
     }
   }
 
+  const copyToken = async () => {
+    if (!sync?.ownerToken) return
+    try {
+      await navigator.clipboard?.writeText(sync.ownerToken)
+      toast({ variant: 'success', title: t('sync.tokenCopied') })
+    } catch {
+      toast({
+        variant: 'error',
+        title: t('sync.copyFailed'),
+        description: t('sync.copyFailedDesc'),
+      })
+    }
+  }
+
   useEffect(() => {
     if (!sync || role !== 'owner') {
       setQrDataUrl(null)
@@ -54,9 +67,22 @@ export function SyncPanel({
     const url = `${window.location.origin}${window.location.pathname}?join=${sync.shareCode}`
     const isLargeViewport =
       typeof window !== 'undefined' && window.innerWidth >= 1536
-    QRCode.toDataURL(url, { width: isLargeViewport ? 360 : 220, margin: 1 })
-      .then(setQrDataUrl)
-      .catch(() => setQrDataUrl(null))
+    let active = true
+    // Lazy-load the qrcode lib so it stays out of the initial bundle — only
+    // the owner device ever renders a QR code.
+    void import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(url, { width: isLargeViewport ? 360 : 220, margin: 1 }),
+      )
+      .then((dataUrl) => {
+        if (active) setQrDataUrl(dataUrl)
+      })
+      .catch(() => {
+        if (active) setQrDataUrl(null)
+      })
+    return () => {
+      active = false
+    }
   }, [sync, role])
 
   const handleCreate = async () => {
@@ -161,9 +187,22 @@ export function SyncPanel({
               {t('sync.ownerToken')}
             </summary>
             <p className="mt-1">{t('sync.ownerTokenHint')}</p>
-            <code className="mt-1 block break-all bg-surface-muted p-2 rounded text-[10px] text-fg">
-              {sync.ownerToken}
-            </code>
+            <div className="mt-1 flex items-center gap-2">
+              <code
+                className="flex-1 break-all bg-surface-muted p-2 rounded text-[10px] text-fg tracking-widest"
+                aria-hidden
+              >
+                {maskToken(sync.ownerToken)}
+              </code>
+              <button
+                type="button"
+                onClick={copyToken}
+                aria-label={t('sync.copyToken')}
+                className="shrink-0 rounded-md border border-border-strong px-2 py-1 text-[11px] hover:border-brand-hover"
+              >
+                {t('sync.copyToken')}
+              </button>
+            </div>
           </details>
           <button
             type="button"
@@ -197,6 +236,15 @@ export function SyncPanel({
       )}
     </section>
   )
+}
+
+/** Show only the first 4 chars of the owner token; mask the rest so a casual
+ *  screenshot or screen-share doesn't leak write access. Full value stays
+ *  available via the copy button. */
+function maskToken(token?: string): string {
+  if (!token) return ''
+  const head = token.slice(0, 4)
+  return `${head}${'•'.repeat(Math.max(8, token.length - 4))}`
 }
 
 const STATUS_KEYS: Record<SyncStatus, TranslationKey> = {

@@ -66,8 +66,8 @@ export function GroupsPanel({
   ])
 
   const { warnings } = useMemo(
-    () => assignGroups(tournament.entries, tournament.groupCount),
-    [tournament.entries, tournament.groupCount],
+    () => assignGroups(tournament.entries, tournament.groupCount, t),
+    [tournament.entries, tournament.groupCount, t],
   )
 
   // Auto-(re)build schedule when groups change. Preserves scores for unchanged matchups.
