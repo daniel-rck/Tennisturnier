@@ -270,24 +270,24 @@ function App() {
     setShowOnboarding(false)
   }, [])
 
-  // Keyboard shortcut: Ctrl/Cmd+Z triggers undo (when not editing form fields)
+  // Keyboard shortcut: Ctrl/Cmd+Z triggers undo (when not editing form fields).
+  // Destructure the stable callback + flag so the listener only re-binds when
+  // undo availability actually changes (not on every render).
+  const { undo, canUndo } = t
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         const target = e.target as HTMLElement | null
         if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
-        if (t.canUndo) {
+        if (canUndo) {
           e.preventDefault()
-          t.undo()
+          undo()
         }
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-    // `t.undo` is a stable useCallback and `t.canUndo` is the only value read —
-    // depending on the whole `t` object would re-bind the listener every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t.canUndo, t.undo])
+  }, [canUndo, undo])
 
   const phases: { id: PhaseId; label: string; icon: string }[] = [
     { id: 'prep', label: tr('phase.prep'), icon: '⚙' },

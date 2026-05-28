@@ -34,7 +34,8 @@ export function SyncPanel({
   const copyCode = async () => {
     if (!sync?.shareCode) return
     try {
-      await navigator.clipboard?.writeText(sync.shareCode)
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard_unavailable')
+      await navigator.clipboard.writeText(sync.shareCode)
       toast({ variant: 'success', title: t('sync.codeCopied') })
     } catch {
       toast({
@@ -48,7 +49,8 @@ export function SyncPanel({
   const copyToken = async () => {
     if (!sync?.ownerToken) return
     try {
-      await navigator.clipboard?.writeText(sync.ownerToken)
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard_unavailable')
+      await navigator.clipboard.writeText(sync.ownerToken)
       toast({ variant: 'success', title: t('sync.tokenCopied') })
     } catch {
       toast({
