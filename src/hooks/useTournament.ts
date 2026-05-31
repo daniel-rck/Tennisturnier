@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { assignGroups } from "../groupScheduler";
-import { defaultTournament, loadTournament, saveTournament } from "../storage";
+import {
+  defaultTournament,
+  loadTournament,
+  migrateFromLocalStorage,
+  saveTournament,
+} from "../storage";
 import type {
   BellVariant,
   BracketMatch,
@@ -26,25 +31,39 @@ const newId = () =>
 const UNDO_LIMIT = 10;
 
 export function useTournament() {
-  // Synchronous lazy init so the first render already sees persisted data —
-  // avoids a one-frame "empty default tournament" flash that confused phase
-  // inference in App.tsx.
-  const [tournament, setTournament] = useState<Tournament>(() => {
-    try {
-      return loadTournament();
-    } catch {
-      return defaultTournament();
-    }
-  });
-  const hydrated = useRef(true);
+  // idb is async, so we start from defaults and hydrate in an effect. `hydrated`
+  // gates persistence (so the initial default never clobbers stored data) and
+  // lets the UI hold a loading state until the real tournament is read.
+  const [tournament, setTournament] = useState<Tournament>(() => defaultTournament());
+  const [hydrated, setHydrated] = useState(false);
+  const hydratedRef = useRef(false);
   const undoStackRef = useRef<Tournament[]>([]);
   const [undoDepth, setUndoDepth] = useState(0);
 
-  // Debounce localStorage writes by ~250ms to avoid serializing the whole
-  // tournament on every keystroke when typing player names.
+  // Hydrate from idb on mount: migrate any legacy localStorage payload first,
+  // then load the current tournament.
   useEffect(() => {
-    if (!hydrated.current) return;
-    const id = window.setTimeout(() => saveTournament(tournament), 250);
+    let cancelled = false;
+    (async () => {
+      await migrateFromLocalStorage();
+      const loaded = await loadTournament();
+      if (cancelled) return;
+      setTournament(loaded);
+      hydratedRef.current = true;
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Debounce idb writes by ~250ms to avoid serializing the whole tournament on
+  // every keystroke when typing player names. Never writes before hydration.
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const id = window.setTimeout(() => {
+      void saveTournament(tournament);
+    }, 250);
     return () => window.clearTimeout(id);
   }, [tournament]);
 
@@ -465,6 +484,7 @@ export function useTournament() {
 
   return {
     tournament,
+    hydrated,
     snapshot,
     undo,
     canUndo: undoDepth > 0,

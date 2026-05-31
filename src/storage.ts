@@ -1,7 +1,9 @@
+import { CURRENT_KEY, getDB, notifyMutation, TOURNAMENTS_STORE } from "./lib/db/index.ts";
 import type { BellVariant, Entry, RevealState, Tournament } from "./types";
 
 const BELL_VARIANTS: readonly BellVariant[] = ["classic", "boxing", "alarm", "temple"];
 
+// Legacy localStorage keys — read once during migration into idb, then removed.
 const KEY_V1 = "tennisturnier:v1";
 const KEY = "tennisturnier:v2";
 
@@ -113,31 +115,62 @@ function sanitizeSync(input: unknown): Tournament["sync"] {
   };
 }
 
-export function loadTournament(): Tournament {
+/**
+ * Read the legacy localStorage payload (v2, falling back to v1), if any.
+ * Returns the raw JSON string or null. Never throws.
+ */
+function readLegacyRaw(): string | null {
   try {
-    const rawV2 = localStorage.getItem(KEY);
-    if (rawV2) return migrate(JSON.parse(rawV2));
-    const rawV1 = localStorage.getItem(KEY_V1);
-    if (rawV1) {
-      const migrated = migrate(JSON.parse(rawV1));
-      // Persist under new key, leave v1 in place for safety.
-      try {
-        localStorage.setItem(KEY, JSON.stringify(migrated));
-      } catch {
-        /* ignore */
-      }
-      return migrated;
+    return localStorage.getItem(KEY) ?? localStorage.getItem(KEY_V1);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One-time migration of pre-idb data: if idb has no tournament yet but a legacy
+ * localStorage payload exists, migrate it into idb and remove the legacy keys.
+ * Conservative — on any error it aborts and leaves localStorage untouched so a
+ * later start can retry. Idempotent: a no-op once idb holds a tournament.
+ */
+export async function migrateFromLocalStorage(): Promise<void> {
+  try {
+    const db = await getDB();
+    const existing = await db.get(TOURNAMENTS_STORE, CURRENT_KEY);
+    if (existing) return;
+    const raw = readLegacyRaw();
+    if (!raw) return;
+    const migrated = migrate(JSON.parse(raw));
+    await db.put(TOURNAMENTS_STORE, migrated, CURRENT_KEY);
+    // Only drop the legacy keys after the idb write succeeded.
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(KEY_V1);
+    } catch {
+      /* ignore */
     }
-    return defaultTournament();
+  } catch {
+    // Abort silently — leave any legacy data intact for a later retry.
+  }
+}
+
+export async function loadTournament(): Promise<Tournament> {
+  try {
+    const db = await getDB();
+    const stored = await db.get(TOURNAMENTS_STORE, CURRENT_KEY);
+    // migrate() is idempotent — also normalizes any older shape read from idb.
+    return stored ? migrate(stored) : defaultTournament();
   } catch {
     return defaultTournament();
   }
 }
 
-export function saveTournament(t: Tournament): void {
+export async function saveTournament(t: Tournament): Promise<void> {
   try {
-    localStorage.setItem(KEY, JSON.stringify(t));
+    const db = await getDB();
+    await db.put(TOURNAMENTS_STORE, t, CURRENT_KEY);
+    notifyMutation(TOURNAMENTS_STORE);
   } catch {
-    // ignore quota errors — non-critical
+    // ignore write errors — non-critical
   }
 }

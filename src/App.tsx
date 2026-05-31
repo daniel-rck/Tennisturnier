@@ -20,7 +20,7 @@ import { useToast } from "./hooks/useToast";
 import { useTournament } from "./hooks/useTournament";
 import { useTranslation } from "./i18n";
 import { generateSchedule } from "./scheduler";
-import { loadTournament, migrate } from "./storage";
+import { migrate } from "./storage";
 
 // Prep-phase panels pull in @dnd-kit (drag-and-drop) — lazy-load them so that
 // dependency stays out of the initial bundle for users who land mid-tournament.
@@ -78,17 +78,18 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => !readOnboardingDone());
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Phase + sub-tab state. We peek synchronously into localStorage so the
-  // first render lands on the right phase (useTournament hydrates in an
-  // effect, which would otherwise leave us on 'prep' for one paint).
-  const [phase, setPhase] = useState<PhaseId>(() => {
-    try {
-      return inferPhase(loadTournament());
-    } catch {
-      return "prep";
-    }
-  });
+  // Phase + sub-tab state. Tournament data hydrates asynchronously from idb;
+  // once it lands we infer the correct starting phase exactly once (see below),
+  // while the app is still behind the hydration gate, so there's no flash.
+  const [phase, setPhase] = useState<PhaseId>("prep");
   const [subTab, setSubTab] = useState<string>("");
+  const didInitPhase = useRef(false);
+  useEffect(() => {
+    if (t.hydrated && !didInitPhase.current) {
+      didInitPhase.current = true;
+      setPhase(inferPhase(t.tournament));
+    }
+  }, [t.hydrated, t.tournament]);
 
   // Smart re-default: when phase becomes invalid (e.g. user reset / imported
   // an empty tournament), step back to prep.
@@ -289,6 +290,16 @@ function App() {
     { id: "live", label: tr("phase.live"), icon: "▶" },
     { id: "results", label: tr("phase.results"), icon: "🏆" },
   ];
+
+  // Hold a loading state until the tournament is read from idb, so the first
+  // visible paint already lands on the inferred phase with real data.
+  if (!t.hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-muted text-court">
+        <Spinner size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-muted">
