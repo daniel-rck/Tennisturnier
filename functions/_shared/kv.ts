@@ -61,7 +61,7 @@ export function extractBearer(req: Request): string | null {
   const h = req.headers.get("Authorization");
   if (!h) return null;
   const m = /^Bearer\s+(.+)$/i.exec(h);
-  return m ? m[1].trim() : null;
+  return m?.[1]?.trim() ?? null;
 }
 
 export function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
