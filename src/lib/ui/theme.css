@@ -58,8 +58,10 @@
   --duration-slow: 400ms;
 }
 
+/* Dark tokens. Use a plain `:root` override inside the media query — a nested
+   `@theme` here gets hoisted by Tailwind 4 and would apply unconditionally. */
 @media (prefers-color-scheme: dark) {
-  @theme {
+  :root {
     --color-surface: oklch(0.18 0 0);
     --color-surface-muted: oklch(0.22 0 0);
     --color-surface-sunken: oklch(0.14 0 0);
