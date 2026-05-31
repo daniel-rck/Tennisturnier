@@ -17,11 +17,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script>
       try {
-        var t = localStorage.getItem('tennisturnier:theme');
+        const t = localStorage.getItem('tennisturnier:theme');
         if (t === 'dark' || t === 'light') {
           document.documentElement.dataset.theme = t;
         }
-      } catch (e) {}
+      } catch (_e) {}
     </script>
     <meta
       name="description"

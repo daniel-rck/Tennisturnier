@@ -1,6 +1,6 @@
 name = "tennisturnier"
 main = "./worker/index.ts"
-compatibility_date = "2024-12-30"
+compatibility_date = "2026-05-01"
 
 # Static SPA from Vite — served when no API route matches.
 # `single-page-application` falls back to index.html for unmatched paths.

@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from '../i18n'
-import { Sheet, Button } from './ui'
+import { useEffect, useState } from "react";
+import { useTranslation } from "../i18n";
+import { Button, Sheet } from "./ui";
 
 interface Props {
-  open: boolean
-  onClose: () => void
-  teamAName: string
-  teamBName: string
-  scoreA: number | undefined
-  scoreB: number | undefined
-  onChange: (a: number | undefined, b: number | undefined) => void
+  open: boolean;
+  onClose: () => void;
+  teamAName: string;
+  teamBName: string;
+  scoreA: number | undefined;
+  scoreB: number | undefined;
+  onChange: (a: number | undefined, b: number | undefined) => void;
 }
 
 export function ScoreSheet({
@@ -21,32 +21,32 @@ export function ScoreSheet({
   scoreB,
   onChange,
 }: Props) {
-  const { t } = useTranslation()
-  const [draftA, setDraftA] = useState<number | undefined>(scoreA)
-  const [draftB, setDraftB] = useState<number | undefined>(scoreB)
+  const { t } = useTranslation();
+  const [draftA, setDraftA] = useState<number | undefined>(scoreA);
+  const [draftB, setDraftB] = useState<number | undefined>(scoreB);
 
   useEffect(() => {
     if (open) {
-      setDraftA(scoreA)
-      setDraftB(scoreB)
+      setDraftA(scoreA);
+      setDraftB(scoreB);
     }
-  }, [open, scoreA, scoreB])
+  }, [open, scoreA, scoreB]);
 
   const commit = (a: number | undefined, b: number | undefined) => {
-    setDraftA(a)
-    setDraftB(b)
-    onChange(a, b)
-  }
+    setDraftA(a);
+    setDraftB(b);
+    onChange(a, b);
+  };
 
   const clear = () => {
-    commit(undefined, undefined)
-  }
+    commit(undefined, undefined);
+  };
 
   return (
     <Sheet
       open={open}
       onClose={onClose}
-      title={t('scoreSheet.title', { teamA: teamAName, teamB: teamBName })}
+      title={t("scoreSheet.title", { teamA: teamAName, teamB: teamBName })}
     >
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-3">
@@ -54,13 +54,13 @@ export function ScoreSheet({
             label={teamAName}
             value={draftA}
             onChange={(n) => commit(n, draftB)}
-            ariaLabel={t('scoreSheet.teamAScore', { team: teamAName })}
+            ariaLabel={t("scoreSheet.teamAScore", { team: teamAName })}
           />
           <ScoreColumn
             label={teamBName}
             value={draftB}
             onChange={(n) => commit(draftA, n)}
-            ariaLabel={t('scoreSheet.teamAScore', { team: teamBName })}
+            ariaLabel={t("scoreSheet.teamAScore", { team: teamBName })}
           />
         </div>
         <Keypad
@@ -68,26 +68,26 @@ export function ScoreSheet({
             // Smart-input: alternates A then B as a single tap, but for now we
             // append to the field with focus. To keep things simple here, we treat
             // each digit as a "set to N" for whichever side isn't complete yet.
-            if (draftA === undefined) commit(d, draftB)
-            else if (draftB === undefined) commit(draftA, d)
-            else commit(d, draftB)
+            if (draftA === undefined) commit(d, draftB);
+            else if (draftB === undefined) commit(draftA, d);
+            else commit(d, draftB);
           }}
           onBackspace={() => {
-            if (draftB !== undefined) commit(draftA, undefined)
-            else commit(undefined, draftB)
+            if (draftB !== undefined) commit(draftA, undefined);
+            else commit(undefined, draftB);
           }}
         />
         <div className="flex items-center justify-between gap-2 pt-2">
           <Button variant="ghost" size="md" onClick={clear}>
-            {t('scoreSheet.clear')}
+            {t("scoreSheet.clear")}
           </Button>
           <Button onClick={onClose} size="md">
-            {t('scoreSheet.done')}
+            {t("scoreSheet.done")}
           </Button>
         </div>
       </div>
     </Sheet>
-  )
+  );
 }
 
 function ScoreColumn({
@@ -96,18 +96,19 @@ function ScoreColumn({
   onChange,
   ariaLabel,
 }: {
-  label: string
-  value: number | undefined
-  onChange: (n: number | undefined) => void
-  ariaLabel: string
+  label: string;
+  value: number | undefined;
+  onChange: (n: number | undefined) => void;
+  ariaLabel: string;
 }) {
-  const display = value ?? '–'
+  const display = value ?? "–";
   return (
     <div className="rounded-card border border-border bg-surface-muted p-3 text-center">
       <div className="text-xs text-fg-muted truncate mb-1" title={label}>
         {label}
       </div>
       <div
+        role="img"
         aria-label={ariaLabel}
         className="serif text-5xl font-semibold tabular text-fg leading-none my-2 animate-score-pop"
         key={String(value)}
@@ -133,17 +134,17 @@ function ScoreColumn({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 function Keypad({
   onDigit,
   onBackspace,
 }: {
-  onDigit: (d: number) => void
-  onBackspace: () => void
+  onDigit: (d: number) => void;
+  onBackspace: () => void;
 }) {
-  const buttons = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  const buttons = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   return (
     <div className="grid grid-cols-3 gap-2">
       {buttons.map((d) => (
@@ -173,5 +174,5 @@ function Keypad({
       </button>
       <span aria-hidden />
     </div>
-  )
+  );
 }

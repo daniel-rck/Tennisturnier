@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from "react";
+import { assignGroups } from "../groupScheduler";
 import {
   defaultTournament,
   loadTournament,
+  migrateFromLocalStorage,
   saveTournament,
-} from '../storage'
-import { assignGroups } from '../groupScheduler'
+} from "../storage";
 import type {
   BellVariant,
   BracketMatch,
@@ -20,89 +21,97 @@ import type {
   Round,
   SyncConfig,
   Tournament,
-} from '../types'
+} from "../types";
 
 const newId = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+  typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2)
+    : Math.random().toString(36).slice(2);
 
-const UNDO_LIMIT = 10
+const UNDO_LIMIT = 10;
 
 export function useTournament() {
-  // Synchronous lazy init so the first render already sees persisted data —
-  // avoids a one-frame "empty default tournament" flash that confused phase
-  // inference in App.tsx.
-  const [tournament, setTournament] = useState<Tournament>(() => {
-    try {
-      return loadTournament()
-    } catch {
-      return defaultTournament()
-    }
-  })
-  const hydrated = useRef(true)
-  const undoStackRef = useRef<Tournament[]>([])
-  const [undoDepth, setUndoDepth] = useState(0)
+  // idb is async, so we start from defaults and hydrate in an effect. `hydrated`
+  // gates persistence (so the initial default never clobbers stored data) and
+  // lets the UI hold a loading state until the real tournament is read.
+  const [tournament, setTournament] = useState<Tournament>(() => defaultTournament());
+  const [hydrated, setHydrated] = useState(false);
+  const hydratedRef = useRef(false);
+  const undoStackRef = useRef<Tournament[]>([]);
+  const [undoDepth, setUndoDepth] = useState(0);
 
-  // Debounce localStorage writes by ~250ms to avoid serializing the whole
-  // tournament on every keystroke when typing player names.
+  // Hydrate from idb on mount: migrate any legacy localStorage payload first,
+  // then load the current tournament.
   useEffect(() => {
-    if (!hydrated.current) return
-    const id = window.setTimeout(() => saveTournament(tournament), 250)
-    return () => window.clearTimeout(id)
-  }, [tournament])
+    let cancelled = false;
+    (async () => {
+      await migrateFromLocalStorage();
+      const loaded = await loadTournament();
+      if (cancelled) return;
+      setTournament(loaded);
+      hydratedRef.current = true;
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Debounce idb writes by ~250ms to avoid serializing the whole tournament on
+  // every keystroke when typing player names. Never writes before hydration.
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const id = window.setTimeout(() => {
+      void saveTournament(tournament);
+    }, 250);
+    return () => window.clearTimeout(id);
+  }, [tournament]);
 
   /** Save current state onto the undo stack. Call before destructive actions. */
   const snapshot = useCallback(() => {
     setTournament((prev) => {
-      undoStackRef.current = [
-        ...undoStackRef.current.slice(-(UNDO_LIMIT - 1)),
-        prev,
-      ]
-      setUndoDepth(undoStackRef.current.length)
-      return prev
-    })
-  }, [])
+      undoStackRef.current = [...undoStackRef.current.slice(-(UNDO_LIMIT - 1)), prev];
+      setUndoDepth(undoStackRef.current.length);
+      return prev;
+    });
+  }, []);
 
   const undo = useCallback(() => {
-    const stack = undoStackRef.current
-    if (stack.length === 0) return
-    const prev = stack[stack.length - 1]
-    undoStackRef.current = stack.slice(0, -1)
-    setUndoDepth(undoStackRef.current.length)
-    setTournament(prev)
-  }, [])
+    const stack = undoStackRef.current;
+    if (stack.length === 0) return;
+    const prev = stack[stack.length - 1];
+    undoStackRef.current = stack.slice(0, -1);
+    setUndoDepth(undoStackRef.current.length);
+    setTournament(prev);
+  }, []);
 
   // ---- Rotation: players ---------------------------------------------------
 
   const setSchedule = useCallback(
-    (schedule: Round[]) =>
-      setTournament((prev) => ({ ...prev, schedule })),
+    (schedule: Round[]) => setTournament((prev) => ({ ...prev, schedule })),
     [],
-  )
+  );
 
   const addPlayer = useCallback((name: string, gender: Gender) => {
-    const trimmed = name.trim()
-    if (!trimmed) return
+    const trimmed = name.trim();
+    if (!trimmed) return;
     setTournament((prev) => ({
       ...prev,
       players: [...prev.players, { id: newId(), name: trimmed, gender }],
       schedule: [],
-    }))
-  }, [])
+    }));
+  }, []);
 
   const updatePlayer = useCallback(
-    (id: string, patch: Partial<Pick<Player, 'name' | 'gender'>>) =>
+    (id: string, patch: Partial<Pick<Player, "name" | "gender">>) =>
       setTournament((prev) => ({
         ...prev,
         players: prev.players.map((p) =>
-          p.id === id
-            ? { ...p, ...patch, name: patch.name?.trim() ?? p.name }
-            : p,
+          p.id === id ? { ...p, ...patch, name: patch.name?.trim() ?? p.name } : p,
         ),
       })),
     [],
-  )
+  );
 
   const removePlayer = useCallback(
     (id: string) =>
@@ -112,32 +121,30 @@ export function useTournament() {
         schedule: [],
       })),
     [],
-  )
+  );
 
   const setPlayersOrder = useCallback(
-    (players: Player[]) =>
-      setTournament((prev) => ({ ...prev, players })),
+    (players: Player[]) => setTournament((prev) => ({ ...prev, players })),
     [],
-  )
+  );
 
   const sortPlayersBy = useCallback(
-    (criterion: 'name' | 'women-first' | 'men-first') =>
+    (criterion: "name" | "women-first" | "men-first") =>
       setTournament((prev) => {
-        const next = prev.players.slice()
-        if (criterion === 'name') {
-          next.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+        const next = prev.players.slice();
+        if (criterion === "name") {
+          next.sort((a, b) => a.name.localeCompare(b.name, "de"));
         } else {
-          const firstGender: Gender = criterion === 'women-first' ? 'F' : 'M'
+          const firstGender: Gender = criterion === "women-first" ? "F" : "M";
           next.sort((a, b) => {
-            if (a.gender === b.gender)
-              return a.name.localeCompare(b.name, 'de')
-            return a.gender === firstGender ? -1 : 1
-          })
+            if (a.gender === b.gender) return a.name.localeCompare(b.name, "de");
+            return a.gender === firstGender ? -1 : 1;
+          });
         }
-        return { ...prev, players: next }
+        return { ...prev, players: next };
       }),
     [],
-  )
+  );
 
   // ---- Top-level settings --------------------------------------------------
 
@@ -151,7 +158,7 @@ export function useTournament() {
         bracket: [],
       })),
     [],
-  )
+  );
 
   const setEntryFormat = useCallback(
     (entryFormat: EntryFormat) =>
@@ -161,22 +168,22 @@ export function useTournament() {
         entries: prev.entries.map((e) => ({
           ...e,
           members:
-            entryFormat === 'singles'
+            entryFormat === "singles"
               ? e.members.slice(0, 1)
               : e.members.length === 1
-                ? [...e.members, '']
+                ? [...e.members, ""]
                 : e.members,
         })),
         groupSchedule: [],
         bracket: [],
       })),
     [],
-  )
+  );
 
   const setMode = useCallback(
     (mode: Mode) => setTournament((prev) => ({ ...prev, mode, schedule: [] })),
     [],
-  )
+  );
 
   const setCourts = useCallback(
     (courts: number) =>
@@ -185,7 +192,7 @@ export function useTournament() {
         courts: Math.max(1, Math.min(20, Math.round(courts))),
       })),
     [],
-  )
+  );
 
   const setRounds = useCallback(
     (rounds: number) =>
@@ -195,7 +202,7 @@ export function useTournament() {
         schedule: [],
       })),
     [],
-  )
+  );
 
   const setAllowPartialFinalRound = useCallback(
     (allowPartialFinalRound: boolean) =>
@@ -205,25 +212,25 @@ export function useTournament() {
         schedule: [],
       })),
     [],
-  )
+  );
 
   const setGroupCount = useCallback(
     (groupCount: number) =>
       setTournament((prev) => {
-        const next = Math.max(1, Math.min(8, Math.round(groupCount)))
-        if (next === prev.groupCount) return prev
+        const next = Math.max(1, Math.min(8, Math.round(groupCount)));
+        if (next === prev.groupCount) return prev;
         // Group count changed — re-shuffle (anything else would be inconsistent).
-        const { groups } = assignGroups(prev.entries, next)
+        const { groups } = assignGroups(prev.entries, next);
         return {
           ...prev,
           groupCount: next,
           groupAssignment: groups.map((g) => g.map((e) => e.id)),
           groupSchedule: [],
           bracket: [],
-        }
+        };
       }),
     [],
-  )
+  );
 
   const setAdvancePerGroup = useCallback(
     (advancePerGroup: number) =>
@@ -233,12 +240,9 @@ export function useTournament() {
         bracket: [],
       })),
     [],
-  )
+  );
 
-  const setName = useCallback(
-    (name: string) => setTournament((prev) => ({ ...prev, name })),
-    [],
-  )
+  const setName = useCallback((name: string) => setTournament((prev) => ({ ...prev, name })), []);
 
   const setTimerMinutes = useCallback(
     (timerMinutes: number) =>
@@ -247,77 +251,69 @@ export function useTournament() {
         timerMinutes: Math.max(1, Math.min(120, Math.round(timerMinutes))),
       })),
     [],
-  )
+  );
 
   const setBellVariant = useCallback(
-    (bellVariant: BellVariant) =>
-      setTournament((prev) => ({ ...prev, bellVariant })),
+    (bellVariant: BellVariant) => setTournament((prev) => ({ ...prev, bellVariant })),
     [],
-  )
+  );
 
   // ---- Entries (groups/KO) -------------------------------------------------
 
   const addEntry = useCallback((members: string[]) => {
-    const cleaned = members.map((m) => m.trim()).filter((m) => m.length > 0)
-    if (cleaned.length === 0) return
+    const cleaned = members.map((m) => m.trim()).filter((m) => m.length > 0);
+    if (cleaned.length === 0) return;
     setTournament((prev) => {
       const filled =
-        prev.entryFormat === 'doubles' && cleaned.length === 1
-          ? [...cleaned, '']
-          : cleaned
-      const id = newId()
+        prev.entryFormat === "doubles" && cleaned.length === 1 ? [...cleaned, ""] : cleaned;
+      const id = newId();
       const newEntry: Entry = {
         id,
         name: deriveEntryName(filled),
         members: filled,
-      }
+      };
       // If groups are already assigned, drop the new entry into the smallest group
       // to keep balance — instead of throwing away all existing scores.
-      let nextAssignment = prev.groupAssignment
+      let nextAssignment = prev.groupAssignment;
       if (nextAssignment.length > 0) {
         const smallest = nextAssignment.reduce(
-          (acc, g, i) =>
-            g.length < nextAssignment[acc].length ? i : acc,
+          (acc, g, i) => (g.length < nextAssignment[acc].length ? i : acc),
           0,
-        )
-        nextAssignment = nextAssignment.map((g, i) =>
-          i === smallest ? [...g, id] : g,
-        )
+        );
+        nextAssignment = nextAssignment.map((g, i) => (i === smallest ? [...g, id] : g));
       }
       return {
         ...prev,
         entries: [...prev.entries, newEntry],
         groupAssignment: nextAssignment,
         bracket: [],
-      }
-    })
-  }, [])
+      };
+    });
+  }, []);
 
   const updateEntry = useCallback(
-    (id: string, patch: Partial<Pick<Entry, 'name' | 'members'>>) =>
+    (id: string, patch: Partial<Pick<Entry, "name" | "members">>) =>
       setTournament((prev) => ({
         ...prev,
         entries: prev.entries.map((e) => {
-          if (e.id !== id) return e
-          const members = patch.members
-            ? patch.members.map((m) => m.trim())
-            : e.members
-          const explicitName = patch.name?.trim()
-          const autoName = deriveEntryName(members)
+          if (e.id !== id) return e;
+          const members = patch.members ? patch.members.map((m) => m.trim()) : e.members;
+          const explicitName = patch.name?.trim();
+          const autoName = deriveEntryName(members);
           // If user typed a name, keep it; if user cleared name, regenerate auto.
           const name =
-            explicitName !== undefined && explicitName !== ''
+            explicitName !== undefined && explicitName !== ""
               ? explicitName
-              : explicitName === ''
+              : explicitName === ""
                 ? autoName
                 : isAutoName(e.name, e.members)
                   ? autoName
-                  : e.name
-          return { ...e, members, name }
+                  : e.name;
+          return { ...e, members, name };
         }),
       })),
     [],
-  )
+  );
 
   const removeEntry = useCallback(
     (id: string) =>
@@ -325,76 +321,64 @@ export function useTournament() {
         ...prev,
         entries: prev.entries.filter((e) => e.id !== id),
         // Strip the entry from the group assignment — keep other groups intact.
-        groupAssignment: prev.groupAssignment.map((g) =>
-          g.filter((eid) => eid !== id),
-        ),
+        groupAssignment: prev.groupAssignment.map((g) => g.filter((eid) => eid !== id)),
         // Drop matches involving this entry, keep the rest.
-        groupSchedule: prev.groupSchedule.filter(
-          (m) => m.entryA !== id && m.entryB !== id,
-        ),
+        groupSchedule: prev.groupSchedule.filter((m) => m.entryA !== id && m.entryB !== id),
         // Bracket is rebuilt structurally on next render, but score for matches
         // referencing a removed entry would mislead — clear it.
         bracket: [],
       })),
     [],
-  )
+  );
 
   /** Reorder for display only — group assignment & schedules stay intact. */
   const setEntriesOrder = useCallback(
-    (entries: Entry[]) =>
-      setTournament((prev) => ({ ...prev, entries })),
+    (entries: Entry[]) => setTournament((prev) => ({ ...prev, entries })),
     [],
-  )
+  );
 
   const sortEntriesByName = useCallback(
     () =>
       setTournament((prev) => ({
         ...prev,
-        entries: prev.entries
-          .slice()
-          .sort((a, b) => a.name.localeCompare(b.name, 'de')),
+        entries: prev.entries.slice().sort((a, b) => a.name.localeCompare(b.name, "de")),
       })),
     [],
-  )
+  );
 
   /** Default snake-allocate the current entries into groupCount groups. */
   const initGroupAssignment = useCallback(
     () =>
       setTournament((prev) => {
-        if (prev.groupAssignment.length === prev.groupCount) return prev
-        const { groups } = assignGroups(prev.entries, prev.groupCount)
+        if (prev.groupAssignment.length === prev.groupCount) return prev;
+        const { groups } = assignGroups(prev.entries, prev.groupCount);
         return {
           ...prev,
           groupAssignment: groups.map((g) => g.map((e) => e.id)),
-        }
+        };
       }),
     [],
-  )
+  );
 
   /** Re-shuffle group assignment using snake allocation; clears scores. */
   const reshuffleGroups = useCallback(
     () =>
       setTournament((prev) => {
-        const { groups } = assignGroups(prev.entries, prev.groupCount)
+        const { groups } = assignGroups(prev.entries, prev.groupCount);
         return {
           ...prev,
           groupAssignment: groups.map((g) => g.map((e) => e.id)),
           groupSchedule: [],
           bracket: [],
-        }
+        };
       }),
     [],
-  )
+  );
 
   // ---- Schedules / scores --------------------------------------------------
 
   const setMatchScore = useCallback(
-    (
-      roundIndex: number,
-      court: number,
-      scoreA: number | undefined,
-      scoreB: number | undefined,
-    ) =>
+    (roundIndex: number, court: number, scoreA: number | undefined, scoreB: number | undefined) =>
       setTournament((prev) => ({
         ...prev,
         schedule: prev.schedule.map((r) =>
@@ -402,61 +386,44 @@ export function useTournament() {
             ? r
             : {
                 ...r,
-                matches: r.matches.map((m) =>
-                  m.court !== court ? m : { ...m, scoreA, scoreB },
-                ),
+                matches: r.matches.map((m) => (m.court !== court ? m : { ...m, scoreA, scoreB })),
               },
         ),
       })),
     [],
-  )
+  );
 
   const setGroupSchedule = useCallback(
-    (groupSchedule: GroupMatch[]) =>
-      setTournament((prev) => ({ ...prev, groupSchedule })),
+    (groupSchedule: GroupMatch[]) => setTournament((prev) => ({ ...prev, groupSchedule })),
     [],
-  )
+  );
 
   const setGroupScore = useCallback(
-    (
-      group: number,
-      matchIndex: number,
-      scoreA: number | undefined,
-      scoreB: number | undefined,
-    ) =>
+    (group: number, matchIndex: number, scoreA: number | undefined, scoreB: number | undefined) =>
       setTournament((prev) => ({
         ...prev,
         groupSchedule: prev.groupSchedule.map((m) =>
-          m.group === group && m.matchIndex === matchIndex
-            ? { ...m, scoreA, scoreB }
-            : m,
+          m.group === group && m.matchIndex === matchIndex ? { ...m, scoreA, scoreB } : m,
         ),
       })),
     [],
-  )
+  );
 
   const setBracket = useCallback(
-    (bracket: BracketMatch[]) =>
-      setTournament((prev) => ({ ...prev, bracket })),
+    (bracket: BracketMatch[]) => setTournament((prev) => ({ ...prev, bracket })),
     [],
-  )
+  );
 
   const setBracketScore = useCallback(
-    (
-      matchId: string,
-      scoreA: number | undefined,
-      scoreB: number | undefined,
-    ) =>
+    (matchId: string, scoreA: number | undefined, scoreB: number | undefined) =>
       setTournament((prev) => ({
         ...prev,
-        bracket: prev.bracket.map((m) =>
-          m.matchId === matchId ? { ...m, scoreA, scoreB } : m,
-        ),
+        bracket: prev.bracket.map((m) => (m.matchId === matchId ? { ...m, scoreA, scoreB } : m)),
       })),
     [],
-  )
+  );
 
-  const reset = useCallback(() => setTournament(defaultTournament()), [])
+  const reset = useCallback(() => setTournament(defaultTournament()), []);
 
   const setThirdPlaceMatch = useCallback(
     (thirdPlaceMatch: boolean) =>
@@ -467,13 +434,12 @@ export function useTournament() {
         bracket: [],
       })),
     [],
-  )
+  );
 
   const setPerGenderRanking = useCallback(
-    (perGenderRanking: boolean) =>
-      setTournament((prev) => ({ ...prev, perGenderRanking })),
+    (perGenderRanking: boolean) => setTournament((prev) => ({ ...prev, perGenderRanking })),
     [],
-  )
+  );
 
   const setRevealActive = useCallback(
     (active: boolean) =>
@@ -482,7 +448,7 @@ export function useTournament() {
         reveal: { ...prev.reveal, active },
       })),
     [],
-  )
+  );
 
   const setRevealStep = useCallback(
     (category: RevealCategory, step: RevealStep) =>
@@ -494,7 +460,7 @@ export function useTournament() {
         },
       })),
     [],
-  )
+  );
 
   const resetReveal = useCallback(
     () =>
@@ -506,22 +472,19 @@ export function useTournament() {
         },
       })),
     [],
-  )
+  );
 
   const setSync = useCallback(
-    (sync: SyncConfig | undefined) =>
-      setTournament((prev) => ({ ...prev, sync })),
+    (sync: SyncConfig | undefined) => setTournament((prev) => ({ ...prev, sync })),
     [],
-  )
+  );
 
   /** Replace the entire tournament, e.g. after import. */
-  const replaceTournament = useCallback(
-    (next: Tournament) => setTournament(next),
-    [],
-  )
+  const replaceTournament = useCallback((next: Tournament) => setTournament(next), []);
 
   return {
     tournament,
+    hydrated,
     snapshot,
     undo,
     canUndo: undoDepth > 0,
@@ -562,14 +525,14 @@ export function useTournament() {
     setSync,
     replaceTournament,
     reset,
-  }
+  };
 }
 
 function deriveEntryName(members: string[]): string {
-  const cleaned = members.map((m) => m.trim()).filter((m) => m.length > 0)
-  return cleaned.join(' & ')
+  const cleaned = members.map((m) => m.trim()).filter((m) => m.length > 0);
+  return cleaned.join(" & ");
 }
 
 function isAutoName(name: string, members: string[]): boolean {
-  return name === deriveEntryName(members)
+  return name === deriveEntryName(members);
 }

@@ -1,53 +1,54 @@
-import { useEffect, useRef } from 'react'
-import { useConfirmRequest } from '../hooks/useConfirm'
-import { useTranslation } from '../i18n'
+import { useEffect, useRef } from "react";
+import { useConfirmRequest } from "../hooks/useConfirm";
+import { useTranslation } from "../i18n";
 
 export function ConfirmDialog() {
-  const { request, resolve } = useConfirmRequest()
-  const { t } = useTranslation()
-  const dialogRef = useRef<HTMLDialogElement | null>(null)
-  const confirmBtnRef = useRef<HTMLButtonElement | null>(null)
-  const cancelBtnRef = useRef<HTMLButtonElement | null>(null)
+  const { request, resolve } = useConfirmRequest();
+  const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
+  const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
+    const el = dialogRef.current;
+    if (!el) return;
     if (request && !el.open) {
-      el.showModal()
+      el.showModal();
       window.requestAnimationFrame(() => {
-        if (request.destructive) cancelBtnRef.current?.focus()
-        else confirmBtnRef.current?.focus()
-      })
+        if (request.destructive) cancelBtnRef.current?.focus();
+        else confirmBtnRef.current?.focus();
+      });
     } else if (!request && el.open) {
-      el.close()
+      el.close();
     }
-  }, [request])
+  }, [request]);
 
   useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
+    const el = dialogRef.current;
+    if (!el) return;
     const onCancel = (e: Event) => {
-      e.preventDefault()
-      resolve(false)
-    }
-    el.addEventListener('cancel', onCancel)
-    return () => el.removeEventListener('cancel', onCancel)
-  }, [resolve])
+      e.preventDefault();
+      resolve(false);
+    };
+    el.addEventListener("cancel", onCancel);
+    return () => el.removeEventListener("cancel", onCancel);
+  }, [resolve]);
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the browser's built-in Escape -> cancel event (see onCancel listener above).
     <dialog
       ref={dialogRef}
       className="no-print fixed inset-0 m-auto h-fit max-h-[calc(100%-2rem)] rounded-lg border border-border bg-surface text-fg p-0 shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm w-[min(28rem,calc(100%-2rem))] open:animate-scale-fade-in"
       onClick={(e) => {
-        if (e.target === dialogRef.current) resolve(false)
+        if (e.target === dialogRef.current) resolve(false);
       }}
     >
       {request && (
         <form
           method="dialog"
           onSubmit={(e) => {
-            e.preventDefault()
-            resolve(true)
+            e.preventDefault();
+            resolve(true);
           }}
           className="px-5 py-4"
         >
@@ -62,18 +63,18 @@ export function ConfirmDialog() {
               onClick={() => resolve(false)}
               className="btn-secondary"
             >
-              {request.cancelLabel ?? t('confirm.cancel')}
+              {request.cancelLabel ?? t("confirm.cancel")}
             </button>
             <button
               ref={confirmBtnRef}
               type="submit"
-              className={request.destructive ? 'btn-danger' : 'btn-primary'}
+              className={request.destructive ? "btn-danger" : "btn-primary"}
             >
-              {request.confirmLabel ?? t('confirm.confirm')}
+              {request.confirmLabel ?? t("confirm.confirm")}
             </button>
           </div>
         </form>
       )}
     </dialog>
-  )
+  );
 }

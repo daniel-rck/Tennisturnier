@@ -1,64 +1,64 @@
-import { useEffect, useRef, useState } from 'react'
-import { useTranslation, type TranslationKey } from '../i18n'
+import { useEffect, useRef, useState } from "react";
+import { type TranslationKey, useTranslation } from "../i18n";
 
 interface SlideKey {
-  key: string
-  icon: string
-  titleKey: TranslationKey
-  bodyKey: TranslationKey
+  key: string;
+  icon: string;
+  titleKey: TranslationKey;
+  bodyKey: TranslationKey;
 }
 
 const SLIDES: SlideKey[] = [
   {
-    key: 'welcome',
-    icon: '🎾',
-    titleKey: 'onboarding.welcome.title',
-    bodyKey: 'onboarding.welcome.body',
+    key: "welcome",
+    icon: "🎾",
+    titleKey: "onboarding.welcome.title",
+    bodyKey: "onboarding.welcome.body",
   },
   {
-    key: 'formats',
-    icon: '🏆',
-    titleKey: 'onboarding.formats.title',
-    bodyKey: 'onboarding.formats.body',
+    key: "formats",
+    icon: "🏆",
+    titleKey: "onboarding.formats.title",
+    bodyKey: "onboarding.formats.body",
   },
   {
-    key: 'privacy',
-    icon: '🔒',
-    titleKey: 'onboarding.privacy.title',
-    bodyKey: 'onboarding.privacy.body',
+    key: "privacy",
+    icon: "🔒",
+    titleKey: "onboarding.privacy.title",
+    bodyKey: "onboarding.privacy.body",
   },
   {
-    key: 'start',
-    icon: '🚀',
-    titleKey: 'onboarding.start.title',
-    bodyKey: 'onboarding.start.body',
+    key: "start",
+    icon: "🚀",
+    titleKey: "onboarding.start.title",
+    bodyKey: "onboarding.start.body",
   },
-]
+];
 
 interface Props {
-  onDone: () => void
-  onImport?: (file: File) => void
+  onDone: () => void;
+  onImport?: (file: File) => void;
 }
 
 export function OnboardingDialog({ onDone, onImport }: Props) {
-  const { t } = useTranslation()
-  const [step, setStep] = useState(0)
-  const dialogRef = useRef<HTMLDivElement | null>(null)
-  const slide = SLIDES[step]
-  const isFirst = step === 0
-  const isLast = step === SLIDES.length - 1
+  const { t } = useTranslation();
+  const [step, setStep] = useState(0);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const slide = SLIDES[step];
+  const isFirst = step === 0;
+  const isLast = step === SLIDES.length - 1;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onDone()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onDone])
+      if (e.key === "Escape") onDone();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onDone]);
 
   useEffect(() => {
-    dialogRef.current?.focus()
-  }, [step])
+    dialogRef.current?.focus();
+  }, []);
 
   return (
     <div
@@ -87,8 +87,8 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
             <span
               key={s.key}
               className={
-                'h-2 rounded-full transition-all ' +
-                (i === step ? 'w-6 bg-brand' : 'w-2 bg-border-strong')
+                "h-2 rounded-full transition-all " +
+                (i === step ? "w-6 bg-brand" : "w-2 bg-border-strong")
               }
             />
           ))}
@@ -102,7 +102,7 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
                 className="btn-ghost"
               >
-                {t('onboarding.back')}
+                {t("onboarding.back")}
               </button>
             )}
             <button
@@ -110,7 +110,7 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
               onClick={onDone}
               className="text-sm text-fg-muted hover:text-fg underline px-2 min-h-[44px]"
             >
-              {t('onboarding.skip')}
+              {t("onboarding.skip")}
             </button>
           </div>
           {!isLast ? (
@@ -118,43 +118,37 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
               type="button"
               onClick={() => setStep((s) => Math.min(SLIDES.length - 1, s + 1))}
               className="btn-primary"
-              autoFocus
             >
-              {t('onboarding.next')}
+              {t("onboarding.next")}
               <span aria-hidden>→</span>
             </button>
           ) : (
             <div className="flex gap-2">
               {onImport && (
                 <label className="btn-secondary cursor-pointer">
-                  {t('onboarding.import')}
+                  {t("onboarding.import")}
                   <input
                     type="file"
                     accept="application/json,.json"
                     className="hidden"
                     onChange={(e) => {
-                      const f = e.target.files?.[0]
+                      const f = e.target.files?.[0];
                       if (f) {
-                        onImport(f)
-                        onDone()
+                        onImport(f);
+                        onDone();
                       }
-                      e.target.value = ''
+                      e.target.value = "";
                     }}
                   />
                 </label>
               )}
-              <button
-                type="button"
-                onClick={onDone}
-                className="btn-primary"
-                autoFocus
-              >
-                {t('onboarding.go')}
+              <button type="button" onClick={onDone} className="btn-primary">
+                {t("onboarding.go")}
               </button>
             </div>
           )}
         </footer>
       </div>
     </div>
-  )
+  );
 }
