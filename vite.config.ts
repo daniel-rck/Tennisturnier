@@ -14,7 +14,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src/sw",
+      filename: "index.ts",
       registerType: "prompt",
+      injectRegister: "auto",
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+      },
+      devOptions: { enabled: false, type: "module" },
       includeAssets: ["favicon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"],
       manifest: {
         name: "Tennisturnier-Planer",
@@ -45,26 +53,8 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        // Live-sync API must hit the network — never serve cached snapshots.
-        navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
-            handler: "NetworkOnly",
-            options: { cacheName: "sync-api-no-cache" },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts",
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-        ],
-      },
+      // Runtime caching (API network-only, fonts cache-first) now lives in the
+      // hand-written service worker at src/sw/index.ts.
     }),
   ],
 });
