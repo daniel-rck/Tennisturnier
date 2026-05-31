@@ -1,26 +1,25 @@
+import type { StoredTournament, SyncEnv } from "../../_shared/kv";
 import {
-  KV_TTL_SECONDS,
   constantTimeEqual,
   extractBearer,
   hashToken,
   isValidCode,
   jsonResponse,
+  KV_TTL_SECONDS,
   kvBindingMissingResponse,
   parseStored,
-} from '../../_shared/kv'
-import type { StoredTournament, SyncEnv } from '../../_shared/kv'
+} from "../../_shared/kv";
 
-const corruptResponse = (): Response =>
-  jsonResponse({ error: 'corrupt_data' }, { status: 500 })
+const corruptResponse = (): Response => jsonResponse({ error: "corrupt_data" }, { status: 500 });
 
 interface PutBody {
-  tournament: unknown
+  tournament: unknown;
   /** Optional client-known version for optimistic concurrency. Server still authoritative. */
-  baseVersion?: number
+  baseVersion?: number;
 }
 
 interface PathParams {
-  code: string
+  code: string;
 }
 
 /**
@@ -29,36 +28,32 @@ interface PathParams {
  *   → 304 if version === since
  *   → 404 if code unknown
  */
-export const onRequestGet: PagesFunction<SyncEnv, 'code'> = async ({
-  request,
-  env,
-  params,
-}) => {
-  if (!env.TOURNAMENTS) return kvBindingMissingResponse()
-  const { code } = params as unknown as PathParams
-  if (!isValidCode(code)) return jsonResponse({ error: 'invalid_code' }, { status: 400 })
+export const onRequestGet: PagesFunction<SyncEnv, "code"> = async ({ request, env, params }) => {
+  if (!env.TOURNAMENTS) return kvBindingMissingResponse();
+  const { code } = params as unknown as PathParams;
+  if (!isValidCode(code)) return jsonResponse({ error: "invalid_code" }, { status: 400 });
 
-  const raw = await env.TOURNAMENTS.get(code, { type: 'text' })
-  if (raw == null) return jsonResponse({ error: 'not_found' }, { status: 404 })
-  const stored = parseStored(raw)
-  if (!stored) return corruptResponse()
+  const raw = await env.TOURNAMENTS.get(code, { type: "text" });
+  if (raw == null) return jsonResponse({ error: "not_found" }, { status: 404 });
+  const stored = parseStored(raw);
+  if (!stored) return corruptResponse();
 
-  const url = new URL(request.url)
-  const sinceRaw = url.searchParams.get('since')
-  const since = sinceRaw == null ? null : Number.parseInt(sinceRaw, 10)
+  const url = new URL(request.url);
+  const sinceRaw = url.searchParams.get("since");
+  const since = sinceRaw == null ? null : Number.parseInt(sinceRaw, 10);
   if (since != null && Number.isFinite(since) && since === stored.version) {
     return new Response(null, {
       status: 304,
-      headers: { 'Cache-Control': 'no-store' },
-    })
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   return jsonResponse({
     tournament: stored.tournament,
     version: stored.version,
     updatedAt: stored.updatedAt,
-  })
-}
+  });
+};
 
 /**
  * PUT /api/sync/:code  (Authorization: Bearer <ownerToken>)
@@ -68,36 +63,32 @@ export const onRequestGet: PagesFunction<SyncEnv, 'code'> = async ({
  *   → 404 if code unknown
  *   → 409 if baseVersion present and != server version (caller should re-fetch)
  */
-export const onRequestPut: PagesFunction<SyncEnv, 'code'> = async ({
-  request,
-  env,
-  params,
-}) => {
-  if (!env.TOURNAMENTS) return kvBindingMissingResponse()
-  const { code } = params as unknown as PathParams
-  if (!isValidCode(code)) return jsonResponse({ error: 'invalid_code' }, { status: 400 })
+export const onRequestPut: PagesFunction<SyncEnv, "code"> = async ({ request, env, params }) => {
+  if (!env.TOURNAMENTS) return kvBindingMissingResponse();
+  const { code } = params as unknown as PathParams;
+  if (!isValidCode(code)) return jsonResponse({ error: "invalid_code" }, { status: 400 });
 
-  const token = extractBearer(request)
-  if (!token) return jsonResponse({ error: 'unauthorized' }, { status: 401 })
+  const token = extractBearer(request);
+  if (!token) return jsonResponse({ error: "unauthorized" }, { status: 401 });
 
-  const raw = await env.TOURNAMENTS.get(code, { type: 'text' })
-  if (raw == null) return jsonResponse({ error: 'not_found' }, { status: 404 })
-  const stored = parseStored(raw)
-  if (!stored) return corruptResponse()
+  const raw = await env.TOURNAMENTS.get(code, { type: "text" });
+  if (raw == null) return jsonResponse({ error: "not_found" }, { status: 404 });
+  const stored = parseStored(raw);
+  if (!stored) return corruptResponse();
 
-  const tokenHash = await hashToken(token)
+  const tokenHash = await hashToken(token);
   if (!constantTimeEqual(tokenHash, stored.ownerTokenHash)) {
-    return jsonResponse({ error: 'forbidden' }, { status: 403 })
+    return jsonResponse({ error: "forbidden" }, { status: 403 });
   }
 
-  let body: PutBody
+  let body: PutBody;
   try {
-    body = (await request.json()) as PutBody
+    body = (await request.json()) as PutBody;
   } catch {
-    return jsonResponse({ error: 'invalid_json' }, { status: 400 })
+    return jsonResponse({ error: "invalid_json" }, { status: 400 });
   }
   if (!body || body.tournament == null) {
-    return jsonResponse({ error: 'tournament_required' }, { status: 400 })
+    return jsonResponse({ error: "tournament_required" }, { status: 400 });
   }
   if (
     body.baseVersion != null &&
@@ -105,9 +96,9 @@ export const onRequestPut: PagesFunction<SyncEnv, 'code'> = async ({
     body.baseVersion !== stored.version
   ) {
     return jsonResponse(
-      { error: 'version_conflict', currentVersion: stored.version },
+      { error: "version_conflict", currentVersion: stored.version },
       { status: 409 },
-    )
+    );
   }
 
   const next: StoredTournament = {
@@ -115,36 +106,32 @@ export const onRequestPut: PagesFunction<SyncEnv, 'code'> = async ({
     version: stored.version + 1,
     ownerTokenHash: stored.ownerTokenHash,
     updatedAt: new Date().toISOString(),
-  }
+  };
   await env.TOURNAMENTS.put(code, JSON.stringify(next), {
     expirationTtl: KV_TTL_SECONDS,
-  })
-  return jsonResponse({ version: next.version })
-}
+  });
+  return jsonResponse({ version: next.version });
+};
 
 /**
  * DELETE /api/sync/:code  (Authorization: Bearer <ownerToken>)
  *   → 204
  */
-export const onRequestDelete: PagesFunction<SyncEnv, 'code'> = async ({
-  request,
-  env,
-  params,
-}) => {
-  if (!env.TOURNAMENTS) return kvBindingMissingResponse()
-  const { code } = params as unknown as PathParams
-  if (!isValidCode(code)) return jsonResponse({ error: 'invalid_code' }, { status: 400 })
-  const token = extractBearer(request)
-  if (!token) return jsonResponse({ error: 'unauthorized' }, { status: 401 })
+export const onRequestDelete: PagesFunction<SyncEnv, "code"> = async ({ request, env, params }) => {
+  if (!env.TOURNAMENTS) return kvBindingMissingResponse();
+  const { code } = params as unknown as PathParams;
+  if (!isValidCode(code)) return jsonResponse({ error: "invalid_code" }, { status: 400 });
+  const token = extractBearer(request);
+  if (!token) return jsonResponse({ error: "unauthorized" }, { status: 401 });
 
-  const raw = await env.TOURNAMENTS.get(code, { type: 'text' })
-  if (raw == null) return new Response(null, { status: 204 })
-  const stored = parseStored(raw)
-  if (!stored) return corruptResponse()
-  const tokenHash = await hashToken(token)
+  const raw = await env.TOURNAMENTS.get(code, { type: "text" });
+  if (raw == null) return new Response(null, { status: 204 });
+  const stored = parseStored(raw);
+  if (!stored) return corruptResponse();
+  const tokenHash = await hashToken(token);
   if (!constantTimeEqual(tokenHash, stored.ownerTokenHash)) {
-    return jsonResponse({ error: 'forbidden' }, { status: 403 })
+    return jsonResponse({ error: "forbidden" }, { status: 403 });
   }
-  await env.TOURNAMENTS.delete(code)
-  return new Response(null, { status: 204 })
-}
+  await env.TOURNAMENTS.delete(code);
+  return new Response(null, { status: 204 });
+};

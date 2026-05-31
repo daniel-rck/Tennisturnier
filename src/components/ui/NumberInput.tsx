@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
-  value: number
-  min?: number
-  max?: number
-  onChange: (n: number) => void
-  className?: string
-  disabled?: boolean
-  ariaLabel?: string
+  value: number;
+  min?: number;
+  max?: number;
+  onChange: (n: number) => void;
+  className?: string;
+  disabled?: boolean;
+  ariaLabel?: string;
   /** Optional id for label-association. */
-  id?: string
+  id?: string;
 }
 
 /**
@@ -22,17 +22,17 @@ export function NumberInput({
   min,
   max,
   onChange,
-  className = '',
+  className = "",
   disabled = false,
   ariaLabel,
   id,
 }: Props) {
-  const [draft, setDraft] = useState<string>(String(value))
-  const focusedRef = useRef(false)
+  const [draft, setDraft] = useState<string>(String(value));
+  const focusedRef = useRef(false);
 
   useEffect(() => {
-    if (!focusedRef.current) setDraft(String(value))
-  }, [value])
+    if (!focusedRef.current) setDraft(String(value));
+  }, [value]);
 
   return (
     <input
@@ -45,25 +45,25 @@ export function NumberInput({
       disabled={disabled}
       aria-label={ariaLabel}
       onFocus={(e) => {
-        focusedRef.current = true
-        e.currentTarget.select()
+        focusedRef.current = true;
+        e.currentTarget.select();
       }}
       onChange={(e) => {
-        const raw = e.target.value
-        setDraft(raw)
-        if (raw === '') return
-        const n = Number(raw)
-        if (!Number.isFinite(n)) return
-        let next = Math.round(n)
-        if (typeof min === 'number') next = Math.max(min, next)
-        if (typeof max === 'number') next = Math.min(max, next)
-        onChange(next)
+        const raw = e.target.value;
+        setDraft(raw);
+        if (raw === "") return;
+        const n = Number(raw);
+        if (!Number.isFinite(n)) return;
+        let next = Math.round(n);
+        if (typeof min === "number") next = Math.max(min, next);
+        if (typeof max === "number") next = Math.min(max, next);
+        onChange(next);
       }}
       onBlur={() => {
-        focusedRef.current = false
-        setDraft(String(value))
+        focusedRef.current = false;
+        setDraft(String(value));
       }}
       className={className}
     />
-  )
+  );
 }
