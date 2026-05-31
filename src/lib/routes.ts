@@ -1,5 +1,7 @@
 export const ROUTES = {
-  home: "/",
+  setup: "/",
+  live: "/live",
+  results: "/ergebnis",
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

@@ -258,10 +258,12 @@
   pointer-events: none;
 }
 
-/* Reveal mode fullscreen — hide chrome, give the stage more room. */
-html[data-reveal-fullscreen="true"] header.no-print,
-html[data-reveal-fullscreen="true"] footer.no-print,
-html[data-reveal-fullscreen="true"] nav.no-print {
+/* Reveal mode fullscreen — hide the AppShell chrome (header, side/bottom nav)
+   and the footer, giving the stage the full viewport. */
+html[data-reveal-fullscreen="true"] header,
+html[data-reveal-fullscreen="true"] aside,
+html[data-reveal-fullscreen="true"] nav[aria-label="Hauptnavigation"],
+html[data-reveal-fullscreen="true"] footer.no-print {
   display: none;
 }
 html[data-reveal-fullscreen="true"] main > div {

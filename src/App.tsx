@@ -1,8 +1,9 @@
+import { MoreHorizontal, Play, Plus, Settings, Trophy, Undo2 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BracketPanel } from "./components/BracketPanel";
 import { Dashboard } from "./components/Dashboard";
 import { GroupsPanel } from "./components/GroupsPanel";
-import { InstallPrompt } from "./components/InstallPrompt";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { OnboardingDialog } from "./components/OnboardingDialog";
 import { PrintView } from "./components/PrintView";
@@ -13,12 +14,14 @@ import { SetupWizard } from "./components/SetupWizard";
 import { Spinner } from "./components/Spinner";
 import { StatisticsPanel } from "./components/StatisticsPanel";
 import { UpdatePrompt } from "./components/UpdatePrompt";
-import { type PhaseId, PhaseNav, SubNav } from "./components/ui/PhaseNav";
+import { type PhaseId, SubNav } from "./components/ui/PhaseNav";
 import { useConfirm } from "./hooks/useConfirm";
 import { useSync } from "./hooks/useSync";
 import { useToast } from "./hooks/useToast";
 import { useTournament } from "./hooks/useTournament";
 import { useTranslation } from "./i18n";
+import { ROUTES } from "./lib/routes.ts";
+import { AppShell, Button, type NavItem } from "./lib/ui";
 import { generateSchedule } from "./scheduler";
 import { migrate } from "./storage";
 
@@ -61,6 +64,19 @@ function inferPhase(t: ReturnType<typeof useTournament>["tournament"]): PhaseId 
   return allDone ? "results" : "live";
 }
 
+/** The active phase is derived from the URL (see src/lib/router.tsx). */
+function phaseFromPath(pathname: string): PhaseId {
+  if (pathname === ROUTES.live) return "live";
+  if (pathname === ROUTES.results) return "results";
+  return "prep";
+}
+
+function pathForPhase(phase: PhaseId): string {
+  if (phase === "live") return ROUTES.live;
+  if (phase === "results") return ROUTES.results;
+  return ROUTES.setup;
+}
+
 function App() {
   const { t: tr } = useTranslation();
   const t = useTournament();
@@ -78,18 +94,31 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => !readOnboardingDone());
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Phase + sub-tab state. Tournament data hydrates asynchronously from idb;
-  // once it lands we infer the correct starting phase exactly once (see below),
-  // while the app is still behind the hydration gate, so there's no flash.
-  const [phase, setPhase] = useState<PhaseId>("prep");
+  // Phase is route-driven (/, /live, /ergebnis); sub-tabs stay local state.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const phase = phaseFromPath(location.pathname);
+  const setPhase = useCallback(
+    (p: PhaseId) => {
+      navigate(pathForPhase(p));
+    },
+    [navigate],
+  );
   const [subTab, setSubTab] = useState<string>("");
+
+  // Tournament data hydrates asynchronously from idb. Once it lands, jump to the
+  // inferred phase exactly once — but only from the default route, so a deep
+  // link (e.g. /live) is respected. Runs behind the hydration gate, no flash.
   const didInitPhase = useRef(false);
   useEffect(() => {
     if (t.hydrated && !didInitPhase.current) {
       didInitPhase.current = true;
-      setPhase(inferPhase(t.tournament));
+      const inferred = inferPhase(t.tournament);
+      if (inferred !== "prep" && location.pathname === ROUTES.setup) {
+        navigate(pathForPhase(inferred), { replace: true });
+      }
     }
-  }, [t.hydrated, t.tournament]);
+  }, [t.hydrated, t.tournament, location.pathname, navigate]);
 
   // Smart re-default: when phase becomes invalid (e.g. user reset / imported
   // an empty tournament), step back to prep.
@@ -285,10 +314,22 @@ function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [canUndo, undo]);
 
-  const phases: { id: PhaseId; label: string; icon: string }[] = [
-    { id: "prep", label: tr("phase.prep"), icon: "⚙" },
-    { id: "live", label: tr("phase.live"), icon: "▶" },
-    { id: "results", label: tr("phase.results"), icon: "🏆" },
+  const navItems: NavItem[] = [
+    {
+      to: ROUTES.setup,
+      label: tr("phase.prep"),
+      icon: <Settings className="h-5 w-5" aria-hidden="true" />,
+    },
+    {
+      to: ROUTES.live,
+      label: tr("phase.live"),
+      icon: <Play className="h-5 w-5" aria-hidden="true" />,
+    },
+    {
+      to: ROUTES.results,
+      label: tr("phase.results"),
+      icon: <Trophy className="h-5 w-5" aria-hidden="true" />,
+    },
   ];
 
   // Hold a loading state until the tournament is read from idb, so the first
@@ -302,22 +343,14 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-muted">
+    <>
       <OfflineBanner />
-
-      {/* Header */}
-      <header className="no-print sticky top-0 z-10 bg-court-pattern text-cream backdrop-blur-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <TennisLogo />
-          <div className="min-w-0 flex-1">
-            <h1 className="serif text-lg font-semibold leading-tight tracking-tight truncate">
-              {t.tournament.name || tr("app.defaultName")}
-            </h1>
-            <p className="text-[11px] text-cream/70 uppercase tracking-wider truncate">
-              {tr("app.title")}
-            </p>
-          </div>
-          <div className="flex items-center gap-1">
+      <AppShell
+        title={t.tournament.name || tr("app.defaultName")}
+        logo={<TennisLogo />}
+        navItems={navItems}
+        headerActions={
+          <>
             {sync.role !== "none" && (
               <SyncIndicator
                 status={sync.status}
@@ -325,62 +358,45 @@ function App() {
                 label={tr(sync.role === "owner" ? "app.role.owner" : "app.role.viewer")}
               />
             )}
-            <InstallPrompt />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={t.undo}
               disabled={!t.canUndo || !isOwner}
               title={isOwner ? tr("app.undoTitle") : tr("app.undoDisabledTitle")}
               aria-label={tr("app.undo")}
-              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-cream/85 hover:text-cream hover:bg-white/10 disabled:text-cream/30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
             >
-              <span aria-hidden className="text-lg">
-                ↶
-              </span>
-            </button>
-            <button
-              type="button"
+              <Undo2 className="h-4 w-4" aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleNewTournament}
               disabled={!isOwner}
-              aria-label={tr("settings.newTournament")}
               title={tr("settings.newTournament")}
-              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-cream/85 hover:text-cream hover:bg-white/10 disabled:text-cream/30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+              aria-label={tr("settings.newTournament")}
             >
-              <span aria-hidden className="text-lg leading-none">
-                ＋
-              </span>
-              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-sm">{tr("header.new")}</span>
-            </button>
-            <button
-              type="button"
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{tr("header.new")}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setSettingsOpen(true)}
-              aria-label={tr("settings.openMenu")}
               title={tr("settings.openMenu")}
-              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-cream/85 hover:text-cream hover:bg-white/10 transition-colors"
+              aria-label={tr("settings.openMenu")}
             >
-              <span aria-hidden className="text-lg">
-                ⋯
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Desktop/tablet: phase nav inline in header */}
-        <div className="max-w-3xl mx-auto px-4 pb-3 hidden sm:flex justify-center">
-          <PhaseNav current={phase} onChange={setPhase} phases={phases} variant="top" />
-        </div>
-      </header>
-
-      {/* Sub-tabs */}
-      <div className="bg-surface border-b border-border sticky top-[60px] sm:top-[108px] z-[5]">
-        <div className="max-w-3xl mx-auto px-4">
+              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </>
+        }
+      >
+        {/* Sub-tabs */}
+        <div className="-mt-2 mb-5 border-b border-border">
           <SubNav current={subTab} onChange={setSubTab} tabs={subTabs} />
         </div>
-      </div>
 
-      {/* Main content */}
-      <main className="flex-1 pb-24 sm:pb-8">
-        <div key={`${phase}-${subTab}`} className="max-w-3xl mx-auto px-4 py-5 animate-fade-in">
+        <div key={`${phase}-${subTab}`} className="animate-fade-in">
           <Suspense
             fallback={
               <div className="py-16 flex justify-center">
@@ -523,14 +539,11 @@ function App() {
             {phase === "results" && subTab === "print" && <PrintView tournament={t.tournament} />}
           </Suspense>
         </div>
-      </main>
 
-      {/* Mobile bottom nav */}
-      <PhaseNav current={phase} onChange={setPhase} phases={phases} variant="bottom" />
-
-      <footer className="no-print text-center text-xs text-fg-subtle py-4 pb-20 sm:pb-4">
-        <div className="opacity-70">{tr("app.tagline")}</div>
-      </footer>
+        <footer className="no-print mt-10 text-center text-xs text-fg-subtle">
+          <div className="opacity-70">{tr("app.tagline")}</div>
+        </footer>
+      </AppShell>
 
       <SettingsSheet
         open={settingsOpen}
@@ -548,13 +561,13 @@ function App() {
       />
       <UpdatePrompt />
       {showOnboarding && <OnboardingDialog onDone={finishOnboarding} onImport={handleImport} />}
-    </div>
+    </>
   );
 }
 
 function TennisLogo() {
   return (
-    <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-cream/15 border border-cream/20 shrink-0">
+    <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-accent-100 border border-accent-200 shrink-0">
       <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true" fill="none">
         <circle cx="12" cy="12" r="10" fill="#e5f04a" stroke="#1a3a2e" strokeWidth="1.5" />
         <path d="M3.5 8.5 c 4 1.5 9 1.5 17 0" stroke="#1a3a2e" strokeWidth="1.2" fill="none" />
@@ -581,10 +594,10 @@ function SyncIndicator({
   return (
     <span
       role="status"
-      className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5"
+      className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-2 py-0.5"
     >
       <span className={`inline-block h-2 w-2 rounded-full ${color}`} />
-      <span className="text-[10px] uppercase tracking-wider font-semibold text-cream/85">
+      <span className="text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
         {label}
       </span>
     </span>

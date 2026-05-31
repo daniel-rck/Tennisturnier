@@ -22,7 +22,9 @@ const ICONS: Record<Place, string> = {
 };
 
 const TONES: Record<Place, string> = {
-  1: "bg-gold-soft border-gold",
+  // gold-soft is a fixed light medal tone in both themes, so pin dark text on it
+  // (otherwise the rank number inherits the light fg token in dark mode).
+  1: "bg-gold-soft border-gold text-[#1a1a1a]",
   2: "bg-surface-sunken border-silver",
   3: "bg-clay-soft border-bronze",
 };
