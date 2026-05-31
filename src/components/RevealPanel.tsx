@@ -1,54 +1,41 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type {
-  Match,
-  Player,
-  RevealCategory,
-  RevealStep,
-  Round,
-  Tournament,
-} from '../types'
-import { ConfettiBurst } from './ConfettiBurst'
-import { playFanfare, playFinale, unlockAudio } from '../bell'
-import { useFullscreen } from '../hooks/useFullscreen'
-import { useTranslation } from '../i18n'
+import { useEffect, useMemo, useRef, useState } from "react";
+import { playFanfare, playFinale, unlockAudio } from "../bell";
+import { useFullscreen } from "../hooks/useFullscreen";
+import { useTranslation } from "../i18n";
+import type { Match, Player, RevealCategory, RevealStep, Round, Tournament } from "../types";
+import { ConfettiBurst } from "./ConfettiBurst";
 
 interface Props {
-  tournament: Tournament
-  isOwner: boolean
-  onStep: (category: RevealCategory, step: RevealStep) => void
-  onReset: () => void
-  onClose: () => void
+  tournament: Tournament;
+  isOwner: boolean;
+  onStep: (category: RevealCategory, step: RevealStep) => void;
+  onReset: () => void;
+  onClose: () => void;
 }
 
 interface PodiumEntry {
-  name: string
-  wins: number
-  diff: number
+  name: string;
+  wins: number;
+  diff: number;
 }
 
-export function RevealPanel({
-  tournament,
-  isOwner,
-  onStep,
-  onReset,
-  onClose,
-}: Props) {
-  const { t } = useTranslation()
-  if (tournament.format !== 'rotation') {
+export function RevealPanel({ tournament, isOwner, onStep, onReset, onClose }: Props) {
+  const { t } = useTranslation();
+  if (tournament.format !== "rotation") {
     return (
       <div className="rounded-md border border-warn-bg bg-warn-bg p-4 text-sm text-warn-fg">
-        {t('reveal.notRotation')}
+        {t("reveal.notRotation")}
         <div className="mt-3">
           <button
             type="button"
             onClick={onClose}
             className="rounded border border-amber-400 px-3 py-1 hover:bg-warn-bg"
           >
-            {t('reveal.exit')}
+            {t("reveal.exit")}
           </button>
         </div>
       </div>
-    )
+    );
   }
   return (
     <RevealStage
@@ -58,86 +45,77 @@ export function RevealPanel({
       onReset={onReset}
       onClose={onClose}
     />
-  )
+  );
 }
 
-function RevealStage({
-  tournament,
-  isOwner,
-  onStep,
-  onReset,
-  onClose,
-}: Props) {
-  const { t } = useTranslation()
-  const showCategories =
-    tournament.mode === 'mixed' && tournament.perGenderRanking
+function RevealStage({ tournament, isOwner, onStep, onReset, onClose }: Props) {
+  const { t } = useTranslation();
+  const showCategories = tournament.mode === "mixed" && tournament.perGenderRanking;
   const tabs: { id: RevealCategory; label: string }[] = showCategories
     ? [
-        { id: 'overall', label: t('reveal.tabsOverall') },
-        { id: 'women', label: t('reveal.tabsWomen') },
-        { id: 'men', label: t('reveal.tabsMen') },
+        { id: "overall", label: t("reveal.tabsOverall") },
+        { id: "women", label: t("reveal.tabsWomen") },
+        { id: "men", label: t("reveal.tabsMen") },
       ]
-    : [{ id: 'overall', label: t('reveal.tabsOverall') }]
-  const [tab, setTab] = useState<RevealCategory>('overall')
-  const step = tournament.reveal.steps[tab]
-  const { isFullscreen, supported: fullscreenSupported, toggle: toggleFullscreen, exit: exitFullscreen } =
-    useFullscreen()
+    : [{ id: "overall", label: t("reveal.tabsOverall") }];
+  const [tab, setTab] = useState<RevealCategory>("overall");
+  const step = tournament.reveal.steps[tab];
+  const {
+    isFullscreen,
+    supported: fullscreenSupported,
+    toggle: toggleFullscreen,
+    exit: exitFullscreen,
+  } = useFullscreen();
 
   // Drive a global data-attribute on <html> while we're showing the reveal stage
   // in fullscreen, so the app chrome (header/footer) can hide via CSS.
   useEffect(() => {
-    if (typeof document === 'undefined') return
-    const flag = isFullscreen ? 'true' : null
-    if (flag) document.documentElement.setAttribute('data-reveal-fullscreen', flag)
-    else document.documentElement.removeAttribute('data-reveal-fullscreen')
+    if (typeof document === "undefined") return;
+    const flag = isFullscreen ? "true" : null;
+    if (flag) document.documentElement.setAttribute("data-reveal-fullscreen", flag);
+    else document.documentElement.removeAttribute("data-reveal-fullscreen");
     return () => {
-      document.documentElement.removeAttribute('data-reveal-fullscreen')
-    }
-  }, [isFullscreen])
+      document.documentElement.removeAttribute("data-reveal-fullscreen");
+    };
+  }, [isFullscreen]);
 
   // Make sure we leave fullscreen when the reveal stage unmounts (e.g. tab change).
   useEffect(() => {
     return () => {
-      void exitFullscreen()
-    }
-  }, [exitFullscreen])
+      void exitFullscreen();
+    };
+  }, [exitFullscreen]);
 
   const handleClose = () => {
-    void exitFullscreen()
-    onClose()
-  }
+    void exitFullscreen();
+    onClose();
+  };
 
-  const podium = useMemo(
-    () => computePodium(tournament, tab),
-    [tournament, tab],
-  )
+  const podium = useMemo(() => computePodium(tournament, tab), [tournament, tab]);
 
   // Animation triggers — increment counters on every step change so ConfettiBurst
   // re-fires. Sound plays only on owner devices for the click that triggered it
   // AND on viewers for the step they observe.
-  const [burstTrigger, setBurstTrigger] = useState(0)
-  const [showerTrigger, setShowerTrigger] = useState(0)
-  const lastStepRef = useRef<Record<RevealCategory, RevealStep>>(
-    tournament.reveal.steps,
-  )
+  const [burstTrigger, setBurstTrigger] = useState(0);
+  const [showerTrigger, setShowerTrigger] = useState(0);
+  const lastStepRef = useRef<Record<RevealCategory, RevealStep>>(tournament.reveal.steps);
 
   useEffect(() => {
-    const prev = lastStepRef.current[tab]
-    const curr = tournament.reveal.steps[tab]
+    const prev = lastStepRef.current[tab];
+    const curr = tournament.reveal.steps[tab];
     if (curr !== prev) {
-      const becameVisible = (place: 1 | 2 | 3) =>
-        !isVisible(prev, place) && isVisible(curr, place)
+      const becameVisible = (place: 1 | 2 | 3) => !isVisible(prev, place) && isVisible(curr, place);
       if (becameVisible(3) || becameVisible(2)) {
-        setBurstTrigger((n) => n + 1)
-        playFanfare().catch(() => {})
+        setBurstTrigger((n) => n + 1);
+        playFanfare().catch(() => {});
       }
       if (becameVisible(1)) {
-        setShowerTrigger((n) => n + 1)
-        playFinale().catch(() => {})
+        setShowerTrigger((n) => n + 1);
+        playFinale().catch(() => {});
       }
-      lastStepRef.current = { ...lastStepRef.current, [tab]: curr }
+      lastStepRef.current = { ...lastStepRef.current, [tab]: curr };
     }
-  }, [tournament.reveal.steps, tab])
+  }, [tournament.reveal.steps, tab]);
 
   return (
     <div className="space-y-6 relative">
@@ -145,18 +123,22 @@ function RevealStage({
         <div className="absolute inset-0 bg-gradient-to-b from-brand-soft/30 via-transparent to-gold-soft/30" />
       </div>
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="serif text-2xl sm:text-3xl 2xl:text-5xl font-semibold">{t('reveal.heading')}</h2>
+        <h2 className="serif text-2xl sm:text-3xl 2xl:text-5xl font-semibold">
+          {t("reveal.heading")}
+        </h2>
         <div className="flex items-center gap-2">
           {fullscreenSupported && (
             <button
               type="button"
               onClick={toggleFullscreen}
               className="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface px-3 py-2 text-sm hover:border-brand-hover min-h-[40px]"
-              title={isFullscreen ? t('reveal.fullscreenTitleExit') : t('reveal.fullscreenTitleEnter')}
+              title={
+                isFullscreen ? t("reveal.fullscreenTitleExit") : t("reveal.fullscreenTitleEnter")
+              }
               aria-pressed={isFullscreen}
             >
-              <span aria-hidden>{isFullscreen ? '⛶' : '⛶'}</span>
-              <span>{isFullscreen ? t('reveal.fullscreenExit') : t('reveal.fullscreen')}</span>
+              <span aria-hidden>{isFullscreen ? "⛶" : "⛶"}</span>
+              <span>{isFullscreen ? t("reveal.fullscreenExit") : t("reveal.fullscreen")}</span>
             </button>
           )}
           {isOwner && (
@@ -165,7 +147,7 @@ function RevealStage({
               onClick={handleClose}
               className="text-xs text-fg-muted hover:text-fg underline"
             >
-              {t('reveal.exit')}
+              {t("reveal.exit")}
             </button>
           )}
         </div>
@@ -180,10 +162,10 @@ function RevealStage({
               onClick={() => setTab(tt.id)}
               aria-pressed={tab === tt.id}
               className={
-                'rounded-full px-4 py-1.5 text-sm transition min-h-[36px] ' +
+                "rounded-full px-4 py-1.5 text-sm transition min-h-[36px] " +
                 (tab === tt.id
-                  ? 'bg-brand-soft text-brand-soft-fg font-semibold'
-                  : 'bg-surface-sunken text-fg-muted hover:bg-surface-muted hover:text-fg')
+                  ? "bg-brand-soft text-brand-soft-fg font-semibold"
+                  : "bg-surface-sunken text-fg-muted hover:bg-surface-muted hover:text-fg")
               }
             >
               {tt.label}
@@ -193,9 +175,7 @@ function RevealStage({
       )}
 
       {podium.length < 3 ? (
-        <p className="text-fg-muted text-sm italic">
-          {t('reveal.notEnough')}
-        </p>
+        <p className="text-fg-muted text-sm italic">{t("reveal.notEnough")}</p>
       ) : (
         <PodiumStage podium={podium} step={step} />
       )}
@@ -204,8 +184,8 @@ function RevealStage({
         <RevealController
           step={step}
           onStep={(s) => {
-            unlockAudio() // first user gesture — needed to allow audio
-            onStep(tab, s)
+            unlockAudio(); // first user gesture — needed to allow audio
+            onStep(tab, s);
           }}
           onReset={onReset}
         />
@@ -214,23 +194,17 @@ function RevealStage({
       <ConfettiBurst trigger={burstTrigger} intensity="burst" />
       <ConfettiBurst trigger={showerTrigger} intensity="shower" />
     </div>
-  )
+  );
 }
 
 function isVisible(step: RevealStep, place: 1 | 2 | 3): boolean {
-  if (step === 0) return false
-  if (place === 3) return true
-  if (place === 2) return step <= 2
-  return step === 1
+  if (step === 0) return false;
+  if (place === 3) return true;
+  if (place === 2) return step <= 2;
+  return step === 1;
 }
 
-function PodiumStage({
-  podium,
-  step,
-}: {
-  podium: PodiumEntry[]
-  step: RevealStep
-}) {
+function PodiumStage({ podium, step }: { podium: PodiumEntry[]; step: RevealStep }) {
   return (
     <div className="grid grid-cols-3 gap-3 2xl:gap-6 items-end mt-8 2xl:mt-16">
       <PodiumColumn
@@ -258,7 +232,7 @@ function PodiumStage({
         medal="🥉"
       />
     </div>
-  )
+  );
 }
 
 function PodiumColumn({
@@ -269,31 +243,32 @@ function PodiumColumn({
   tone,
   medal,
 }: {
-  place: number
-  entry: PodiumEntry
-  visible: boolean
-  height: string
-  tone: string
-  medal: string
+  place: number;
+  entry: PodiumEntry;
+  visible: boolean;
+  height: string;
+  tone: string;
+  medal: string;
 }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
   return (
     <div
       className={
-        'flex flex-col items-center gap-2 2xl:gap-4 transition-all duration-700 ease-out ' +
-        (visible
-          ? 'opacity-100 translate-y-0'
-          : 'opacity-0 translate-y-6 pointer-events-none')
+        "flex flex-col items-center gap-2 2xl:gap-4 transition-all duration-700 ease-out " +
+        (visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none")
       }
     >
-      <div className="text-4xl 2xl:text-7xl">{visible ? medal : ' '}</div>
+      <div className="text-4xl 2xl:text-7xl">{visible ? medal : " "}</div>
       <div className="serif font-semibold text-center text-lg sm:text-2xl 2xl:text-4xl min-h-[1.5rem]">
-        {visible ? entry.name : ' '}
+        {visible ? entry.name : " "}
       </div>
       <div className="text-xs 2xl:text-xl text-fg-muted tabular min-h-[1rem]">
         {visible
-          ? t('reveal.podiumStat', { wins: entry.wins, diff: (entry.diff > 0 ? '+' : '') + entry.diff })
-          : ' '}
+          ? t("reveal.podiumStat", {
+              wins: entry.wins,
+              diff: (entry.diff > 0 ? "+" : "") + entry.diff,
+            })
+          : " "}
       </div>
       <div
         className={`w-full ${height} ${tone} rounded-t-card flex items-center justify-center serif font-bold text-3xl 2xl:text-6xl text-fg shadow-card`}
@@ -301,7 +276,7 @@ function PodiumColumn({
         {place}
       </div>
     </div>
-  )
+  );
 }
 
 function RevealController({
@@ -309,20 +284,20 @@ function RevealController({
   onStep,
   onReset,
 }: {
-  step: RevealStep
-  onStep: (s: RevealStep) => void
-  onReset: () => void
+  step: RevealStep;
+  onStep: (s: RevealStep) => void;
+  onReset: () => void;
 }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
   const buttons: { label: string; target: RevealStep; enabled: boolean }[] = [
-    { label: t('reveal.unveil3'), target: 3, enabled: step === 0 },
-    { label: t('reveal.unveil2'), target: 2, enabled: step === 3 },
-    { label: t('reveal.unveil1'), target: 1, enabled: step === 2 },
-  ]
+    { label: t("reveal.unveil3"), target: 3, enabled: step === 0 },
+    { label: t("reveal.unveil2"), target: 2, enabled: step === 3 },
+    { label: t("reveal.unveil1"), target: 1, enabled: step === 2 },
+  ];
 
   return (
     <div className="rounded-md border border-border bg-surface p-3 space-y-2">
-      <p className="text-xs text-fg-muted">{t('reveal.controllerHint')}</p>
+      <p className="text-xs text-fg-muted">{t("reveal.controllerHint")}</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {buttons.map((b) => (
           <button
@@ -331,10 +306,10 @@ function RevealController({
             disabled={!b.enabled}
             onClick={() => onStep(b.target)}
             className={
-              'rounded-md px-3 py-2 text-sm font-medium transition min-h-[44px] ' +
+              "rounded-md px-3 py-2 text-sm font-medium transition min-h-[44px] " +
               (b.enabled
-                ? 'bg-brand text-white hover:bg-brand-hover'
-                : 'bg-surface-sunken text-fg-subtle cursor-not-allowed')
+                ? "bg-brand text-white hover:bg-brand-hover"
+                : "bg-surface-sunken text-fg-subtle cursor-not-allowed")
             }
           >
             {b.label}
@@ -347,66 +322,61 @@ function RevealController({
           onClick={onReset}
           className="text-xs text-fg-muted hover:text-fg underline"
         >
-          {t('reveal.restart')}
+          {t("reveal.restart")}
         </button>
         <details className="text-xs text-fg-muted">
-          <summary className="cursor-pointer hover:text-fg">
-            {t('reveal.dryrun')}
-          </summary>
+          <summary className="cursor-pointer hover:text-fg">{t("reveal.dryrun")}</summary>
           <button
             type="button"
             onClick={() => onStep(1)}
             className="mt-1 rounded border border-border-strong px-2 py-1 hover:border-brand-hover"
           >
-            {t('reveal.jumpToWinner')}
+            {t("reveal.jumpToWinner")}
           </button>
         </details>
       </div>
     </div>
-  )
+  );
 }
 
 // ===== Podium computation =================================================
 
-function computePodium(
-  t: Tournament,
-  cat: RevealCategory,
-): PodiumEntry[] {
-  const stats = computeStats(t.schedule, t.players)
+function computePodium(t: Tournament, cat: RevealCategory): PodiumEntry[] {
+  const stats = computeStats(t.schedule, t.players);
   const filtered = stats.filter((s) => {
-    if (cat === 'overall') return true
-    const player = t.players.find((p) => p.id === s.id)
-    if (!player) return false
-    return cat === 'women' ? player.gender === 'F' : player.gender === 'M'
-  })
+    if (cat === "overall") return true;
+    const player = t.players.find((p) => p.id === s.id);
+    if (!player) return false;
+    return cat === "women" ? player.gender === "F" : player.gender === "M";
+  });
   return filtered
     .sort((a, b) => {
-      if (a.wins !== b.wins) return b.wins - a.wins
-      if (a.diff !== b.diff) return b.diff - a.diff
-      if (a.gamesFor !== b.gamesFor) return b.gamesFor - a.gamesFor
-      return a.name.localeCompare(b.name, 'de')
+      if (a.wins !== b.wins) return b.wins - a.wins;
+      if (a.diff !== b.diff) return b.diff - a.diff;
+      if (a.gamesFor !== b.gamesFor) return b.gamesFor - a.gamesFor;
+      return a.name.localeCompare(b.name, "de");
     })
     .slice(0, 3)
-    .map((s) => ({ name: s.name, wins: s.wins, diff: s.diff }))
+    .map((s) => ({ name: s.name, wins: s.wins, diff: s.diff }));
 }
 
 interface Stats {
-  id: string
-  name: string
-  wins: number
-  diff: number
-  gamesFor: number
+  id: string;
+  name: string;
+  wins: number;
+  diff: number;
+  gamesFor: number;
 }
 
 function computeStats(schedule: Round[], players: Player[]): Stats[] {
   const map = new Map<
     string,
     { id: string; name: string; wins: number; gamesFor: number; gamesAgainst: number }
-  >()
+  >();
   for (const p of players)
-    map.set(p.id, { id: p.id, name: p.name, wins: 0, gamesFor: 0, gamesAgainst: 0 })
+    map.set(p.id, { id: p.id, name: p.name, wins: 0, gamesFor: 0, gamesAgainst: 0 });
   for (const round of schedule) {
-    for (const m of round.matches) accumulate(map, m)
+    for (const m of round.matches) accumulate(map, m);
   }
   return Array.from(map.values())
     .filter((s) => s.gamesFor + s.gamesAgainst > 0)
@@ -416,7 +386,7 @@ function computeStats(schedule: Round[], players: Player[]): Stats[] {
       wins: s.wins,
       diff: s.gamesFor - s.gamesAgainst,
       gamesFor: s.gamesFor,
-    }))
+    }));
 }
 
 function accumulate(
@@ -426,21 +396,21 @@ function accumulate(
   >,
   m: Match,
 ): void {
-  if (m.scoreA == null || m.scoreB == null) return
-  const aWin = m.scoreA > m.scoreB
-  const bWin = m.scoreB > m.scoreA
+  if (m.scoreA == null || m.scoreB == null) return;
+  const aWin = m.scoreA > m.scoreB;
+  const bWin = m.scoreB > m.scoreA;
   for (const id of m.teamA.players) {
-    const s = map.get(id)
-    if (!s) continue
-    s.gamesFor += m.scoreA
-    s.gamesAgainst += m.scoreB
-    if (aWin) s.wins++
+    const s = map.get(id);
+    if (!s) continue;
+    s.gamesFor += m.scoreA;
+    s.gamesAgainst += m.scoreB;
+    if (aWin) s.wins++;
   }
   for (const id of m.teamB.players) {
-    const s = map.get(id)
-    if (!s) continue
-    s.gamesFor += m.scoreB
-    s.gamesAgainst += m.scoreA
-    if (bWin) s.wins++
+    const s = map.get(id);
+    if (!s) continue;
+    s.gamesFor += m.scoreB;
+    s.gamesAgainst += m.scoreA;
+    if (bWin) s.wins++;
   }
 }

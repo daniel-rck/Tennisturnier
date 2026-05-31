@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * Track and control browser fullscreen state.
@@ -9,42 +9,42 @@ import { useCallback, useEffect, useState } from 'react'
  */
 export function useFullscreen() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(
-    () => typeof document !== 'undefined' && document.fullscreenElement != null,
-  )
+    () => typeof document !== "undefined" && document.fullscreenElement != null,
+  );
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(document.fullscreenElement != null)
-    document.addEventListener('fullscreenchange', handler)
-    return () => document.removeEventListener('fullscreenchange', handler)
-  }, [])
+    const handler = () => setIsFullscreen(document.fullscreenElement != null);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
 
   const request = useCallback(async () => {
-    if (typeof document === 'undefined') return
-    if (document.fullscreenElement) return
+    if (typeof document === "undefined") return;
+    if (document.fullscreenElement) return;
     try {
-      await document.documentElement.requestFullscreen()
+      await document.documentElement.requestFullscreen();
     } catch {
       // User denied or browser doesn't support — silently ignore.
     }
-  }, [])
+  }, []);
 
   const exit = useCallback(async () => {
-    if (typeof document === 'undefined') return
-    if (!document.fullscreenElement) return
+    if (typeof document === "undefined") return;
+    if (!document.fullscreenElement) return;
     try {
-      await document.exitFullscreen()
+      await document.exitFullscreen();
     } catch {
       // Ignore.
     }
-  }, [])
+  }, []);
 
   const toggle = useCallback(() => {
-    return isFullscreen ? exit() : request()
-  }, [isFullscreen, request, exit])
+    return isFullscreen ? exit() : request();
+  }, [isFullscreen, request, exit]);
 
   const supported =
-    typeof document !== 'undefined' &&
-    typeof document.documentElement.requestFullscreen === 'function'
+    typeof document !== "undefined" &&
+    typeof document.documentElement.requestFullscreen === "function";
 
-  return { isFullscreen, supported, request, exit, toggle }
+  return { isFullscreen, supported, request, exit, toggle };
 }

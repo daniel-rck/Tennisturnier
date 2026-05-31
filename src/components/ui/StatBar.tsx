@@ -1,23 +1,23 @@
 interface Props {
   /** 0..max */
-  value: number
-  max: number
-  label?: string
+  value: number;
+  max: number;
+  label?: string;
   /** Color tone of the filled portion */
-  tone?: 'brand' | 'gold' | 'clay' | 'silver'
+  tone?: "brand" | "gold" | "clay" | "silver";
   /** Show numeric value at the end */
-  showValue?: boolean
+  showValue?: boolean;
 }
 
 const TONES = {
-  brand: 'bg-brand',
-  gold: 'bg-gold',
-  clay: 'bg-clay',
-  silver: 'bg-silver',
-}
+  brand: "bg-brand",
+  gold: "bg-gold",
+  clay: "bg-clay",
+  silver: "bg-silver",
+};
 
-export function StatBar({ value, max, label, tone = 'brand', showValue = true }: Props) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0
+export function StatBar({ value, max, label, tone = "brand", showValue = true }: Props) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
     <div className="space-y-0.5">
       {label && (
@@ -39,5 +39,5 @@ export function StatBar({ value, max, label, tone = 'brand', showValue = true }:
         />
       </div>
     </div>
-  )
+  );
 }

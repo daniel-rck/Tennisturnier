@@ -1,13 +1,13 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* Manueller Dark-Toggle via [data-theme="dark"] auf <html> zusätzlich zu prefers-color-scheme. */
-@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
   /* Centre Court palette — Wimbledon-inspired premium. */
-  --color-surface: #faf7f0;          /* Wimbledon cream — primary surface */
-  --color-surface-muted: #f5efe0;    /* Ivory — secondary surface */
-  --color-surface-sunken: #ede5d0;   /* Deeper cream — sunken bg */
+  --color-surface: #faf7f0; /* Wimbledon cream — primary surface */
+  --color-surface-muted: #f5efe0; /* Ivory — secondary surface */
+  --color-surface-sunken: #ede5d0; /* Deeper cream — sunken bg */
   --color-fg: #1a1a1a;
   --color-fg-muted: #4a4a4a;
   --color-fg-subtle: #6a6a6a;
@@ -41,8 +41,9 @@
   --color-danger-fg: #a02828;
 
   /* Typography */
-  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Radius */
   --radius-card: 16px;
@@ -102,7 +103,7 @@
   html {
     color-scheme: light;
   }
-  :root[data-theme='dark'] {
+  :root[data-theme="dark"] {
     color-scheme: dark;
     --color-surface: #14191a;
     --color-surface-muted: #0f1314;
@@ -183,11 +184,14 @@
   body {
     @apply bg-surface-muted text-fg antialiased;
     font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss01';
+    font-feature-settings: "cv11", "ss01";
   }
-  h1, h2, h3, .serif {
+  h1,
+  h2,
+  h3,
+  .serif {
     font-family: var(--font-serif);
-    font-feature-settings: 'ss01';
+    font-feature-settings: "ss01";
     letter-spacing: -0.01em;
   }
   :focus-visible {
@@ -198,48 +202,96 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0 }
-  to   { opacity: 1 }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes scale-fade-in {
-  from { opacity: 0; transform: scale(0.96) }
-  to   { opacity: 1; transform: scale(1) }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(20px) }
-  to   { opacity: 1; transform: translateX(0) }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(16px) }
-  to   { opacity: 1; transform: translateY(0) }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes pulse-brand {
-  0%, 100% { background-color: transparent }
-  50%      { background-color: var(--color-brand-soft) }
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--color-brand-soft);
+  }
 }
 @keyframes score-pop {
-  0%   { transform: scale(1) }
-  50%  { transform: scale(1.18) }
-  100% { transform: scale(1) }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 @keyframes live-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgb(220 38 38 / 0.45) }
-  50%      { opacity: 0.85; box-shadow: 0 0 0 8px rgb(220 38 38 / 0) }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(220 38 38 / 0.45);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 8px rgb(220 38 38 / 0);
+  }
 }
 @keyframes gold-glow {
-  0%, 100% { box-shadow: 0 0 24px rgb(201 169 97 / 0.4), 0 0 48px rgb(201 169 97 / 0.2) }
-  50%      { box-shadow: 0 0 32px rgb(201 169 97 / 0.7), 0 0 64px rgb(201 169 97 / 0.35) }
+  0%,
+  100% {
+    box-shadow:
+      0 0 24px rgb(201 169 97 / 0.4),
+      0 0 48px rgb(201 169 97 / 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 32px rgb(201 169 97 / 0.7),
+      0 0 64px rgb(201 169 97 / 0.35);
+  }
 }
 
 /* Court pattern — subtle background lines for hero/header */
 .bg-court-pattern {
-  background-image:
-    linear-gradient(135deg, #0a1f17 0%, #051410 100%);
+  background-image: linear-gradient(135deg, #0a1f17 0%, #051410 100%);
   position: relative;
   isolation: isolate;
 }
 .bg-court-pattern::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background-image: url("/court-pattern.svg");
@@ -251,28 +303,30 @@
 }
 
 /* Reveal-Modus im Vollbild — Header + Footer ausblenden, mehr Platz für die Bühne. */
-html[data-reveal-fullscreen='true'] header.no-print,
-html[data-reveal-fullscreen='true'] footer.no-print,
-html[data-reveal-fullscreen='true'] nav.no-print {
+html[data-reveal-fullscreen="true"] header.no-print,
+html[data-reveal-fullscreen="true"] footer.no-print,
+html[data-reveal-fullscreen="true"] nav.no-print {
   display: none;
 }
-html[data-reveal-fullscreen='true'] main > div {
+html[data-reveal-fullscreen="true"] main > div {
   max-width: 100%;
   padding: 2rem 3rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
   }
 }
 
 /* Print bleibt immer hell — überschreibt Dark-Overrides. */
 @media print {
   :root,
-  :root[data-theme='dark'] {
+  :root[data-theme="dark"] {
     --color-surface: #ffffff;
     --color-surface-muted: #ffffff;
     --color-surface-sunken: #ffffff;
@@ -283,11 +337,11 @@ html[data-reveal-fullscreen='true'] main > div {
     --color-border-strong: #999999;
   }
   body {
-    background: #ffffff !important;
-    color: #000000 !important;
+    background: #ffffff;
+    color: #000000;
   }
   .no-print {
-    display: none !important;
+    display: none;
   }
   .print-page {
     break-after: page;

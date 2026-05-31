@@ -2,7 +2,7 @@
 /// <reference types="vite-plugin-pwa/client" />
 /// <reference types="vite-plugin-pwa/react" />
 
-declare module '*.css'
+declare module "*.css";
 
-declare const __APP_VERSION__: string
-declare const __BUILD_DATE__: string
+declare const __APP_VERSION__: string;
+declare const __BUILD_DATE__: string;
