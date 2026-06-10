@@ -61,7 +61,7 @@ ist bewusst kurz und behebt nur verifizierte Probleme.
       Online-Flush, Poll-Loop.
       Verify: bun run test && bun run lint (useSync-Warnungen weg) && bun run typecheck
 
-- [ ] T5: Lint hygiene batch — schema bump, App.tsx deps, dead suppressions, dead export
+- [x] T5: Lint hygiene batch — schema bump, App.tsx deps, dead suppressions, dead export
       Files: biome.json:2; src/App.tsx:125-130, 183-184, 186-218, 234-235;
              src/components/RoundTimer.tsx:40; src/lib/db/useLiveQuery.ts:26;
              src/knockoutScheduler.ts:248

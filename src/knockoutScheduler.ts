@@ -1,11 +1,6 @@
 import { germanFallback, type Translate } from "./i18n/fallback";
 import type { BracketMatch, BracketSlot } from "./types";
 
-const newId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID().slice(0, 8)
-    : Math.random().toString(36).slice(2, 10);
-
 const nextPow2 = (n: number) => {
   let p = 1;
   while (p < n) p <<= 1;
@@ -244,5 +239,3 @@ export function groupAdvanceSlots(groupCount: number, advancePerGroup: number): 
   }
   return slots;
 }
-
-export { newId as bracketNewId };

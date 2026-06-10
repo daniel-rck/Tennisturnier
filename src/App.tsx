@@ -137,7 +137,7 @@ function App() {
     if ((phase === "live" || phase === "results") && inferred === "prep") {
       setPhase("prep");
     }
-  }, [t.tournament, phase]);
+  }, [t.tournament, phase, setPhase]);
 
   // Derived: sub-tabs per phase
   const subTabs = useMemo(() => {
@@ -190,7 +190,6 @@ function App() {
         }`;
         window.history.replaceState({}, "", next);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sync.joinSession]);
 
   const handleGenerate = useCallback(() => {
@@ -225,13 +224,13 @@ function App() {
         setIsGenerating(false);
       }
     }, 0);
-  }, [t, toast, tr]);
+  }, [t, toast, tr, setPhase]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     t.snapshot();
     t.reset();
     setPhase("prep");
-  };
+  }, [t.snapshot, t.reset, setPhase]);
 
   const handleNewTournament = useCallback(async () => {
     const ok = await confirm({
@@ -241,7 +240,6 @@ function App() {
       destructive: true,
     });
     if (ok) handleReset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tr, handleReset, confirm]);
 
   const handleReshuffle = () => {
