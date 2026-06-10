@@ -29,7 +29,7 @@ ist bewusst kurz und behebt nur verifizierte Probleme.
       mode:42→"mixed", timerMinutes:9999→120.
       Verify: bun run test && bun run typecheck
 
-- [ ] T2: Run remote sync snapshots through `migrate()`
+- [x] T2: Run remote sync snapshots through `migrate()`
       Files: src/App.tsx:83-87
       Change: `const applyRemote = useCallback((next: Tournament) =>
       replaceTournament(migrate(next)), [replaceTournament])` vor dem

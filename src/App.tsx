@@ -24,6 +24,7 @@ import { ROUTES } from "./lib/routes.ts";
 import { AppShell, Button, type NavItem } from "./lib/ui";
 import { generateSchedule } from "./scheduler";
 import { migrate } from "./storage";
+import type { Tournament } from "./types";
 
 // Prep-phase panels pull in @dnd-kit (drag-and-drop) — lazy-load them so that
 // dependency stays out of the initial bundle for users who land mid-tournament.
@@ -80,10 +81,19 @@ function pathForPhase(phase: PhaseId): string {
 function App() {
   const { t: tr } = useTranslation();
   const t = useTournament();
+  // Remote snapshots come from the server unvalidated (`tournament: unknown` in
+  // KV) — run them through the same migrate() the JSON import uses, so a payload
+  // from an older/foreign client can't crash or corrupt local state. Memoized
+  // because applyRemote sits in the viewer poll effect's dependency array.
+  const { replaceTournament } = t;
+  const applyRemote = useCallback(
+    (next: Tournament) => replaceTournament(migrate(next)),
+    [replaceTournament],
+  );
   const sync = useSync({
     tournament: t.tournament,
     setSync: t.setSync,
-    applyRemote: t.replaceTournament,
+    applyRemote,
   });
   const isOwner = sync.role !== "viewer";
   const confirm = useConfirm();
