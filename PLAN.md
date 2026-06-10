@@ -15,7 +15,7 @@ ist bewusst kurz und behebt nur verifizierte Probleme.
 
 ## Tasks
 
-- [ ] T1: Sanitize scalar/enum fields in `migrate()`
+- [x] T1: Sanitize scalar/enum fields in `migrate()`
       Files: src/storage.ts:63-86, src/__tests__/storage.test.ts
       Change: Nach dem `...base, ...p`-Spread validierte Overrides ergänzen
       (gleiches Muster wie bestehende Array/Boolean/bellVariant-Behandlung):

@@ -41,6 +41,37 @@ describe("migrate", () => {
     expect(migrated.entries[0].id).toBe("a");
   });
 
+  it("falls back to defaults for invalid scalar types", () => {
+    const corrupt = {
+      name: 7,
+      format: "bogus",
+      mode: 42,
+      entryFormat: null,
+      courts: "invalid",
+      rounds: Number.NaN,
+      timerMinutes: 9999,
+      groupCount: -3,
+      advancePerGroup: "2",
+    };
+    const migrated = migrate(corrupt);
+    expect(migrated.name).toBe("Vereinsturnier");
+    expect(migrated.format).toBe("rotation");
+    expect(migrated.mode).toBe("mixed");
+    expect(migrated.entryFormat).toBe("doubles");
+    expect(migrated.courts).toBe(2);
+    expect(migrated.rounds).toBe(5);
+    expect(migrated.timerMinutes).toBe(120);
+    expect(migrated.groupCount).toBe(1);
+    expect(migrated.advancePerGroup).toBe(2);
+  });
+
+  it("rounds and keeps valid numeric scalars", () => {
+    const migrated = migrate({ courts: 3.4, rounds: 12, timerMinutes: 25 });
+    expect(migrated.courts).toBe(3);
+    expect(migrated.rounds).toBe(12);
+    expect(migrated.timerMinutes).toBe(25);
+  });
+
   it("fills missing members[] with empty array", () => {
     const v1 = {
       entries: [{ id: "a", name: "A" }],
