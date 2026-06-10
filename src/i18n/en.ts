@@ -527,4 +527,10 @@ export const en: Record<TranslationKey, string> = {
     "Best partner = most-frequent winning partner (wins/shared matches)",
   "statistics.legend.bestOpponent":
     "Easiest opponent = most-defeated opponent (wins/matches against)",
+
+  // Error boundary (last-resort crash screen)
+  "errorBoundary.title": "Something went wrong",
+  "errorBoundary.description":
+    "The app hit an unexpected error. Your tournament data is stored locally — reload the page to continue.",
+  "errorBoundary.reload": "Reload page",
 };

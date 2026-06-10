@@ -38,7 +38,7 @@ ist bewusst kurz und behebt nur verifizierte Probleme.
       `sanitizeSync` erhält den Viewer-Sync-Zustand.
       Verify: bun run test && bun run typecheck && bun run lint
 
-- [ ] T3: Add an error boundary with reload fallback
+- [x] T3: Add an error boundary with reload fallback
       Files: src/components/ErrorBoundary.tsx (neu), src/main.tsx,
              src/i18n/de.ts, src/i18n/en.ts
       Change: Klassen-Boundary (componentDidCatch → console.error); Fallback ist
