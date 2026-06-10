@@ -50,7 +50,7 @@ ist bewusst kurz und behebt nur verifizierte Probleme.
       errorBoundary.reload (i18n.test.ts prüft Key-Parität).
       Verify: bun run build && bun run test && bun run lint
 
-- [ ] T4: Memoize `doPush` and fix useSync effect dependencies
+- [x] T4: Memoize `doPush` and fix useSync effect dependencies
       Files: src/hooks/useSync.ts:74-158, 240, 288
       Change: `doPush` in `useCallback` mit Deps `[sync?.shareCode, sync?.ownerToken]`
       (Rest sind Refs/stabile Setter); die beiden Owner-Effect-Dep-Arrays korrekt

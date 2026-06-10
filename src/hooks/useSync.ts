@@ -71,50 +71,59 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     tournamentRef.current = tournament;
   }, [tournament]);
 
-  const doPush = async (json: string, payload: Tournament): Promise<void> => {
-    if (!sync?.ownerToken) return;
-    if (pushInFlightRef.current) return;
-    pushInFlightRef.current = true;
-    setStatus("connecting");
-    let pushed = false;
-    try {
-      const res = await fetch(`/api/sync/${sync.shareCode}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${sync.ownerToken}`,
-        },
-        body: JSON.stringify({ tournament: payload }),
-      });
-      if (!res.ok) {
-        setStatus("error");
-        setError(await readErrorMessage(res, tRef.current));
-        return;
+  const doPush = useCallback(
+    async (json: string, payload: Tournament): Promise<void> => {
+      if (!sync?.ownerToken) return;
+      if (pushInFlightRef.current) return;
+      pushInFlightRef.current = true;
+      try {
+        // Loop instead of tail recursion: edits that arrived while a push was
+        // in flight would otherwise sit in localStorage until the next user
+        // edit triggers another push. Catch up immediately on success — on
+        // failure we wait for the `online` listener (or the next edit) so we
+        // don't spin against a broken connection.
+        let nextJson: string | null = json;
+        let nextPayload: Tournament = payload;
+        while (nextJson != null) {
+          setStatus("connecting");
+          let pushed = false;
+          try {
+            const res = await fetch(`/api/sync/${sync.shareCode}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${sync.ownerToken}`,
+              },
+              body: JSON.stringify({ tournament: nextPayload }),
+            });
+            if (!res.ok) {
+              setStatus("error");
+              setError(await readErrorMessage(res, tRef.current));
+              return;
+            }
+            const body = (await res.json()) as { version: number };
+            versionRef.current = body.version;
+            lastPushedRef.current = nextJson;
+            setStatus("live");
+            setError(null);
+            pushed = true;
+          } catch {
+            setStatus("offline");
+            setError(tRef.current("sync.error.network"));
+          }
+          if (!pushed) return;
+          const latestPayload = stripSync(tournamentRef.current);
+          const latestJson = JSON.stringify(latestPayload);
+          if (latestJson === lastPushedRef.current) return;
+          nextJson = latestJson;
+          nextPayload = latestPayload;
+        }
+      } finally {
+        pushInFlightRef.current = false;
       }
-      const body = (await res.json()) as { version: number };
-      versionRef.current = body.version;
-      lastPushedRef.current = json;
-      setStatus("live");
-      setError(null);
-      pushed = true;
-    } catch {
-      setStatus("offline");
-      setError(tRef.current("sync.error.network"));
-    } finally {
-      pushInFlightRef.current = false;
-    }
-    // Edits that arrived while this push was in flight would otherwise sit in
-    // localStorage until the next user edit triggers another push. Catch up
-    // immediately on success — on failure we wait for the `online` listener
-    // (or the next edit) so we don't spin against a broken connection.
-    if (pushed) {
-      const latestPayload = stripSync(tournamentRef.current);
-      const latestJson = JSON.stringify(latestPayload);
-      if (latestJson !== lastPushedRef.current) {
-        void doPush(latestJson, latestPayload);
-      }
-    }
-  };
+    },
+    [sync?.shareCode, sync?.ownerToken],
+  );
 
   useEffect(() => {
     if (role !== "owner" || !sync) return;
@@ -131,8 +140,7 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     return () => {
       if (pushTimerRef.current != null) window.clearTimeout(pushTimerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournament, role, sync?.shareCode, sync?.ownerToken, sync, doPush]);
+  }, [tournament, role, sync, doPush]);
 
   // Retry push as soon as the browser reports the connection is back, so that
   // edits made while offline don't sit in localStorage forever waiting for the
@@ -154,11 +162,14 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     return () => {
       window.removeEventListener("online", flushPending);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, sync?.shareCode, sync?.ownerToken, sync, doPush]);
+  }, [role, sync, doPush]);
 
   // ---- Viewer poll --------------------------------------------------------
 
+  // Keyed on shareCode, not the `sync` object: applied snapshots produce a
+  // fresh sync identity each time, but its fields only change with the code —
+  // listing the object would restart the poll loop on every update.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on sync?.shareCode instead of the unstable sync object
   useEffect(() => {
     if (role !== "viewer" || !sync) return;
     let cancelled = false;
@@ -237,13 +248,7 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("online", onOnline);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    role,
-    sync?.shareCode, // Re-attach our local sync config so we stay in viewer mode.
-    applyRemote,
-    sync,
-  ]);
+  }, [role, sync?.shareCode, applyRemote]);
 
   // ---- Idle when disabled -------------------------------------------------
 
@@ -285,7 +290,6 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     setSync({ shareCode: body.code, ownerToken: body.ownerToken, enabled: true });
     setStatus("live");
     return body.code;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournament, t, setSync]);
 
   const joinSession = useCallback(
