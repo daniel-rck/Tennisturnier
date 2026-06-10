@@ -74,7 +74,7 @@ ist bewusst kurz und behebt nur verifizierte Probleme.
       Verify: bun run lint → nur noch die bewussten noNonNullAssertion-Warnungen,
       keine Info; bun run test && bun run typecheck
 
-- [ ] T6: Sync README to reality (Biome, typecheck script)
+- [x] T6: Sync README to reality (Biome, typecheck script)
       Files: README.md:63, 69
       Change: Scripts-Tabelle — lint-Zeile → "Biome (Lint + Format-Check)";
       Zeile `bun run typecheck` → "TypeScript-Typprüfung (tsc -b --noEmit)"
