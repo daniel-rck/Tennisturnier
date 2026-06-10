@@ -399,8 +399,9 @@ function App() {
           </>
         }
       >
-        {/* Sub-tabs */}
-        <div className="-mt-2 mb-5 border-b border-border">
+        {/* Sub-tabs — pinned below the app header while the page scrolls.
+            Panels with their own sticky bars offset against header + this row. */}
+        <div className="sticky top-14 z-10 -mx-4 px-4 -mt-2 mb-5 border-b border-border bg-surface">
           <SubNav current={subTab} onChange={setSubTab} tabs={subTabs} />
         </div>
 

@@ -205,7 +205,7 @@ export function EntriesPanel({
         {entryFormat === "doubles" ? t("entries.descDoubles") : t("entries.descSingles")}
       </p>
 
-      <Card variant="flat" className="p-3 space-y-2 sticky top-[112px] sm:top-[160px] z-[4]">
+      <Card variant="flat" className="p-3 space-y-2 sticky top-[108px] z-[4]">
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: memberCount }).map((_, i) => (
             <input
@@ -330,7 +330,7 @@ function ContinueBar({
   const fallbackLabel = label ?? t("wizard.finish");
   return (
     <div
-      className="sticky bottom-[68px] sm:bottom-4 z-[5]"
+      className="sticky bottom-[68px] md:bottom-4 z-[5]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="rounded-card border border-border bg-surface/95 backdrop-blur-md shadow-elevated p-3 flex items-center gap-3">
