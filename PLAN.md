@@ -81,8 +81,10 @@ ist bewusst kurz und behebt nur verifizierte Probleme.
       ergänzen; Tech-Stack-Zeile: "ESLint 9" → "Biome 2".
       Verify: grep -i eslint README.md → keine Treffer; bun run lint
 
-- [ ] T7: Final full verification + check off PLAN.md
+- [x] T7: Final full verification + check off PLAN.md
       Verify: bun run build && bun run test && bun run lint && bun run typecheck
+      Ergebnis: build ✓ · 89/89 Tests ✓ · lint exit 0 (nur noch 21 bewusste
+      noNonNullAssertion-Warnungen, keine Info, keine Deps-Warnungen) · typecheck ✓
 
 ## Nicht in dieser Session
 - Client-seitiges `baseVersion`/409-Handling: mit dem Single-Owner-Device-Modell
