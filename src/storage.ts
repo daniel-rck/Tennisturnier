@@ -2,6 +2,18 @@ import { CURRENT_KEY, getDB, notifyMutation, TOURNAMENTS_STORE } from "./lib/db/
 import type { BellVariant, Entry, RevealState, Tournament } from "./types";
 
 const BELL_VARIANTS: readonly BellVariant[] = ["classic", "boxing", "alarm", "temple"];
+const FORMATS: readonly Tournament["format"][] = ["rotation", "groups", "knockout", "groups-ko"];
+const MODES: readonly Tournament["mode"][] = ["mixed", "women", "men", "open"];
+const ENTRY_FORMATS: readonly Tournament["entryFormat"][] = ["singles", "doubles"];
+
+/** Clamp to an integer in [min, max]; non-numeric/non-finite input → fallback. */
+const clampInt = (v: unknown, min: number, max: number, fallback: number): number =>
+  typeof v === "number" && Number.isFinite(v)
+    ? Math.max(min, Math.min(max, Math.round(v)))
+    : fallback;
+
+const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T =>
+  typeof v === "string" && (allowed as readonly string[]).includes(v) ? (v as T) : fallback;
 
 // Legacy localStorage keys — read once during migration into idb, then removed.
 const KEY_V1 = "tennisturnier:v1";
@@ -64,6 +76,16 @@ export function migrate(parsed: unknown): Tournament {
     ...base,
     ...p,
     entries,
+    name: typeof p.name === "string" ? p.name : base.name,
+    format: oneOf(p.format, FORMATS, base.format),
+    mode: oneOf(p.mode, MODES, base.mode),
+    entryFormat: oneOf(p.entryFormat, ENTRY_FORMATS, base.entryFormat),
+    // Same ranges the useTournament setters enforce.
+    courts: clampInt(p.courts, 1, 20, base.courts),
+    rounds: clampInt(p.rounds, 1, 50, base.rounds),
+    timerMinutes: clampInt(p.timerMinutes, 1, 120, base.timerMinutes),
+    groupCount: clampInt(p.groupCount, 1, 8, base.groupCount),
+    advancePerGroup: clampInt(p.advancePerGroup, 1, 4, base.advancePerGroup),
     players: Array.isArray(p.players) ? p.players : [],
     schedule: Array.isArray(p.schedule) ? p.schedule : [],
     groupSchedule: Array.isArray(p.groupSchedule) ? p.groupSchedule : [],

@@ -60,13 +60,14 @@ bunx wrangler dev    # http://localhost:8787
 |---|---|
 | `bun run dev` | Vite Dev-Server (ohne Sync-Backend) |
 | `bun run build` | Production-Build (`dist/`) |
-| `bun run lint` | ESLint über alle TS/TSX-Dateien |
+| `bun run lint` | Biome (Lint + Format-Check) |
+| `bun run typecheck` | TypeScript-Typprüfung (`tsc -b --noEmit`) |
 | `bun run test` | Vitest einmalig ausführen |
 | `bun run preview` | Production-Build lokal previewen |
 
 ## Tech-Stack
 
-React 19 · TypeScript 5.9 · Vite 8 · Tailwind 4 · vite-plugin-pwa · Cloudflare Workers (Static Assets + KV) · Vitest · ESLint 9 · Bun
+React 19 · TypeScript 5.9 · Vite 8 · Tailwind 4 · vite-plugin-pwa · Cloudflare Workers (Static Assets + KV) · Vitest · Biome 2 · Bun
 
 ## Architektur
 

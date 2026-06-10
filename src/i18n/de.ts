@@ -538,6 +538,12 @@ export const de = {
     "Bester Partner = häufigster Sieg-Partner (Siege/gemeinsame Spiele)",
   "statistics.legend.bestOpponent":
     "Schwächster Gegner = meist besiegter Gegner (Siege/Spiele gegen ihn:sie)",
+
+  // Error boundary (last-resort crash screen)
+  "errorBoundary.title": "Etwas ist schiefgelaufen",
+  "errorBoundary.description":
+    "Die App ist auf einen unerwarteten Fehler gestoßen. Deine Turnierdaten sind lokal gespeichert — lade die Seite neu, um weiterzumachen.",
+  "errorBoundary.reload": "Seite neu laden",
 } as const;
 
 export type TranslationKey = keyof typeof de;

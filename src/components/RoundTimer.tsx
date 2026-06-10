@@ -37,7 +37,6 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
 
   useEffect(() => {
     if (!running) setRemaining(minutes * 60);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minutes, running]);
 
   useEffect(() => {
