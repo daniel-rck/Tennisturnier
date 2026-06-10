@@ -25,10 +25,20 @@ export function AppShell({ title, logo, navItems, headerActions, children }: App
         }
       />
       <div className="flex flex-1 min-h-0">
-        <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-surface-muted">
-          <AppNav items={navItems} variant="sidebar" />
+        <aside className="hidden md:block w-56 shrink-0 border-r border-border bg-surface-muted">
+          {/* Keep the nav visible while the window scrolls; the aside itself
+              spans the full content height for the border/background. */}
+          <div className="sticky top-14">
+            <AppNav items={navItems} variant="sidebar" />
+          </div>
         </aside>
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+        {/* The window is the scroll container (the shell is min-h-screen, so it
+            grows with content). No overflow on <main> — an overflow container
+            here would capture every descendant position:sticky without ever
+            scrolling itself, leaving header offsets and sticky bars broken.
+            min-w-0 keeps wide content from stretching this flex item (and the
+            page) beyond the viewport. */}
+        <main className="flex-1 min-w-0 pb-16 md:pb-0">
           <div className="container mx-auto max-w-4xl px-4 py-6">{children}</div>
         </main>
       </div>
