@@ -10,3 +10,5 @@ export { PageHeader } from "./PageHeader.tsx";
 export * from "./primitives.tsx";
 export type { UseInstallPromptResult } from "./useInstallPrompt.ts";
 export { useInstallPrompt } from "./useInstallPrompt.ts";
+export type { Theme, UseThemeResult } from "./useTheme.ts";
+export { themeInitScript, useTheme } from "./useTheme.ts";

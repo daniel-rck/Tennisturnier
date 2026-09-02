@@ -2,7 +2,6 @@ export { Avatar } from "./Avatar";
 export { Button } from "./Button";
 export { Card, CardBody, CardHeader } from "./Card";
 export { NumberInput } from "./NumberInput";
-export { PageHeader } from "./PageHeader";
 export type { PhaseId } from "./PhaseNav";
 export { PhaseNav, SubNav } from "./PhaseNav";
 export { Pill, TogglePill } from "./Pill";

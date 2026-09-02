@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { type TranslationKey, useTranslation } from "../i18n";
+import { at } from "../utils/at.ts";
 
 interface SlideKey {
   key: string;
@@ -44,7 +45,7 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const dialogRef = useRef<HTMLDivElement | null>(null);
-  const slide = SLIDES[step];
+  const slide = at(SLIDES, step);
   const isFirst = step === 0;
   const isLast = step === SLIDES.length - 1;
 

@@ -5,6 +5,7 @@ import { groupLetter, resolveBracket } from "../knockoutScheduler";
 import type { RotationRanking } from "../ranking";
 import { computeKnockoutPodium, computeRotationRanking } from "../ranking";
 import type { Entry, RevealCategory, RevealStep, Tournament } from "../types";
+import { at } from "../utils/at.ts";
 import { EmptyState } from "./EmptyState";
 import { Podium, type PodiumEntry } from "./Podium";
 import { RevealPanel } from "./RevealPanel";
@@ -175,14 +176,15 @@ function rerank(rows: RotationRow[]): RotationRow[] {
   let i = 0;
   while (i < next.length) {
     let j = i + 1;
-    while (
-      j < next.length &&
-      next[j].wins === next[i].wins &&
-      next[j].diff === next[i].diff &&
-      next[j].gamesFor === next[i].gamesFor
-    )
+    const head = at(next, i);
+    while (j < next.length) {
+      const row = at(next, j);
+      if (row.wins !== head.wins || row.diff !== head.diff || row.gamesFor !== head.gamesFor) {
+        break;
+      }
       j++;
-    for (let k = i; k < j; k++) next[k].rank = i + 1;
+    }
+    for (let k = i; k < j; k++) at(next, k).rank = i + 1;
     i = j;
   }
   return next;

@@ -121,7 +121,8 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
     rounds.get(m.round)?.push(m);
   }
   const roundNumbers = Array.from(rounds.keys()).sort((a, b) => a - b);
-  const lastRound = roundNumbers[roundNumbers.length - 1];
+  // Empty when there are no resolved matches yet.
+  const lastRound = roundNumbers[roundNumbers.length - 1] ?? 0;
 
   return (
     <div className="space-y-4">
@@ -140,7 +141,8 @@ export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
       <div className="overflow-x-auto">
         <div className="flex gap-4 2xl:gap-8 min-w-fit pb-2">
           {roundNumbers.map((rn) => {
-            const matches = rounds.get(rn)!;
+            // roundNumbers is derived from `rounds`, so the key always exists.
+            const matches = rounds.get(rn) ?? [];
             return (
               <div key={rn} className="min-w-[16rem] 2xl:min-w-[24rem]">
                 <h3 className="text-sm 2xl:text-lg font-semibold mb-2 text-fg-muted">

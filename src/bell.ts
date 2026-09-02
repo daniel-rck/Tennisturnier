@@ -1,4 +1,5 @@
 import type { BellVariant } from "./types";
+import { at } from "./utils/at.ts";
 
 let ctx: AudioContext | null = null;
 
@@ -183,7 +184,7 @@ const VARIANTS: Record<BellVariant, VariantSpec> = {
       const chirps = Math.floor(ringDuration / chirp);
       for (let k = 0; k < chirps; k++) {
         const t = start + k * chirp;
-        const f = freqs[k % 2];
+        const f = at(freqs, k % 2);
         const osc = c.createOscillator();
         const gain = c.createGain();
         osc.type = "square";

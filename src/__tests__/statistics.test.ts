@@ -126,8 +126,8 @@ describe("computePlayerStats — rotation", () => {
       ],
     });
     const stats = computePlayerStats(t);
-    expect(stats[0].winRate).toBe(1);
-    expect(stats[stats.length - 1].winRate).toBe(0);
+    expect(stats[0]!.winRate).toBe(1);
+    expect(stats[stats.length - 1]!.winRate).toBe(0);
   });
 });
 

@@ -1,5 +1,6 @@
 import { germanFallback, type Translate } from "./i18n/fallback";
 import type { Entry, GroupMatch } from "./types";
+import { at } from "./utils/at.ts";
 
 export interface GroupAssignment {
   groups: Entry[][];
@@ -23,7 +24,7 @@ export function assignGroups(
     const cycle = Math.floor(i / groupCount);
     const idxInCycle = i % groupCount;
     const g = cycle % 2 === 0 ? idxInCycle : groupCount - 1 - idxInCycle;
-    groups[g].push(entries[i]);
+    at(groups, g).push(at(entries, i));
   }
   return { groups, warnings };
 }
@@ -45,8 +46,8 @@ export function roundRobin(group: Entry[], groupNumber: number): GroupMatch[] {
       matches.push({
         group: groupNumber,
         matchIndex: counter++,
-        entryA: group[i].id,
-        entryB: group[j].id,
+        entryA: at(group, i).id,
+        entryB: at(group, j).id,
       });
     }
   }
@@ -145,13 +146,14 @@ export function groupStandings(group: Entry[], matches: GroupMatch[]): GroupStan
   let i = 0;
   while (i < rows.length) {
     let j = i + 1;
-    while (
-      j < rows.length &&
-      rows[j].wins === rows[i].wins &&
-      rows[j].diff === rows[i].diff &&
-      rows[j].gamesFor === rows[i].gamesFor
-    )
+    const head = at(rows, i);
+    while (j < rows.length) {
+      const row = at(rows, j);
+      if (row.wins !== head.wins || row.diff !== head.diff || row.gamesFor !== head.gamesFor) {
+        break;
+      }
       j++;
+    }
     if (j - i >= 2) {
       const cluster = rows.slice(i, j);
       cluster.sort((a, b) => {
@@ -159,9 +161,9 @@ export function groupStandings(group: Entry[], matches: GroupMatch[]): GroupStan
         if (r !== 0) return r;
         return a.name.localeCompare(b.name, "de");
       });
-      for (let k = 0; k < cluster.length; k++) rows[i + k] = cluster[k];
+      for (let k = 0; k < cluster.length; k++) rows[i + k] = at(cluster, k);
     }
-    for (let k = i; k < j; k++) rows[k].rank = i + 1;
+    for (let k = i; k < j; k++) at(rows, k).rank = i + 1;
     i = j;
   }
   return rows;

@@ -244,7 +244,8 @@ function PodiumColumn({
   medal,
 }: {
   place: number;
-  entry: PodiumEntry;
+  /** Undefined when the tournament has fewer finishers than podium places. */
+  entry: PodiumEntry | undefined;
   visible: boolean;
   height: string;
   tone: string;
@@ -260,10 +261,10 @@ function PodiumColumn({
     >
       <div className="text-4xl 2xl:text-7xl">{visible ? medal : " "}</div>
       <div className="serif font-semibold text-center text-lg sm:text-2xl 2xl:text-4xl min-h-[1.5rem]">
-        {visible ? entry.name : " "}
+        {visible && entry ? entry.name : " "}
       </div>
       <div className="text-xs 2xl:text-xl text-fg-muted tabular min-h-[1rem]">
-        {visible
+        {visible && entry
           ? t("reveal.podiumStat", {
               wins: entry.wins,
               diff: (entry.diff > 0 ? "+" : "") + entry.diff,

@@ -4,6 +4,7 @@ import { groupLetter, resolveBracket } from "../knockoutScheduler";
 import { computeKnockoutPodium, computeRotationRanking } from "../ranking";
 import type { Entry, Tournament } from "../types";
 import { FORMAT_KEYS, MODE_KEYS } from "../types";
+import { at } from "../utils/at.ts";
 import { EmptyState } from "./EmptyState";
 
 function groupsFor(t: Tournament): Entry[][] {
@@ -251,7 +252,7 @@ function BracketPrint({ t }: { t: Tournament }) {
   }
   const resolved = resolveBracket(t.bracket, entryName, groupWinners, tr);
   if (resolved.length === 0) return null;
-  const last = resolved[resolved.length - 1].round;
+  const last = at(resolved, resolved.length - 1).round;
   const rounds = new Map<number, typeof resolved>();
   for (const m of resolved) {
     if (!rounds.has(m.round)) rounds.set(m.round, []);

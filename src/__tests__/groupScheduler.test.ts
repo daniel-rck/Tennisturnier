@@ -19,8 +19,8 @@ describe("assignGroups", () => {
     const entries: Entry[] = ["1", "2", "3", "4", "5", "6"].map((id) => entry(id, `E${id}`));
     const { groups } = assignGroups(entries, 2);
     // Snake: cycle 0 -> 1->A, 2->B; cycle 1 reverse -> 3->B, 4->A; cycle 2 -> 5->A, 6->B
-    expect(groups[0].map((e) => e.id)).toEqual(["1", "4", "5"]);
-    expect(groups[1].map((e) => e.id)).toEqual(["2", "3", "6"]);
+    expect(groups[0]!.map((e) => e.id)).toEqual(["1", "4", "5"]);
+    expect(groups[1]!.map((e) => e.id)).toEqual(["2", "3", "6"]);
   });
 
   it("warns when there are fewer than 2 entries per group", () => {
@@ -49,7 +49,7 @@ describe("groupStandings", () => {
     ];
     const s = groupStandings(g, matches);
     expect(s.map((r) => r.entryId)).toEqual(["A", "B", "C"]);
-    expect(s[0].wins).toBe(2);
+    expect(s[0]!.wins).toBe(2);
   });
 
   it("uses head-to-head as tiebreaker for equal wins/diff/gamesFor", () => {
@@ -75,8 +75,8 @@ describe("groupStandings", () => {
       { group: 1, matchIndex: 1, entryA: "A", entryB: "B", scoreA: 6, scoreB: 4 },
     ];
     const s = groupStandings(g2, matches);
-    expect(s[0].entryId).toBe("A");
-    expect(s[1].entryId).toBe("B");
+    expect(s[0]!.entryId).toBe("A");
+    expect(s[1]!.entryId).toBe("B");
   });
 });
 
@@ -97,7 +97,7 @@ describe("resolveGroupAssignment", () => {
       ["b", "missing"],
     ]);
     expect(groups).toHaveLength(2);
-    expect(groups[0].map((e) => e.id)).toEqual(["a", "c"]);
-    expect(groups[1].map((e) => e.id)).toEqual(["b"]);
+    expect(groups[0]!.map((e) => e.id)).toEqual(["a", "c"]);
+    expect(groups[1]!.map((e) => e.id)).toEqual(["b"]);
   });
 });

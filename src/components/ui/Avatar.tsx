@@ -1,4 +1,5 @@
 import type { Gender } from "../../types";
+import { at } from "../../utils/at.ts";
 
 interface Props {
   name: string;
@@ -26,7 +27,7 @@ const PALETTE: [string, string][] = [
 function colorFor(name: string): [string, string] {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  return PALETTE[hash % PALETTE.length];
+  return at(PALETTE, hash % PALETTE.length);
 }
 
 function initials(name: string): string {

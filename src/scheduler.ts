@@ -1,6 +1,7 @@
 import { germanFallback, type Translate } from "./i18n/fallback";
 import type { Match, Mode, Player, Round, Tournament } from "./types";
 import { MODE_KEYS } from "./types";
+import { at } from "./utils/at.ts";
 
 export interface ScheduleResult {
   rounds: Round[];
@@ -75,7 +76,7 @@ function bestBipartiteMatching(
     const permute = (k: number) => {
       if (k === perm.length) {
         let c = 0;
-        for (let i = 0; i < perm.length; i++) c += pairCost(state, wIds[i], perm[i]);
+        for (let i = 0; i < perm.length; i++) c += pairCost(state, at(wIds, i), at(perm, i));
         if (c < bestCost) {
           bestCost = c;
           best = perm.slice();
@@ -83,19 +84,19 @@ function bestBipartiteMatching(
         return;
       }
       for (let i = k; i < perm.length; i++) {
-        [perm[k], perm[i]] = [perm[i], perm[k]];
+        [perm[k], perm[i]] = [at(perm, i), at(perm, k)];
         permute(k + 1);
-        [perm[k], perm[i]] = [perm[i], perm[k]];
+        [perm[k], perm[i]] = [at(perm, i), at(perm, k)];
       }
     };
     permute(0);
-    return wIds.map((w, i) => [w, best[i]] as [string, string]);
+    return wIds.map((w, i) => [w, at(best, i)] as [string, string]);
   }
 
   // For n > 8, use the Hungarian algorithm (O(n³)).
   const cost: number[][] = wIds.map((w) => mIds.map((m) => pairCost(state, w, m)));
   const assignment = hungarian(cost);
-  return wIds.map((w, i) => [w, mIds[assignment[i]]] as [string, string]);
+  return wIds.map((w, i) => [w, at(mIds, at(assignment, i))] as [string, string]);
 }
 
 /** Hungarian algorithm for square cost matrix (rectangular by padding caller-side).
@@ -114,40 +115,41 @@ function hungarian(cost: number[][]): number[] {
     const used = new Array<boolean>(n + 1).fill(false);
     do {
       used[j0] = true;
-      const i0 = p[j0];
+      const i0 = at(p, j0);
       let delta = Infinity;
       let j1 = 0;
       for (let j = 1; j <= n; j++) {
         if (used[j]) continue;
-        const cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
-        if (cur < minv[j]) {
+        const cur = at(at(cost, i0 - 1), j - 1) - at(u, i0) - at(v, j);
+        if (cur < at(minv, j)) {
           minv[j] = cur;
           way[j] = j0;
         }
-        if (minv[j] < delta) {
-          delta = minv[j];
+        if (at(minv, j) < delta) {
+          delta = at(minv, j);
           j1 = j;
         }
       }
       for (let j = 0; j <= n; j++) {
         if (used[j]) {
-          u[p[j]] += delta;
-          v[j] -= delta;
+          u[at(p, j)] = at(u, at(p, j)) + delta;
+          v[j] = at(v, j) - delta;
         } else {
-          minv[j] -= delta;
+          minv[j] = at(minv, j) - delta;
         }
       }
       j0 = j1;
-    } while (p[j0] !== 0);
+    } while (at(p, j0) !== 0);
     do {
-      const j1 = way[j0];
-      p[j0] = p[j1];
+      const j1 = at(way, j0);
+      p[j0] = at(p, j1);
       j0 = j1;
     } while (j0 !== 0);
   }
   const ans = new Array<number>(n).fill(0);
   for (let j = 1; j <= n; j++) {
-    if (p[j] !== 0) ans[p[j] - 1] = j - 1;
+    const row = at(p, j);
+    if (row !== 0) ans[row - 1] = j - 1;
   }
   return ans;
 }
@@ -168,9 +170,9 @@ function bestSamePairing(players: Player[], state: PairingState): Array<[string,
         }
         return;
       }
-      const a = remaining[0];
+      const a = at(remaining, 0);
       for (let i = 1; i < remaining.length; i++) {
-        const b = remaining[i];
+        const b = at(remaining, i);
         const next = remaining.slice(1);
         next.splice(i - 1, 1);
         const addCost = pairCost(state, a, b);
@@ -190,10 +192,10 @@ function bestSamePairing(players: Player[], state: PairingState): Array<[string,
     const arr = Array.from(remaining);
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
-        const c = pairCost(state, arr[i], arr[j]);
+        const c = pairCost(state, at(arr, i), at(arr, j));
         if (c < pickCost) {
           pickCost = c;
-          pick = [arr[i], arr[j]];
+          pick = [at(arr, i), at(arr, j)];
         }
       }
     }
@@ -227,9 +229,9 @@ function assignToCourts(
         }
         return;
       }
-      const a = remaining[0];
+      const a = at(remaining, 0);
       for (let i = 1; i < remaining.length; i++) {
-        const b = remaining[i];
+        const b = at(remaining, i);
         const next = remaining.slice(1);
         next.splice(i - 1, 1);
         const addCost = vsCost(state, a, b);
@@ -248,13 +250,13 @@ function assignToCourts(
     let pickIdx = 0;
     let pickCost = Infinity;
     for (let i = 0; i < remaining.length; i++) {
-      const c = vsCost(state, a, remaining[i]);
+      const c = vsCost(state, a, at(remaining, i));
       if (c < pickCost) {
         pickCost = c;
         pickIdx = i;
       }
     }
-    const b = remaining.splice(pickIdx, 1)[0];
+    const b = at(remaining.splice(pickIdx, 1), 0);
     result.push([a, b]);
   }
   return result;
