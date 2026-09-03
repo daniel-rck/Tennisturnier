@@ -15,14 +15,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <script>
-      try {
-        const t = localStorage.getItem('tennisturnier:theme');
-        if (t === 'dark' || t === 'light') {
-          document.documentElement.dataset.theme = t;
-        }
-      } catch (_e) {}
-    </script>
+    <script src="/theme-init.js"></script>
     <meta
       name="description"
       content="Browserbasierte App zum Planen kleiner Tennisturniere — Spielplan, Rundentimer, Gruppen, KO-Bracket, Siegerehrung. Offlinefähig, ohne Anmeldung."

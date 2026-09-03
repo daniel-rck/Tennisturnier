@@ -13,6 +13,7 @@ import { SettingsSheet } from "./components/SettingsSheet";
 import { SetupWizard } from "./components/SetupWizard";
 import { Spinner } from "./components/Spinner";
 import { StatisticsPanel } from "./components/StatisticsPanel";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { UpdatePrompt } from "./components/UpdatePrompt";
 import { type PhaseId, SubNav } from "./components/ui/PhaseNav";
 import { useConfirm } from "./hooks/useConfirm";
@@ -357,6 +358,8 @@ function App() {
         title={t.tournament.name || tr("app.defaultName")}
         logo={<TennisLogo />}
         navItems={navItems}
+        // The base toggle hardcodes German labels; this app is translated.
+        themeToggle={<ThemeToggle />}
         headerActions={
           <>
             {sync.role !== "none" && (

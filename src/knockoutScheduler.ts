@@ -1,5 +1,6 @@
 import { germanFallback, type Translate } from "./i18n/fallback";
 import type { BracketMatch, BracketSlot } from "./types";
+import { at } from "./utils/at.ts";
 
 const nextPow2 = (n: number) => {
   let p = 1;
@@ -34,15 +35,15 @@ export function buildBracket(
   const size = nextPow2(n);
   const order = seedOrder(size); // length = size, values 1..size
   const padded: BracketSlot[] = order.map((seed) =>
-    seed <= n ? slots[seed - 1] : { kind: "bye" },
+    seed <= n ? at(slots, seed - 1) : { kind: "bye" },
   );
 
   const matches: BracketMatch[] = [];
   // Round 1
   const round1Ids: string[] = [];
   for (let i = 0; i < size / 2; i++) {
-    const slotA = padded[2 * i];
-    const slotB = padded[2 * i + 1];
+    const slotA = at(padded, 2 * i);
+    const slotB = at(padded, 2 * i + 1);
     const id = `R1-M${i + 1}`;
     round1Ids.push(id);
     matches.push({
@@ -68,8 +69,8 @@ export function buildBracket(
         matchId: id,
         round,
         position: i + 1,
-        slotA: { kind: "feeder", matchId: prev[2 * i] },
-        slotB: { kind: "feeder", matchId: prev[2 * i + 1] },
+        slotA: { kind: "feeder", matchId: at(prev, 2 * i) },
+        slotB: { kind: "feeder", matchId: at(prev, 2 * i + 1) },
       });
     }
     if (matchesInRound === 1) semiIds = prev;
@@ -80,13 +81,13 @@ export function buildBracket(
   // Optional 3rd-place match: only meaningful if a final exists with two semis.
   if (options.thirdPlaceMatch && semiIds.length === 2) {
     const finalIdx = matches.findIndex((m) => m.matchId === "F");
-    const finalRound = matches[finalIdx].round;
+    const finalRound = at(matches, finalIdx).round;
     matches.splice(finalIdx, 0, {
       matchId: "3P",
       round: finalRound,
       position: 0,
-      slotA: { kind: "feeder", matchId: semiIds[0], loser: true },
-      slotB: { kind: "feeder", matchId: semiIds[1], loser: true },
+      slotA: { kind: "feeder", matchId: at(semiIds, 0), loser: true },
+      slotB: { kind: "feeder", matchId: at(semiIds, 1), loser: true },
     });
   }
   return matches;
@@ -217,7 +218,7 @@ export function humanMatchLabel(matchId: string, tr: Translate = germanFallback)
   if (matchId === "F") return tr("bracket.label.final");
   if (matchId === "3P") return tr("bracket.label.thirdPlace");
   const m = /^R(\d+)-M(\d+)$/.exec(matchId);
-  if (m) return tr("bracket.label.match", { m: m[2], r: m[1] });
+  if (m) return tr("bracket.label.match", { m: at(m, 2), r: at(m, 1) });
   return matchId;
 }
 

@@ -17,7 +17,7 @@ describe("buildBracket", () => {
   it("builds a bracket of size 2 (single final)", () => {
     const m = buildBracket(entrySlots(["a", "b"]));
     expect(m).toHaveLength(1);
-    expect(m[0].matchId).toBe("R1-M1");
+    expect(m[0]!.matchId).toBe("R1-M1");
   });
 
   it("pads to next power of two and assigns byes to top seeds", () => {
@@ -101,7 +101,7 @@ describe("resolveBracket", () => {
     const bracket = buildBracket(entrySlots(["a", "b"]));
     const withScores = bracket.map((m) => ({ ...m, scoreA: 6, scoreB: 6 }));
     const resolved = resolveBracket(withScores, name);
-    expect(resolved[0].winner).toBeNull();
+    expect(resolved[0]!.winner).toBeNull();
   });
 
   it("uses human-friendly slot labels for unresolved feeders", () => {

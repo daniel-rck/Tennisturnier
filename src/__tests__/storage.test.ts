@@ -38,7 +38,7 @@ describe("migrate", () => {
     };
     const migrated = migrate(v1);
     expect(migrated.entries).toHaveLength(1);
-    expect(migrated.entries[0].id).toBe("a");
+    expect(migrated.entries[0]!.id).toBe("a");
   });
 
   it("falls back to defaults for invalid scalar types", () => {
@@ -77,6 +77,6 @@ describe("migrate", () => {
       entries: [{ id: "a", name: "A" }],
     };
     const migrated = migrate(v1);
-    expect(migrated.entries[0].members).toEqual([]);
+    expect(migrated.entries[0]!.members).toEqual([]);
   });
 });

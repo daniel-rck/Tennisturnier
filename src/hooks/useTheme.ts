@@ -1,74 +1,37 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
+import { type Theme, useTheme as useBaseTheme } from "../lib/ui/useTheme.ts";
 
-export type Theme = "light" | "dark" | "system";
+export type { Theme };
 
-const STORAGE_KEY = "tennisturnier:theme";
-
-function readStored(): Theme {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === "dark" || raw === "light") return raw;
-  } catch {
-    /* localStorage unavailable (private mode, quota) — fall back to defaults */
-  }
-  return "system";
-}
-
-function applyTheme(theme: Theme): void {
-  const root = document.documentElement;
-  if (theme === "system") {
-    delete root.dataset.theme;
-  } else {
-    root.dataset.theme = theme;
-  }
-}
-
-function effectiveScheme(theme: Theme): "light" | "dark" {
-  if (theme === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  return theme;
-}
-
-function syncThemeColorMeta(theme: Theme): void {
-  const scheme = effectiveScheme(theme);
-  const color = scheme === "dark" ? "#051410" : "#0a1f17";
-  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
-    const media = m.getAttribute("media");
-    if (!media) m.setAttribute("content", color);
-  });
-}
-
+/**
+ * The web-base theme hook plus two things this app needs on top:
+ * a `cycle()` helper for the single-button toggle, and a `theme-color`
+ * meta sync so the mobile browser chrome matches the court palette.
+ *
+ * Persistence and the `data-theme` contract deliberately stay in the base hook
+ * — this used to be a full reimplementation with its own `tennisturnier:theme`
+ * storage key, which meant the fleet had three different ways to remember a
+ * theme choice.
+ */
 export function useTheme(): {
   theme: Theme;
+  resolvedTheme: "light" | "dark";
   setTheme: (next: Theme) => void;
   cycle: () => void;
 } {
-  const [theme, setThemeState] = useState<Theme>(() => readStored());
+  const { theme, resolvedTheme, setTheme } = useBaseTheme();
 
   useEffect(() => {
-    applyTheme(theme);
-    syncThemeColorMeta(theme);
-    try {
-      if (theme === "system") localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      /* localStorage unavailable (private mode, quota) — fall back to defaults */
+    const color = resolvedTheme === "dark" ? "#051410" : "#0a1f17";
+    for (const m of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+      // Leave the media-qualified metas alone; they encode their own scheme.
+      if (!m.getAttribute("media")) m.setAttribute("content", color);
     }
-  }, [theme]);
+  }, [resolvedTheme]);
 
-  // Re-sync meta when system preference changes (only relevant in 'system' mode).
-  useEffect(() => {
-    if (theme !== "system") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => syncThemeColorMeta("system");
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, [theme]);
+  const cycle = useCallback(() => {
+    setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light");
+  }, [theme, setTheme]);
 
-  const setTheme = (next: Theme) => setThemeState(next);
-  const cycle = () =>
-    setThemeState((t) => (t === "light" ? "dark" : t === "dark" ? "system" : "light"));
-
-  return { theme, setTheme, cycle };
+  return { theme, resolvedTheme, setTheme, cycle };
 }

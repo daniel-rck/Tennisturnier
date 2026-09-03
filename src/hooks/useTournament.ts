@@ -22,6 +22,7 @@ import type {
   SyncConfig,
   Tournament,
 } from "../types";
+import { at } from "../utils/at.ts";
 
 const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -79,7 +80,7 @@ export function useTournament() {
   const undo = useCallback(() => {
     const stack = undoStackRef.current;
     if (stack.length === 0) return;
-    const prev = stack[stack.length - 1];
+    const prev = at(stack, stack.length - 1);
     undoStackRef.current = stack.slice(0, -1);
     setUndoDepth(undoStackRef.current.length);
     setTournament(prev);
@@ -277,7 +278,7 @@ export function useTournament() {
       let nextAssignment = prev.groupAssignment;
       if (nextAssignment.length > 0) {
         const smallest = nextAssignment.reduce(
-          (acc, g, i) => (g.length < nextAssignment[acc].length ? i : acc),
+          (acc, g, i) => (g.length < at(nextAssignment, acc).length ? i : acc),
           0,
         );
         nextAssignment = nextAssignment.map((g, i) => (i === smallest ? [...g, id] : g));

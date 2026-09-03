@@ -1,5 +1,6 @@
 import type { ResolvedBracketMatch } from "./knockoutScheduler";
 import type { Player, Round } from "./types";
+import { at } from "./utils/at.ts";
 
 export interface RotationRanking {
   id: string;
@@ -66,15 +67,17 @@ export function computeRotationRanking(schedule: Round[], players: Player[]): Ro
     });
   let i = 0;
   while (i < rows.length) {
+    // Rows that tie on every criterion share a rank.
+    const head = at(rows, i);
     let j = i + 1;
-    while (
-      j < rows.length &&
-      rows[j].wins === rows[i].wins &&
-      rows[j].diff === rows[i].diff &&
-      rows[j].gamesFor === rows[i].gamesFor
-    )
+    while (j < rows.length) {
+      const row = at(rows, j);
+      if (row.wins !== head.wins || row.diff !== head.diff || row.gamesFor !== head.gamesFor) {
+        break;
+      }
       j++;
-    for (let k = i; k < j; k++) rows[k].rank = i + 1;
+    }
+    for (let k = i; k < j; k++) at(rows, k).rank = i + 1;
     i = j;
   }
   return rows;
@@ -93,7 +96,8 @@ export function computeKnockoutPodium(
   entryName: (id: string) => string,
 ): KnockoutPodium {
   if (resolved.length === 0) return { champion: null, runnerUp: null, thirds: [] };
-  const final = resolved.find((m) => m.matchId === "F") ?? resolved[resolved.length - 1];
+  // `resolved` is non-empty (guarded above), so the fallback always resolves.
+  const final = resolved.find((m) => m.matchId === "F") ?? at(resolved, resolved.length - 1);
   const thirdPlaceMatch = resolved.find((m) => m.matchId === "3P");
   const semis = resolved.filter((m) => m.round === final.round - 1);
   const champion = final.winner ? entryName(final.winner) : null;
