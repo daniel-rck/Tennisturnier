@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "../i18n";
 
 interface Props {
   value: number | undefined;
@@ -17,6 +18,7 @@ export function ScoreInput({
   min = 0,
   max = 99,
 }: Props) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState<string>(value?.toString() ?? "");
   const isFocused = useRef(false);
 
@@ -56,7 +58,7 @@ export function ScoreInput({
   }
 
   const stepperBtn =
-    "h-10 w-10 shrink-0 rounded-md border border-border-strong text-fg-muted text-lg leading-none " +
+    "h-11 w-11 shrink-0 rounded-md border border-border-strong text-fg-muted text-lg leading-none " +
     "hover:bg-surface-muted hover:text-fg active:bg-surface-sunken " +
     "disabled:opacity-50 disabled:border-dashed disabled:cursor-not-allowed disabled:hover:bg-transparent";
 
@@ -69,7 +71,7 @@ export function ScoreInput({
         type="button"
         onClick={() => step(-1)}
         disabled={minusDisabled}
-        aria-label={`${ariaLabel} verringern`}
+        aria-label={t("scoreInput.decrease", { label: ariaLabel })}
         className={stepperBtn}
       >
         −
@@ -92,14 +94,14 @@ export function ScoreInput({
           isFocused.current = false;
           setDraft(value?.toString() ?? "");
         }}
-        className="w-12 h-10 rounded-md border border-border-strong px-1 text-center text-base tabular-nums disabled:bg-surface-sunken disabled:text-fg-subtle"
+        className="w-12 h-11 rounded-md border border-border-strong px-1 text-center text-base tabular-nums disabled:bg-surface-sunken disabled:text-fg-subtle"
         aria-label={ariaLabel}
       />
       <button
         type="button"
         onClick={() => step(1)}
         disabled={plusDisabled}
-        aria-label={`${ariaLabel} erhöhen`}
+        aria-label={t("scoreInput.increase", { label: ariaLabel })}
         className={stepperBtn}
       >
         +

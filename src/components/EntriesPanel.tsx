@@ -18,6 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "../hooks/useConfirm";
+import { useToast } from "../hooks/useToast";
 import { useTranslation } from "../i18n";
 import type { Entry, EntryFormat } from "../types";
 import { EmptyState } from "./EmptyState";
@@ -75,7 +76,7 @@ function EntryRow({
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="inline-flex items-center justify-center min-w-[28px] min-h-[40px] rounded-md cursor-grab active:cursor-grabbing touch-none text-fg-subtle hover:text-fg hover:bg-surface-sunken"
+          className="inline-flex items-center justify-center min-w-9 min-h-11 rounded-md cursor-grab active:cursor-grabbing touch-none text-fg-subtle hover:text-fg hover:bg-surface-sunken"
           aria-label={t("common.move")}
           {...attributes}
           {...listeners}
@@ -92,6 +93,7 @@ function EntryRow({
               type="text"
               value={entry.members[0] ?? ""}
               placeholder={t("entries.placeholder.name")}
+              aria-label={t("entries.placeholder.name")}
               onChange={(e) => onUpdate(entry.id, { members: [e.target.value] })}
               onBlur={trimMembers}
               className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
@@ -111,6 +113,7 @@ function EntryRow({
                   type="text"
                   value={entry.members[i] ?? ""}
                   placeholder={t("entries.placeholder.member", { n: i + 1 })}
+                  aria-label={t("entries.memberLabel", { n: i + 1 })}
                   onChange={(e) => {
                     const next = entry.members.slice();
                     while (next.length < memberCount) next.push("");
@@ -224,6 +227,11 @@ export function EntriesPanel({
                 memberCount === 1
                   ? t("entries.placeholder.name")
                   : t("entries.placeholder.member", { n: i + 1 })
+              }
+              aria-label={
+                memberCount === 1
+                  ? t("entries.placeholder.name")
+                  : t("entries.memberLabel", { n: i + 1 })
               }
               value={drafts[i] ?? ""}
               onChange={(e) => {
@@ -344,7 +352,7 @@ function ContinueBar({
         <div className="flex-1 min-w-0 text-sm">
           {ready ? (
             <span className="text-fg-muted">
-              <span className="font-semibold text-fg tabular">{count}</span> Teams bereit
+              <span className="tabular">{t("entries.ready", { count })}</span>
             </span>
           ) : (
             <span className="text-fg-muted">
@@ -380,6 +388,7 @@ function BulkEntriesSheet({
   entryFormat: EntryFormat;
 }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [raw, setRaw] = useState("");
 
   const parsed: string[][] = raw
@@ -402,6 +411,9 @@ function BulkEntriesSheet({
     });
     setRaw("");
     onClose();
+    if (parsed.length > 0) {
+      toast({ variant: "success", title: t("players.bulkImport.done", { count: parsed.length }) });
+    }
   };
 
   return (
@@ -417,6 +429,7 @@ function BulkEntriesSheet({
     >
       <div className="space-y-3">
         <textarea
+          aria-label={t("entries.bulkImport.title")}
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           placeholder={

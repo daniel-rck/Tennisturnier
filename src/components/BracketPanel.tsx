@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { type TranslationKey, useTranslation } from "../i18n";
-import { resolveBracket } from "../knockoutScheduler";
+import { humanMatchLabel, resolveBracket } from "../knockoutScheduler";
 import { groupRankLookup } from "../structure";
 import type { Tournament } from "../types";
 import { EmptyState } from "./EmptyState";
@@ -126,6 +126,7 @@ function BracketCard({
       : hasA || hasB
         ? "partial"
         : "pending";
+  const editable = !m.isByeMatch && m.entryA != null && m.entryB != null;
   const accent =
     !m.isByeMatch && status === "complete"
       ? "border-l-4 border-l-brand"
@@ -137,7 +138,7 @@ function BracketCard({
     <div className={`rounded-md border border-border bg-surface p-2 text-sm ${accent}`}>
       <div className="flex items-center justify-between gap-2 mb-1 text-xs">
         <span className="text-fg-muted">
-          {m.matchId === "3P" ? t("bracket.thirdPlace") : m.matchId}
+          {m.matchId === "3P" ? t("bracket.thirdPlace") : humanMatchLabel(m.matchId, t)}
         </span>
         {m.isByeMatch && (
           <span className="rounded bg-fg-subtle/20 text-fg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide font-medium">
@@ -158,7 +159,7 @@ function BracketCard({
       <SlotRow
         label={m.pendingA}
         score={m.scoreA}
-        editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
+        editable={editable}
         winning={aWinning}
         ariaLabel={t("schedule.scoreAria", { team: m.pendingA })}
         onChange={(a) => onScore(m.matchId, a, m.scoreB)}
@@ -166,15 +167,18 @@ function BracketCard({
       <SlotRow
         label={m.pendingB}
         score={m.scoreB}
-        editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
+        editable={editable}
         winning={bWinning}
         ariaLabel={t("schedule.scoreAria", { team: m.pendingB })}
         onChange={(b) => onScore(m.matchId, m.scoreA, b)}
       />
+      {!m.isByeMatch && !editable && (
+        <p className="mt-1 text-xs text-fg-subtle">{t("bracket.waiting")}</p>
+      )}
       {isTie && (
         <p
           role="alert"
-          className="mt-1 text-xs text-danger-fg bg-danger-bg border border-rose-200 rounded px-2 py-1"
+          className="mt-1 text-xs text-danger-fg bg-danger-bg border border-danger-fg/30 rounded px-2 py-1"
         >
           {t("bracket.tieWarning")}
         </p>

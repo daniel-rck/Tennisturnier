@@ -207,7 +207,19 @@ function App() {
     })();
   }, [sync.joinSession]);
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
+    const hasScores = t.tournament.schedule.some((r) =>
+      r.matches.some((m) => m.scoreA != null || m.scoreB != null),
+    );
+    if (hasScores) {
+      const ok = await confirm({
+        title: tr("schedule.regenerateConfirm.title"),
+        description: tr("schedule.regenerateConfirm.description"),
+        confirmLabel: tr("schedule.regenerateConfirm.button"),
+        destructive: true,
+      });
+      if (!ok) return;
+    }
     setIsGenerating(true);
     window.setTimeout(() => {
       try {
@@ -239,7 +251,7 @@ function App() {
         setIsGenerating(false);
       }
     }, 0);
-  }, [t, toast, tr, setPhase]);
+  }, [t, toast, tr, setPhase, confirm]);
 
   const handleReset = useCallback(() => {
     t.snapshot();

@@ -19,6 +19,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Kleineres Initial-Bundle (~21 % weniger gzip): `canvas-confetti`, `qrcode` und die
   Drag-and-Drop-Panels (`@dnd-kit`) werden erst bei Bedarf nachgeladen
 
+### Verbessert (Bedienung)
+- Ergebnis-Tastenfeld: Seite antippen zum Auswählen, zweistellige Ergebnisse (z. B. 10:8),
+  kein stilles Überschreiben mehr; größere ±-Tasten
+- Bottom-Sheets haben einen Schließen-Button; eindeutige Titel-IDs für Screenreader
+- Rückfrage vor „Spielplan neu erstellen“ (wenn schon Ergebnisse drin sind) und vor „Show neu starten“
+- Bestätigung nach dem Sammel-Import von Spieler:innen/Teams
+- KO: lesbare Match-Namen statt IDs, Hinweis bei noch gesperrten Ergebnisfeldern
+- Fehlende Übersetzungen und Beschriftungen (Sortierung, Geschlecht, Eingabefelder, ±-Tasten)
+  ergänzt; Touch-Ziele auf mindestens 44 px vergrößert
+- Timer wird nicht mehr jede 200 ms per Screenreader angesagt
+
 ### Behoben
 - Gruppen-, KO- und Gruppen+KO-Turniere lassen sich wieder starten: Gruppenplan und
   Bracket werden direkt aus den Teams gebaut, statt erst beim Öffnen des jeweiligen Tabs

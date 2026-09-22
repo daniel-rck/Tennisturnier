@@ -80,9 +80,14 @@ export function MatchCard({
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset transition-colors",
           ].join(" ")}
           aria-label={
-            readOnly
-              ? `${teamAName} vs ${teamBName}`
-              : t("scoreSheet.title", { teamA: teamAName, teamB: teamBName })
+            scoreA == null && scoreB == null
+              ? t("match.ariaOpen", { teamA: teamAName, teamB: teamBName })
+              : t("match.aria", {
+                  teamA: teamAName,
+                  teamB: teamBName,
+                  scoreA: scoreA ?? "–",
+                  scoreB: scoreB ?? "–",
+                })
           }
         >
           <div

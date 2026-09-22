@@ -75,7 +75,7 @@ function Stepper({ step }: { step: Step }) {
   const { t } = useTranslation();
   const labels: TranslationKey[] = ["wizard.step.format", "wizard.step.details"];
   return (
-    <ol className="flex items-center gap-2" aria-label="Wizard steps">
+    <ol className="flex items-center gap-2" aria-label={t("wizard.stepsLabel")}>
       {labels.map((label, i) => {
         const reached = step >= (i as Step);
         const current = step === i;
