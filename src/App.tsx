@@ -14,8 +14,8 @@ import { SetupWizard } from "./components/SetupWizard";
 import { Spinner } from "./components/Spinner";
 import { StatisticsPanel } from "./components/StatisticsPanel";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { UpdatePrompt } from "./components/UpdatePrompt";
 import { type PhaseId, SubNav } from "./components/ui/PhaseNav";
+import { UpdatePrompt } from "./components/UpdatePrompt";
 import { useConfirm } from "./hooks/useConfirm";
 import { useSync } from "./hooks/useSync";
 import { useToast } from "./hooks/useToast";
@@ -115,7 +115,7 @@ function App() {
     },
     [navigate],
   );
-  const [subTab, setSubTab] = useState<string>("");
+  const [selectedSubTab, setSubTab] = useState<string>("");
 
   // Tournament data hydrates asynchronously from idb. Once it lands, jump to the
   // inferred phase exactly once — but only from the default route, so a deep
@@ -166,12 +166,10 @@ function App() {
     ];
   }, [phase, t.tournament.format, tr]);
 
-  // Reset sub-tab to first valid when phase changes or list changes
-  useEffect(() => {
-    if (!subTabs.some((s) => s.id === subTab)) {
-      setSubTab(subTabs[0]?.id ?? "");
-    }
-  }, [subTabs, subTab]);
+  // Fall back to the first valid sub-tab when the phase or tab list changes.
+  const subTab = subTabs.some((s) => s.id === selectedSubTab)
+    ? selectedSubTab
+    : (subTabs[0]?.id ?? "");
 
   // Auto-join via ?join=<code> URL param — runs once on first mount.
   const joinedRef = useRef(false);

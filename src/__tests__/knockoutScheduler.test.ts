@@ -38,8 +38,7 @@ describe("buildBracket", () => {
     expect(ids).toContain("3P");
     expect(ids).toContain("F");
     const tp = m.find((x) => x.matchId === "3P")!;
-    expect(tp.slotA.kind).toBe("feeder");
-    if (tp.slotA.kind === "feeder") expect(tp.slotA.loser).toBe(true);
+    expect(tp.slotA).toMatchObject({ kind: "feeder", loser: true });
   });
 });
 

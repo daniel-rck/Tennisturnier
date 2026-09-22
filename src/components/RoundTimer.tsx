@@ -33,9 +33,11 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
   const endAtRef = useRef<number | null>(null);
   const rangRef = useRef(false);
   const variantRef = useRef(bellVariant);
+  // oxlint-disable-next-line react/refs -- latest-ref: the interval must ring the newest bell variant without restarting
   variantRef.current = bellVariant;
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- follow the configured duration while idle
     if (!running) setRemaining(minutes * 60);
   }, [minutes, running]);
 

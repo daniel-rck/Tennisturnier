@@ -11,6 +11,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Badges, prägnanter README, CONTRIBUTING-Leitfaden, Issue- und PR-Templates
 
 ### Geändert
+- Tooling: web-base 0.5.0 — Lint/Format mit oxlint + oxfmt statt Biome
+- Abhängigkeiten aktualisiert (u. a. React 19.3, Vite 8.3, Vitest 5)
 - Build-Stack: Upgrade auf Vite 8, `@vitejs/plugin-react` 6, `vite-plugin-pwa` 1.3 und Vitest 4
 - Vollständige Internationalisierung: Spielplan-/Gruppen-Warnungen, KO-Bracket-Platzhalter
   und Sync-Fehlermeldungen werden nun übersetzt (vorher teils hartcodiert deutsch)

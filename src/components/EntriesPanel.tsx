@@ -101,7 +101,7 @@ function EntryRow({
             <div className="flex-1 grid grid-cols-2 gap-1.5">
               {Array.from({ length: memberCount }).map((_, i) => (
                 <input
-                  // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
+                  // oxlint-disable-next-line react/no-array-index-key -- fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
                   key={i}
                   type="text"
                   value={entry.members[i] ?? ""}
@@ -192,6 +192,7 @@ export function EntriesPanel({
   };
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- resizes the draft slots when singles/doubles switches
     setDrafts((prev) =>
       prev.length === memberCount ? prev : (Array(memberCount).fill("") as string[]),
     );
@@ -209,7 +210,7 @@ export function EntriesPanel({
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: memberCount }).map((_, i) => (
             <input
-              // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
+              // oxlint-disable-next-line react/no-array-index-key -- fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
               key={i}
               ref={i === 0 ? firstDraftRef : undefined}
               type="text"
@@ -423,7 +424,7 @@ function BulkEntriesSheet({
         {parsed.length > 0 && (
           <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
             {parsed.slice(0, 8).map((members, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: read-only preview of free-text-parsed entries that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
+              // oxlint-disable-next-line react/no-array-index-key -- read-only preview of free-text-parsed entries that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
               <Pill key={`${members.join("&")}-${i}`} tone="brand">
                 {members.join(" & ")}
               </Pill>

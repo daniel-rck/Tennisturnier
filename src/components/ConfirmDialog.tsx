@@ -35,7 +35,7 @@ export function ConfirmDialog() {
   }, [resolve]);
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the browser's built-in Escape -> cancel event (see onCancel listener above).
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the browser's built-in Escape -> cancel event (see onCancel listener above).
     <dialog
       ref={dialogRef}
       className="no-print fixed inset-0 m-auto h-fit max-h-[calc(100%-2rem)] rounded-lg border border-border bg-surface text-fg p-0 shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm w-[min(28rem,calc(100%-2rem))] open:animate-scale-fade-in"

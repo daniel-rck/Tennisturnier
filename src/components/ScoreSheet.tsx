@@ -27,6 +27,7 @@ export function ScoreSheet({
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line react/set-state-in-effect -- re-seed the drafts from the stored score each time the sheet opens
       setDraftA(scoreA);
       setDraftB(scoreB);
     }

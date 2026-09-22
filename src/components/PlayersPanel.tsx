@@ -103,7 +103,7 @@ function PlayerRow({
 function GenderToggle({ value, onChange }: { value: Gender; onChange: (g: Gender) => void }) {
   const { t } = useTranslation();
   return (
-    // biome-ignore lint/a11y/useSemanticElements: this is a custom pill-styled toggle of two aria-pressed buttons; a native <fieldset> would require a <legend> and impose default form styling/semantics that break the inline-flex rounded pill layout. role="group" + aria-label is the correct ARIA for this grouping.
+    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- this is a custom pill-styled toggle of two aria-pressed buttons; a native <fieldset> would require a <legend> and impose default form styling/semantics that break the inline-flex rounded pill layout. role="group" + aria-label is the correct ARIA for this grouping.
     <div
       role="group"
       aria-label="Geschlecht"
@@ -404,7 +404,7 @@ function BulkImportSheet({
         {parsed.length > 0 && (
           <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
             {parsed.slice(0, 12).map((p, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: read-only preview of free-text-parsed players that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
+              // oxlint-disable-next-line react/no-array-index-key -- read-only preview of free-text-parsed players that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
               <Pill key={`${p.name}-${i}`} tone={p.gender === "F" ? "gold" : "brand"}>
                 {p.name} {p.gender === "F" ? "♀" : "♂"}
               </Pill>

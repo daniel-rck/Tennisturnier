@@ -41,7 +41,7 @@ export function Sheet({
   }, [open, onClose]);
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the Escape keydown listener above and the dialog's native cancel behavior.
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the Escape keydown listener above and the dialog's native cancel behavior.
     <dialog
       ref={dialogRef}
       onClose={onClose}

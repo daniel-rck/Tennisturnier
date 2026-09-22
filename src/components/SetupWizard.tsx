@@ -155,6 +155,7 @@ function StepFormat({
           {(Object.keys(FORMAT_KEYS) as Format[]).map((f) => {
             const active = f === format;
             return (
+              // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- the label is the translated title/description rendered as children via t()
               <button
                 key={f}
                 type="button"

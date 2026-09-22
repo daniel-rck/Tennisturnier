@@ -34,7 +34,7 @@ export function PrivacyDialog({ open, onClose }: Props) {
   }, [onClose]);
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the browser's built-in Escape -> cancel event (see onCancel listener above).
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the browser's built-in Escape -> cancel event (see onCancel listener above).
     <dialog
       ref={dialogRef}
       aria-labelledby="privacy-title"
