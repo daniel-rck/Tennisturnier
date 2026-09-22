@@ -1,14 +1,10 @@
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { useEffect, useMemo } from "react";
-import {
-  assignGroups,
-  groupStandings,
-  resolveGroupAssignment,
-  roundRobin,
-} from "../groupScheduler";
+import { useMemo } from "react";
+import { assignGroups, groupStandings } from "../groupScheduler";
 import { useConfirm } from "../hooks/useConfirm";
 import { useTranslation } from "../i18n";
 import { groupLetter } from "../knockoutScheduler";
+import { groupsOf } from "../structure";
 import type { Entry, GroupMatch, Tournament } from "../types";
 import { EmptyState } from "./EmptyState";
 import { ScoreInput } from "./ScoreInput";
@@ -16,7 +12,6 @@ import { NumberInput } from "./ui/NumberInput";
 
 interface Props {
   tournament: Tournament;
-  onSetGroupSchedule: (matches: GroupMatch[]) => void;
   onScore: (
     group: number,
     matchIndex: number,
@@ -24,84 +19,18 @@ interface Props {
     b: number | undefined,
   ) => void;
   onSetGroupCount: (n: number) => void;
-  onInitGroupAssignment: () => void;
   onReshuffle: () => void;
 }
 
-export function GroupsPanel({
-  tournament,
-  onSetGroupSchedule,
-  onScore,
-  onSetGroupCount,
-  onInitGroupAssignment,
-  onReshuffle,
-}: Props) {
+export function GroupsPanel({ tournament, onScore, onSetGroupCount, onReshuffle }: Props) {
   const confirm = useConfirm();
   const { t } = useTranslation();
-  // Initialize group assignment lazily on first visit when there are entries.
-  useEffect(() => {
-    if (
-      tournament.entries.length >= 2 &&
-      tournament.groupAssignment.length !== tournament.groupCount
-    ) {
-      onInitGroupAssignment();
-    }
-  }, [
-    tournament.entries.length,
-    tournament.groupCount,
-    tournament.groupAssignment.length,
-    onInitGroupAssignment,
-  ]);
-
-  const groups = useMemo(() => {
-    if (tournament.groupAssignment.length !== tournament.groupCount) {
-      // Fall back to ad-hoc snake until persistence is initialized.
-      return assignGroups(tournament.entries, tournament.groupCount).groups;
-    }
-    return resolveGroupAssignment(tournament.entries, tournament.groupAssignment);
-  }, [tournament.entries, tournament.groupCount, tournament.groupAssignment]);
+  const groups = useMemo(() => groupsOf(tournament), [tournament]);
 
   const { warnings } = useMemo(
     () => assignGroups(tournament.entries, tournament.groupCount, t),
     [tournament.entries, tournament.groupCount, t],
   );
-
-  // Auto-(re)build schedule when groups change. Preserves scores for unchanged matchups.
-  useEffect(() => {
-    if (tournament.entries.length < 2) {
-      if (tournament.groupSchedule.length > 0) onSetGroupSchedule([]);
-      return;
-    }
-    const expected: GroupMatch[] = [];
-    groups.forEach((g, idx) => {
-      expected.push(...roundRobin(g, idx + 1));
-    });
-    const sameSize = expected.length === tournament.groupSchedule.length;
-    const sameMatches =
-      sameSize &&
-      expected.every((e, i) => {
-        const m = tournament.groupSchedule[i];
-        return (
-          m &&
-          m.group === e.group &&
-          m.matchIndex === e.matchIndex &&
-          m.entryA === e.entryA &&
-          m.entryB === e.entryB
-        );
-      });
-    if (!sameMatches) {
-      const scoreMap = new Map<string, { a?: number; b?: number }>();
-      for (const m of tournament.groupSchedule) {
-        const k = key(m.group, m.entryA, m.entryB);
-        scoreMap.set(k, { a: m.scoreA, b: m.scoreB });
-      }
-      const merged = expected.map((e) => {
-        const s = scoreMap.get(key(e.group, e.entryA, e.entryB));
-        return { ...e, scoreA: s?.a, scoreB: s?.b };
-      });
-      onSetGroupSchedule(merged);
-    }
-  }, [groups, tournament.entries.length, tournament.groupSchedule, onSetGroupSchedule]);
 
   if (tournament.entries.length < 2) {
     return (
@@ -259,10 +188,6 @@ function GroupMatchRow({
       </span>
     </div>
   );
-}
-
-function key(group: number, a: string, b: string) {
-  return `${group}|${a}|${b}`;
 }
 
 interface Standing {

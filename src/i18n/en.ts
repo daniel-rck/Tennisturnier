@@ -95,6 +95,16 @@ export const en: Record<TranslationKey, string> = {
     'One name per line. Optionally add „;m" or „;f" for gender (e.g. „Anna;f").',
   "players.bulkImport.placeholder": "Anna\nBen;m\nCarla;f\n…",
   "players.bulkImport.add": "Add {count}",
+  "players.bulkImport.done": "{count} added",
+  "players.sortLabel": "Sort",
+  "players.genderLabel": "Gender",
+  "players.nameLabel": "Name of {name}",
+  "players.ready": "{count} players ready",
+  "entries.ready": "{count} teams ready",
+  "entries.memberLabel": "Member {n}",
+  "scoreInput.decrease": "Decrease {label}",
+  "scoreInput.increase": "Increase {label}",
+  "wizard.stepsLabel": "Steps",
   "entries.bulkImport.title": "Paste multiple teams",
   "entries.bulkImport.descriptionDoubles":
     'One team per line, members separated by „&" or „+" (e.g. „Anna & Ben").',
@@ -104,9 +114,16 @@ export const en: Record<TranslationKey, string> = {
 
   // Score sheet
   "scoreSheet.title": "{teamA} vs. {teamB}",
-  "scoreSheet.teamAScore": "Score {team}",
+  "scoreSheet.teamScore": "Score {team}",
   "scoreSheet.clear": "Clear score",
   "scoreSheet.done": "Done",
+  "match.aria": "{teamA} vs. {teamB}, score {scoreA}:{scoreB}",
+  "match.ariaOpen": "{teamA} vs. {teamB}, no score yet",
+  "scoreSheet.hint": "Tap a side to select it – then two digits work too (e.g. 10).",
+  "scoreSheet.backspace": "Delete last digit",
+  "scoreSheet.decrease": "{team}: one point less",
+  "scoreSheet.increase": "{team}: one point more",
+  "scoreSheet.select": "Select {team}",
 
   // Common
   "common.cancel": "Cancel",
@@ -281,6 +298,7 @@ export const en: Record<TranslationKey, string> = {
   "bracket.thirdPlace": "3rd-place match",
   "bracket.bye": "Bye",
   "bracket.tieWarning": "Tie in knockout — please correct, otherwise no one advances.",
+  "bracket.waiting": "Scores can be entered once both opponents are known.",
 
   // Ranking
   "ranking.startReveal": "🎉 Start award ceremony",
@@ -340,6 +358,9 @@ export const en: Record<TranslationKey, string> = {
   "reveal.unveil2": "🥈 Reveal 2nd place",
   "reveal.unveil1": "🥇 Reveal 1st place",
   "reveal.restart": "Restart show",
+  "reveal.restartConfirm.title": "Restart the show?",
+  "reveal.restartConfirm.description": "All revealed places are hidden again.",
+  "reveal.restartConfirm.button": "Restart",
   "reveal.dryrun": "Rehearsal",
   "reveal.jumpToWinner": "Jump straight to the winner",
 
@@ -455,6 +476,14 @@ export const en: Record<TranslationKey, string> = {
   "toast.loadConfirm.description": 'Load "{name}" — the current tournament will be overwritten.',
   "toast.loadConfirm.button": "Load",
   "toast.loaded": "Tournament loaded",
+  "schedule.regenerateConfirm.title": "Regenerate schedule?",
+  "schedule.regenerateConfirm.description":
+    "Scores entered so far are lost. Use “Undo” to get them back.",
+  "schedule.regenerateConfirm.button": "Regenerate",
+  "sync.joinConfirm.title": "Join live tournament?",
+  "sync.joinConfirm.description":
+    "The tournament with code {code} replaces your local tournament. Use “Undo” to get it back.",
+  "sync.joinConfirm.button": "Join",
 
   // Update prompt
   "update.title": "New version available",

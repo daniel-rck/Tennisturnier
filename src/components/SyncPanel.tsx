@@ -55,6 +55,7 @@ export function SyncPanel({ tournament, status, role, error, onCreate, onJoin, o
 
   useEffect(() => {
     if (!sync || role !== "owner") {
+      // oxlint-disable-next-line react/set-state-in-effect -- clears the async-generated QR image when the session ends
       setQrDataUrl(null);
       return;
     }

@@ -18,6 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "../hooks/useConfirm";
+import { useToast } from "../hooks/useToast";
 import { useTranslation } from "../i18n";
 import type { Entry, EntryFormat } from "../types";
 import { EmptyState } from "./EmptyState";
@@ -62,6 +63,10 @@ function EntryRow({
     opacity: isDragging ? 0.5 : 1,
   };
   const memberCount = entryFormat === "singles" ? 1 : 2;
+  const trimMembers = () => {
+    const trimmed = entry.members.map((m) => m.trim());
+    if (trimmed.some((m, i) => m !== entry.members[i])) onUpdate(entry.id, { members: trimmed });
+  };
   return (
     <div
       ref={setNodeRef}
@@ -71,7 +76,7 @@ function EntryRow({
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="inline-flex items-center justify-center min-w-[28px] min-h-[40px] rounded-md cursor-grab active:cursor-grabbing touch-none text-fg-subtle hover:text-fg hover:bg-surface-sunken"
+          className="inline-flex items-center justify-center min-w-9 min-h-11 rounded-md cursor-grab active:cursor-grabbing touch-none text-fg-subtle hover:text-fg hover:bg-surface-sunken"
           aria-label={t("common.move")}
           {...attributes}
           {...listeners}
@@ -88,7 +93,9 @@ function EntryRow({
               type="text"
               value={entry.members[0] ?? ""}
               placeholder={t("entries.placeholder.name")}
+              aria-label={t("entries.placeholder.name")}
               onChange={(e) => onUpdate(entry.id, { members: [e.target.value] })}
+              onBlur={trimMembers}
               className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
             />
           </>
@@ -101,17 +108,19 @@ function EntryRow({
             <div className="flex-1 grid grid-cols-2 gap-1.5">
               {Array.from({ length: memberCount }).map((_, i) => (
                 <input
-                  // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
+                  // oxlint-disable-next-line react/no-array-index-key -- fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
                   key={i}
                   type="text"
                   value={entry.members[i] ?? ""}
                   placeholder={t("entries.placeholder.member", { n: i + 1 })}
+                  aria-label={t("entries.memberLabel", { n: i + 1 })}
                   onChange={(e) => {
                     const next = entry.members.slice();
                     while (next.length < memberCount) next.push("");
                     next[i] = e.target.value;
                     onUpdate(entry.id, { members: next.slice(0, memberCount) });
                   }}
+                  onBlur={trimMembers}
                   className="min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent text-sm"
                 />
               ))}
@@ -192,6 +201,7 @@ export function EntriesPanel({
   };
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- resizes the draft slots when singles/doubles switches
     setDrafts((prev) =>
       prev.length === memberCount ? prev : (Array(memberCount).fill("") as string[]),
     );
@@ -209,7 +219,7 @@ export function EntriesPanel({
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: memberCount }).map((_, i) => (
             <input
-              // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
+              // oxlint-disable-next-line react/no-array-index-key -- fixed-length positional member slots; the index IS the stable slot identity (member 1/2), no other id exists
               key={i}
               ref={i === 0 ? firstDraftRef : undefined}
               type="text"
@@ -217,6 +227,11 @@ export function EntriesPanel({
                 memberCount === 1
                   ? t("entries.placeholder.name")
                   : t("entries.placeholder.member", { n: i + 1 })
+              }
+              aria-label={
+                memberCount === 1
+                  ? t("entries.placeholder.name")
+                  : t("entries.memberLabel", { n: i + 1 })
               }
               value={drafts[i] ?? ""}
               onChange={(e) => {
@@ -337,7 +352,7 @@ function ContinueBar({
         <div className="flex-1 min-w-0 text-sm">
           {ready ? (
             <span className="text-fg-muted">
-              <span className="font-semibold text-fg tabular">{count}</span> Teams bereit
+              <span className="tabular">{t("entries.ready", { count })}</span>
             </span>
           ) : (
             <span className="text-fg-muted">
@@ -373,6 +388,7 @@ function BulkEntriesSheet({
   entryFormat: EntryFormat;
 }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [raw, setRaw] = useState("");
 
   const parsed: string[][] = raw
@@ -395,6 +411,9 @@ function BulkEntriesSheet({
     });
     setRaw("");
     onClose();
+    if (parsed.length > 0) {
+      toast({ variant: "success", title: t("players.bulkImport.done", { count: parsed.length }) });
+    }
   };
 
   return (
@@ -410,6 +429,7 @@ function BulkEntriesSheet({
     >
       <div className="space-y-3">
         <textarea
+          aria-label={t("entries.bulkImport.title")}
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           placeholder={
@@ -423,7 +443,7 @@ function BulkEntriesSheet({
         {parsed.length > 0 && (
           <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
             {parsed.slice(0, 8).map((members, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: read-only preview of free-text-parsed entries that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
+              // oxlint-disable-next-line react/no-array-index-key -- read-only preview of free-text-parsed entries that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
               <Pill key={`${members.join("&")}-${i}`} tone="brand">
                 {members.join(" & ")}
               </Pill>

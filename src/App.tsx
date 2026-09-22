@@ -14,8 +14,8 @@ import { SetupWizard } from "./components/SetupWizard";
 import { Spinner } from "./components/Spinner";
 import { StatisticsPanel } from "./components/StatisticsPanel";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { UpdatePrompt } from "./components/UpdatePrompt";
 import { type PhaseId, SubNav } from "./components/ui/PhaseNav";
+import { UpdatePrompt } from "./components/UpdatePrompt";
 import { useConfirm } from "./hooks/useConfirm";
 import { useSync } from "./hooks/useSync";
 import { useToast } from "./hooks/useToast";
@@ -25,6 +25,7 @@ import { ROUTES } from "./lib/routes.ts";
 import { AppShell, Button, type NavItem } from "./lib/ui";
 import { generateSchedule } from "./scheduler";
 import { migrate } from "./storage";
+import { isBracketComplete } from "./structure";
 import type { Tournament } from "./types";
 
 // Prep-phase panels pull in @dnd-kit (drag-and-drop) — lazy-load them so that
@@ -62,8 +63,7 @@ function inferPhase(t: ReturnType<typeof useTournament>["tournament"]): PhaseId 
   }
   // knockout / groups-ko
   if (t.entries.length < 2 || t.bracket.length === 0) return "prep";
-  const allDone = t.bracket.every((m) => m.scoreA != null && m.scoreB != null);
-  return allDone ? "results" : "live";
+  return isBracketComplete(t.bracket) ? "results" : "live";
 }
 
 /** The active phase is derived from the URL (see src/lib/router.tsx). */
@@ -115,7 +115,7 @@ function App() {
     },
     [navigate],
   );
-  const [subTab, setSubTab] = useState<string>("");
+  const [selectedSubTab, setSubTab] = useState<string>("");
 
   // Tournament data hydrates asynchronously from idb. Once it lands, jump to the
   // inferred phase exactly once — but only from the default route, so a deep
@@ -166,34 +166,62 @@ function App() {
     ];
   }, [phase, t.tournament.format, tr]);
 
-  // Reset sub-tab to first valid when phase changes or list changes
-  useEffect(() => {
-    if (!subTabs.some((s) => s.id === subTab)) {
-      setSubTab(subTabs[0]?.id ?? "");
-    }
-  }, [subTabs, subTab]);
+  // Fall back to the first valid sub-tab when the phase or tab list changes.
+  const subTab = subTabs.some((s) => s.id === selectedSubTab)
+    ? selectedSubTab
+    : (subTabs[0]?.id ?? "");
 
-  // Auto-join via ?join=<code> URL param — runs once on first mount.
+  // Auto-join via ?join=<code> URL param — runs once, after idb hydration, so
+  // the local-data check sees the real tournament and loadTournament() can't
+  // overwrite the joined snapshot afterwards.
   const joinedRef = useRef(false);
   useEffect(() => {
-    if (joinedRef.current) return;
+    if (!t.hydrated || joinedRef.current) return;
     const params = new URLSearchParams(window.location.search);
     const code = params.get("join");
     if (!code) return;
     joinedRef.current = true;
-    sync
-      .joinSession(code)
-      .catch(() => {})
-      .finally(() => {
-        params.delete("join");
-        const next = `${window.location.pathname}${
-          params.toString() ? `?${params.toString()}` : ""
-        }`;
-        window.history.replaceState({}, "", next);
-      });
-  }, [sync.joinSession]);
+    const clearParam = () => {
+      params.delete("join");
+      const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      window.history.replaceState({}, "", next);
+    };
+    void (async () => {
+      // Joining replaces the local tournament — ask first when there is one,
+      // and keep it on the undo stack either way.
+      const local = t.tournament;
+      const hasLocalData = local.players.length > 0 || local.entries.length > 0;
+      if (hasLocalData && local.sync?.shareCode !== code.trim().toUpperCase()) {
+        const ok = await confirm({
+          title: tr("sync.joinConfirm.title"),
+          description: tr("sync.joinConfirm.description", { code }),
+          confirmLabel: tr("sync.joinConfirm.button"),
+          destructive: true,
+        });
+        if (!ok) {
+          clearParam();
+          return;
+        }
+      }
+      t.snapshot();
+      await sync.joinSession(code).catch(() => {});
+      clearParam();
+    })();
+  }, [t.hydrated, sync.joinSession]);
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
+    const hasScores = t.tournament.schedule.some((r) =>
+      r.matches.some((m) => m.scoreA != null || m.scoreB != null),
+    );
+    if (hasScores) {
+      const ok = await confirm({
+        title: tr("schedule.regenerateConfirm.title"),
+        description: tr("schedule.regenerateConfirm.description"),
+        confirmLabel: tr("schedule.regenerateConfirm.button"),
+        destructive: true,
+      });
+      if (!ok) return;
+    }
     setIsGenerating(true);
     window.setTimeout(() => {
       try {
@@ -225,13 +253,16 @@ function App() {
         setIsGenerating(false);
       }
     }, 0);
-  }, [t, toast, tr, setPhase]);
+  }, [t, toast, tr, setPhase, confirm]);
 
   const handleReset = useCallback(() => {
     t.snapshot();
+    // End the live session first, so the owner's share code stops working
+    // instead of lingering on the server until the KV TTL runs out.
+    if (sync.role !== "none") sync.leaveSession();
     t.reset();
     setPhase("prep");
-  }, [t.snapshot, t.reset, setPhase]);
+  }, [t.snapshot, t.reset, setPhase, sync.role, sync.leaveSession]);
 
   const handleNewTournament = useCallback(async () => {
     const ok = await confirm({
@@ -249,9 +280,9 @@ function App() {
   };
 
   const handleExport = () => {
-    const exportable = t.tournament.sync
-      ? { ...t.tournament, sync: { ...t.tournament.sync, ownerToken: undefined } }
-      : t.tournament;
+    // Never export the sync config: without the owner token a re-import would
+    // turn the owner into a viewer of their own session.
+    const { sync: _sync, ...exportable } = t.tournament;
     const blob = new Blob([JSON.stringify(exportable, null, 2)], {
       type: "application/json",
     });
@@ -288,7 +319,8 @@ function App() {
     });
     if (ok) {
       t.snapshot();
-      t.replaceTournament(next);
+      // Keep this device's own sync role; an imported file carries none.
+      t.replaceTournament({ ...next, sync: t.tournament.sync });
       // re-infer phase from new data
       setPhase(inferPhase(next));
       toast({ variant: "success", title: tr("toast.loaded") });
@@ -517,19 +549,13 @@ function App() {
             {phase === "live" && subTab === "groups" && (
               <GroupsPanel
                 tournament={t.tournament}
-                onSetGroupSchedule={t.setGroupSchedule}
                 onScore={t.setGroupScore}
                 onSetGroupCount={t.setGroupCount}
-                onInitGroupAssignment={t.initGroupAssignment}
                 onReshuffle={handleReshuffle}
               />
             )}
             {phase === "live" && subTab === "bracket" && (
-              <BracketPanel
-                tournament={t.tournament}
-                onSetBracket={t.setBracket}
-                onScore={t.setBracketScore}
-              />
+              <BracketPanel tournament={t.tournament} onScore={t.setBracketScore} />
             )}
             {phase === "live" && subTab === "statistics" && (
               <StatisticsPanel tournament={t.tournament} />

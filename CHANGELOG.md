@@ -11,13 +11,44 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Badges, prägnanter README, CONTRIBUTING-Leitfaden, Issue- und PR-Templates
 
 ### Geändert
+- Tooling: web-base 0.5.0 — Lint/Format mit oxlint + oxfmt statt Biome
+- Abhängigkeiten aktualisiert (u. a. React 19.3, Vite 8.3, Vitest 5)
 - Build-Stack: Upgrade auf Vite 8, `@vitejs/plugin-react` 6, `vite-plugin-pwa` 1.3 und Vitest 4
 - Vollständige Internationalisierung: Spielplan-/Gruppen-Warnungen, KO-Bracket-Platzhalter
   und Sync-Fehlermeldungen werden nun übersetzt (vorher teils hartcodiert deutsch)
 - Kleineres Initial-Bundle (~21 % weniger gzip): `canvas-confetti`, `qrcode` und die
   Drag-and-Drop-Panels (`@dnd-kit`) werden erst bei Bedarf nachgeladen
 
+### Verbessert (Bedienung)
+- Ergebnis-Tastenfeld: Seite antippen zum Auswählen, zweistellige Ergebnisse (z. B. 10:8),
+  kein stilles Überschreiben mehr; größere ±-Tasten
+- Bottom-Sheets haben einen Schließen-Button; eindeutige Titel-IDs für Screenreader
+- Rückfrage vor „Spielplan neu erstellen“ (wenn schon Ergebnisse drin sind) und vor „Show neu starten“
+- Bestätigung nach dem Sammel-Import von Spieler:innen/Teams
+- KO: lesbare Match-Namen statt IDs, Hinweis bei noch gesperrten Ergebnisfeldern
+- Fehlende Übersetzungen und Beschriftungen (Sortierung, Geschlecht, Eingabefelder, ±-Tasten)
+  ergänzt; Touch-Ziele auf mindestens 44 px vergrößert
+- Timer wird nicht mehr jede 200 ms per Screenreader angesagt
+
 ### Behoben
+- Gruppen-, KO- und Gruppen+KO-Turniere lassen sich wieder starten: Gruppenplan und
+  Bracket werden direkt aus den Teams gebaut, statt erst beim Öffnen des jeweiligen Tabs
+  (vorher sprang „Turnier läuft“ zurück in die Vorbereitung)
+- KO: Wird ein früheres Ergebnis korrigiert, verschwinden Ergebnisse späterer Runden, deren
+  Paarung sich dadurch ändert (vorher blieben sie bei den falschen Teams stehen)
+- KO mit Freilosen gilt nach dem Finale als abgeschlossen
+- KO-Ergebnisse lassen sich erst eintragen, wenn beide Gegner feststehen – auch in der
+  Übersicht und bei Gruppen+KO (Gruppenplätze gelten erst, wenn die Gruppe fertig ist);
+  ein Unentschieden im KO gilt nicht als abgeschlossen
+- Beitreten per Link wartet, bis das lokale Turnier geladen ist (keine Rückfrage übersprungen,
+  kein Überschreiben des beigetretenen Turniers mehr)
+- Rundentimer: Pause behält die Restzeit, abgelaufene Zeit wird angezeigt
+- Statistik zählt alle KO-Runden, nicht nur die erste
+- Namen können wieder mit Leerzeichen getippt werden (Trimmen erst beim Verlassen des Felds)
+- Export enthält keine Sync-Daten mehr; ein Re-Import macht den Owner nicht zum Viewer
+- Beitreten per Link fragt nach, bevor ein lokales Turnier ersetzt wird (und ist rückgängig machbar)
+- „Neues Turnier“ beendet eine laufende Live-Sitzung sauber
+- Geschlechtswechsel verwirft einen Mixed-Spielplan, dessen Paarungen ungültig würden
 - Live-Sync: Netzwerkfehler beim Starten/Beitreten hängen nicht mehr dauerhaft im
   Status „verbinde…“; Viewer-Polling schützt jetzt vor überlappenden Anfragen
 - Owner-Token wird in der Oberfläche maskiert dargestellt (Kopieren weiterhin möglich)

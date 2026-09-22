@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # lint (Biome) → typecheck (App + SW + Worker) → test (Vitest) → build (SPA + PWA).
+  # lint (oxlint + oxfmt) → typecheck (App + SW + Worker) → test (Vitest) → build (SPA + PWA).
   # The Worker deploy is handled by Cloudflare Workers Builds (Git integration).
   ci:
     uses: daniel-rck/web-base/.github/workflows/web-app-ci.yml@main

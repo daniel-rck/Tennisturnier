@@ -104,15 +104,15 @@ function bestBipartiteMatching(
 function hungarian(cost: number[][]): number[] {
   const n = cost.length;
   // u[i], v[j] dual potentials; p[j] = row matched to column j (1-indexed style).
-  const u = new Array<number>(n + 1).fill(0);
-  const v = new Array<number>(n + 1).fill(0);
-  const p = new Array<number>(n + 1).fill(0);
-  const way = new Array<number>(n + 1).fill(0);
+  const u = Array.from<number>({ length: n + 1 }).fill(0);
+  const v = Array.from<number>({ length: n + 1 }).fill(0);
+  const p = Array.from<number>({ length: n + 1 }).fill(0);
+  const way = Array.from<number>({ length: n + 1 }).fill(0);
   for (let i = 1; i <= n; i++) {
     p[0] = i;
     let j0 = 0;
-    const minv = new Array<number>(n + 1).fill(Infinity);
-    const used = new Array<boolean>(n + 1).fill(false);
+    const minv = Array.from<number>({ length: n + 1 }).fill(Infinity);
+    const used = Array.from<boolean>({ length: n + 1 }).fill(false);
     do {
       used[j0] = true;
       const i0 = at(p, j0);
@@ -146,7 +146,7 @@ function hungarian(cost: number[][]): number[] {
       j0 = j1;
     } while (j0 !== 0);
   }
-  const ans = new Array<number>(n).fill(0);
+  const ans = Array.from<number>({ length: n }).fill(0);
   for (let j = 1; j <= n; j++) {
     const row = at(p, j);
     if (row !== 0) ans[row - 1] = j - 1;

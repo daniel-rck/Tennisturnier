@@ -75,7 +75,7 @@ function Stepper({ step }: { step: Step }) {
   const { t } = useTranslation();
   const labels: TranslationKey[] = ["wizard.step.format", "wizard.step.details"];
   return (
-    <ol className="flex items-center gap-2" aria-label="Wizard steps">
+    <ol className="flex items-center gap-2" aria-label={t("wizard.stepsLabel")}>
       {labels.map((label, i) => {
         const reached = step >= (i as Step);
         const current = step === i;
@@ -155,6 +155,7 @@ function StepFormat({
           {(Object.keys(FORMAT_KEYS) as Format[]).map((f) => {
             const active = f === format;
             return (
+              // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- the label is the translated title/description rendered as children via t()
               <button
                 key={f}
                 type="button"

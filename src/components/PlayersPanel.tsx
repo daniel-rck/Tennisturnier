@@ -18,6 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useRef, useState } from "react";
 import { useConfirm } from "../hooks/useConfirm";
+import { useToast } from "../hooks/useToast";
 import { useTranslation } from "../i18n";
 import type { Gender, Player } from "../types";
 import { EmptyState } from "./EmptyState";
@@ -66,7 +67,7 @@ function PlayerRow({
     >
       <button
         type="button"
-        className="inline-flex items-center justify-center min-w-[28px] min-h-[44px] rounded-md cursor-grab active:cursor-grabbing touch-none text-fg-subtle hover:text-fg hover:bg-surface-sunken"
+        className="inline-flex items-center justify-center min-w-9 min-h-11 rounded-md cursor-grab active:cursor-grabbing touch-none text-fg-subtle hover:text-fg hover:bg-surface-sunken"
         aria-label={t("common.move")}
         {...attributes}
         {...listeners}
@@ -77,7 +78,12 @@ function PlayerRow({
       <input
         type="text"
         value={player.name}
+        aria-label={t("players.nameLabel", { name: player.name })}
         onChange={(e) => onUpdate(player.id, { name: e.target.value })}
+        onBlur={() => {
+          const trimmed = player.name.trim();
+          if (trimmed !== player.name) onUpdate(player.id, { name: trimmed });
+        }}
         className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
       />
       <GenderToggle value={player.gender} onChange={(g) => onUpdate(player.id, { gender: g })} />
@@ -103,10 +109,10 @@ function PlayerRow({
 function GenderToggle({ value, onChange }: { value: Gender; onChange: (g: Gender) => void }) {
   const { t } = useTranslation();
   return (
-    // biome-ignore lint/a11y/useSemanticElements: this is a custom pill-styled toggle of two aria-pressed buttons; a native <fieldset> would require a <legend> and impose default form styling/semantics that break the inline-flex rounded pill layout. role="group" + aria-label is the correct ARIA for this grouping.
+    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- this is a custom pill-styled toggle of two aria-pressed buttons; a native <fieldset> would require a <legend> and impose default form styling/semantics that break the inline-flex rounded pill layout. role="group" + aria-label is the correct ARIA for this grouping.
     <div
       role="group"
-      aria-label="Geschlecht"
+      aria-label={t("players.genderLabel")}
       className="inline-flex items-center rounded-full bg-surface-sunken p-0.5 text-xs"
     >
       <button
@@ -115,7 +121,7 @@ function GenderToggle({ value, onChange }: { value: Gender; onChange: (g: Gender
         aria-pressed={value === "F"}
         aria-label={t("gender.female")}
         className={[
-          "inline-flex items-center justify-center min-h-[36px] min-w-[36px] rounded-full px-2.5 font-semibold transition-colors",
+          "inline-flex items-center justify-center min-h-11 min-w-11 rounded-full px-2.5 font-semibold transition-colors",
           value === "F" ? "bg-clay text-white shadow-sm" : "text-fg-muted hover:text-fg",
         ].join(" ")}
       >
@@ -127,7 +133,7 @@ function GenderToggle({ value, onChange }: { value: Gender; onChange: (g: Gender
         aria-pressed={value === "M"}
         aria-label={t("gender.male")}
         className={[
-          "inline-flex items-center justify-center min-h-[36px] min-w-[36px] rounded-full px-2.5 font-semibold transition-colors",
+          "inline-flex items-center justify-center min-h-11 min-w-11 rounded-full px-2.5 font-semibold transition-colors",
           value === "M" ? "bg-court text-white shadow-sm" : "text-fg-muted hover:text-fg",
         ].join(" ")}
       >
@@ -205,6 +211,7 @@ export function PlayersPanel({
             ref={nameInputRef}
             type="text"
             placeholder={t("players.namePlaceholder")}
+            aria-label={t("players.namePlaceholder")}
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
@@ -234,11 +241,11 @@ export function PlayersPanel({
       {players.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] uppercase tracking-wider font-semibold text-fg-subtle">
-            Sort
+            {t("players.sortLabel")}
           </span>
           <SortPill onClick={() => onSort("name")}>A→Z</SortPill>
-          <SortPill onClick={() => onSort("women-first")}>♀ first</SortPill>
-          <SortPill onClick={() => onSort("men-first")}>♂ first</SortPill>
+          <SortPill onClick={() => onSort("women-first")}>{t("players.sortWomenFirst")}</SortPill>
+          <SortPill onClick={() => onSort("men-first")}>{t("players.sortMenFirst")}</SortPill>
         </div>
       )}
 
@@ -310,7 +317,7 @@ function ContinueBar({
         <div className="flex-1 min-w-0 text-sm">
           {ready ? (
             <span className="text-fg-muted">
-              <span className="font-semibold text-fg tabular">{count}</span> Teilnehmer:innen bereit
+              <span className="tabular">{t("players.ready", { count })}</span>
             </span>
           ) : (
             <span className="text-fg-muted">
@@ -339,7 +346,7 @@ function SortPill({ children, onClick }: { children: React.ReactNode; onClick: (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center rounded-full bg-surface-sunken hover:bg-surface-muted px-3 py-1 text-xs font-medium text-fg-muted hover:text-fg transition-colors min-h-[32px]"
+      className="inline-flex items-center rounded-full bg-surface-sunken hover:bg-surface-muted px-3 py-1 text-xs font-medium text-fg-muted hover:text-fg transition-colors min-h-11"
     >
       {children}
     </button>
@@ -358,6 +365,7 @@ function BulkImportSheet({
   defaultGender: Gender;
 }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [raw, setRaw] = useState("");
 
   const parsed = raw
@@ -384,6 +392,9 @@ function BulkImportSheet({
     });
     setRaw("");
     onClose();
+    if (parsed.length > 0) {
+      toast({ variant: "success", title: t("players.bulkImport.done", { count: parsed.length }) });
+    }
   };
 
   return (
@@ -398,13 +409,14 @@ function BulkImportSheet({
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           placeholder={t("players.bulkImport.placeholder")}
+          aria-label={t("players.bulkImport.title")}
           rows={8}
           className="w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm font-mono focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none resize-y"
         />
         {parsed.length > 0 && (
           <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
             {parsed.slice(0, 12).map((p, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: read-only preview of free-text-parsed players that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
+              // oxlint-disable-next-line react/no-array-index-key -- read-only preview of free-text-parsed players that may contain duplicate names; the positional index is needed to keep keys unique within this static list.
               <Pill key={`${p.name}-${i}`} tone={p.gender === "F" ? "gold" : "brand"}>
                 {p.name} {p.gender === "F" ? "♀" : "♂"}
               </Pill>

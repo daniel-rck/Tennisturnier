@@ -1,89 +1,19 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { assignGroups, groupStandings, resolveGroupAssignment } from "../groupScheduler";
+import { useCallback, useMemo } from "react";
 import { type TranslationKey, useTranslation } from "../i18n";
-import { buildBracket, entrySlots, groupAdvanceSlots, resolveBracket } from "../knockoutScheduler";
-import type { BracketMatch, Tournament } from "../types";
+import { humanMatchLabel, resolveBracket } from "../knockoutScheduler";
+import { groupRankLookup } from "../structure";
+import type { Tournament } from "../types";
 import { EmptyState } from "./EmptyState";
 import { ScoreInput } from "./ScoreInput";
 
 interface Props {
   tournament: Tournament;
-  onSetBracket: (bracket: BracketMatch[]) => void;
   onScore: (matchId: string, a: number | undefined, b: number | undefined) => void;
 }
 
-export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
+export function BracketPanel({ tournament, onScore }: Props) {
   const { t } = useTranslation();
-  const groupWinners = useMemo(() => {
-    if (tournament.format !== "groups-ko") return undefined;
-    const groups =
-      tournament.groupAssignment.length === tournament.groupCount
-        ? resolveGroupAssignment(tournament.entries, tournament.groupAssignment)
-        : assignGroups(tournament.entries, tournament.groupCount).groups;
-    const map = new Map<string, string>();
-    groups.forEach((g, gi) => {
-      const standings = groupStandings(
-        g,
-        tournament.groupSchedule.filter((m) => m.group === gi + 1),
-      );
-      standings.forEach((s, ri) => {
-        map.set(`${gi + 1}|${ri + 1}`, s.entryId);
-      });
-    });
-    return (group: number, rank: number) => map.get(`${group}|${rank}`);
-  }, [
-    tournament.format,
-    tournament.entries,
-    tournament.groupCount,
-    tournament.groupAssignment,
-    tournament.groupSchedule,
-  ]);
-
-  const desired = useMemo(() => {
-    const opts = { thirdPlaceMatch: tournament.thirdPlaceMatch };
-    if (tournament.format === "knockout") {
-      return buildBracket(entrySlots(tournament.entries.map((e) => e.id)), opts);
-    }
-    if (tournament.format === "groups-ko") {
-      return buildBracket(
-        groupAdvanceSlots(tournament.groupCount, tournament.advancePerGroup),
-        opts,
-      );
-    }
-    return [];
-  }, [
-    tournament.format,
-    tournament.entries,
-    tournament.groupCount,
-    tournament.advancePerGroup,
-    tournament.thirdPlaceMatch,
-  ]);
-
-  // Sync bracket structure when entry / format / advancePerGroup changes
-  useEffect(() => {
-    const sameStructure =
-      tournament.bracket.length === desired.length &&
-      desired.every((d, i) => {
-        const cur = tournament.bracket[i];
-        return (
-          cur &&
-          cur.matchId === d.matchId &&
-          cur.round === d.round &&
-          cur.position === d.position &&
-          slotEq(cur.slotA, d.slotA) &&
-          slotEq(cur.slotB, d.slotB)
-        );
-      });
-    if (!sameStructure) {
-      const scoreMap = new Map<string, { a?: number; b?: number }>();
-      for (const m of tournament.bracket) scoreMap.set(m.matchId, { a: m.scoreA, b: m.scoreB });
-      const merged = desired.map((d) => {
-        const s = scoreMap.get(d.matchId);
-        return { ...d, scoreA: s?.a, scoreB: s?.b };
-      });
-      onSetBracket(merged);
-    }
-  }, [desired, tournament.bracket, onSetBracket]);
+  const groupWinners = useMemo(() => groupRankLookup(tournament), [tournament]);
 
   const entryName = useCallback(
     (id: string) => tournament.entries.find((e) => e.id === id)?.name ?? "?",
@@ -196,6 +126,7 @@ function BracketCard({
       : hasA || hasB
         ? "partial"
         : "pending";
+  const editable = !m.isByeMatch && m.entryA != null && m.entryB != null;
   const accent =
     !m.isByeMatch && status === "complete"
       ? "border-l-4 border-l-brand"
@@ -207,7 +138,7 @@ function BracketCard({
     <div className={`rounded-md border border-border bg-surface p-2 text-sm ${accent}`}>
       <div className="flex items-center justify-between gap-2 mb-1 text-xs">
         <span className="text-fg-muted">
-          {m.matchId === "3P" ? t("bracket.thirdPlace") : m.matchId}
+          {m.matchId === "3P" ? t("bracket.thirdPlace") : humanMatchLabel(m.matchId, t)}
         </span>
         {m.isByeMatch && (
           <span className="rounded bg-fg-subtle/20 text-fg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide font-medium">
@@ -228,7 +159,7 @@ function BracketCard({
       <SlotRow
         label={m.pendingA}
         score={m.scoreA}
-        editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
+        editable={editable}
         winning={aWinning}
         ariaLabel={t("schedule.scoreAria", { team: m.pendingA })}
         onChange={(a) => onScore(m.matchId, a, m.scoreB)}
@@ -236,15 +167,18 @@ function BracketCard({
       <SlotRow
         label={m.pendingB}
         score={m.scoreB}
-        editable={!m.isByeMatch && m.entryA != null && m.entryB != null}
+        editable={editable}
         winning={bWinning}
         ariaLabel={t("schedule.scoreAria", { team: m.pendingB })}
         onChange={(b) => onScore(m.matchId, m.scoreA, b)}
       />
+      {!m.isByeMatch && !editable && (
+        <p className="mt-1 text-xs text-fg-subtle">{t("bracket.waiting")}</p>
+      )}
       {isTie && (
         <p
           role="alert"
-          className="mt-1 text-xs text-danger-fg bg-danger-bg border border-rose-200 rounded px-2 py-1"
+          className="mt-1 text-xs text-danger-fg bg-danger-bg border border-danger-fg/30 rounded px-2 py-1"
         >
           {t("bracket.tieWarning")}
         </p>
@@ -281,13 +215,4 @@ function SlotRow({
       <ScoreInput value={score} onChange={onChange} disabled={!editable} ariaLabel={ariaLabel} />
     </div>
   );
-}
-
-function slotEq(a: BracketMatch["slotA"], b: BracketMatch["slotA"]): boolean {
-  if (a.kind !== b.kind) return false;
-  if (a.kind === "entry" && b.kind === "entry") return a.entryId === b.entryId;
-  if (a.kind === "feeder" && b.kind === "feeder") return a.matchId === b.matchId;
-  if (a.kind === "group-rank" && b.kind === "group-rank")
-    return a.group === b.group && a.rank === b.rank;
-  return true;
 }

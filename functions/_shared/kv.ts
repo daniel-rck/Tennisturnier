@@ -71,7 +71,7 @@ export function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
       "Content-Type": "application/json",
       // Sync API must not be cached by Cloudflare or browsers.
       "Cache-Control": "no-store",
-      ...(init.headers ?? {}),
+      ...init.headers,
     },
   });
 }

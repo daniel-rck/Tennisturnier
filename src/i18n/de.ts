@@ -94,6 +94,16 @@ export const de = {
     'Ein Name pro Zeile. Wahlweise mit „;m" oder „;f" am Ende für Geschlecht (z.B. „Anna;f").',
   "players.bulkImport.placeholder": "Anna\nBen;m\nCarla;f\n…",
   "players.bulkImport.add": "{count} hinzufügen",
+  "players.bulkImport.done": "{count} hinzugefügt",
+  "players.sortLabel": "Sortieren",
+  "players.genderLabel": "Geschlecht",
+  "players.nameLabel": "Name von {name}",
+  "players.ready": "{count} Teilnehmer:innen bereit",
+  "entries.ready": "{count} Teams bereit",
+  "entries.memberLabel": "Mitglied {n}",
+  "scoreInput.decrease": "{label} verringern",
+  "scoreInput.increase": "{label} erhöhen",
+  "wizard.stepsLabel": "Schritte",
   "entries.bulkImport.title": "Mehrere Teams einfügen",
   "entries.bulkImport.descriptionDoubles":
     'Ein Team pro Zeile, Mitglieder mit „&" oder „+" getrennt (z.B. „Anna & Ben").',
@@ -103,9 +113,16 @@ export const de = {
 
   // Score sheet (NEW)
   "scoreSheet.title": "{teamA} vs. {teamB}",
-  "scoreSheet.teamAScore": "Punkte {team}",
+  "scoreSheet.teamScore": "Punkte {team}",
   "scoreSheet.clear": "Score löschen",
   "scoreSheet.done": "Fertig",
+  "match.aria": "{teamA} gegen {teamB}, Ergebnis {scoreA}:{scoreB}",
+  "match.ariaOpen": "{teamA} gegen {teamB}, noch kein Ergebnis",
+  "scoreSheet.hint": "Tippe auf eine Seite, um sie zu wählen – dann auch zweistellig (z. B. 10).",
+  "scoreSheet.backspace": "Letzte Ziffer löschen",
+  "scoreSheet.decrease": "{team}: einen Punkt weniger",
+  "scoreSheet.increase": "{team}: einen Punkt mehr",
+  "scoreSheet.select": "{team} auswählen",
 
   // Common
   "common.cancel": "Abbrechen",
@@ -282,6 +299,7 @@ export const de = {
   "bracket.thirdPlace": "Spiel um Platz 3",
   "bracket.bye": "Freilos",
   "bracket.tieWarning": "Unentschieden im KO – bitte korrigieren, sonst kommt niemand weiter.",
+  "bracket.waiting": "Ergebnis eintragbar, sobald beide Gegner feststehen.",
 
   // Ranking
   "ranking.startReveal": "🎉 Siegerehrung-Show starten",
@@ -346,6 +364,9 @@ export const de = {
   "reveal.unveil2": "🥈 Platz 2 enthüllen",
   "reveal.unveil1": "🥇 Platz 1 enthüllen",
   "reveal.restart": "Show neu starten",
+  "reveal.restartConfirm.title": "Show neu starten?",
+  "reveal.restartConfirm.description": "Alle enthüllten Plätze werden wieder verdeckt.",
+  "reveal.restartConfirm.button": "Neu starten",
   "reveal.dryrun": "Generalprobe",
   "reveal.jumpToWinner": "Sofort zum Sieger springen",
 
@@ -464,6 +485,14 @@ export const de = {
   "toast.loadConfirm.description": '„{name}" laden — das aktuelle Turnier wird überschrieben.',
   "toast.loadConfirm.button": "Laden",
   "toast.loaded": "Turnier geladen",
+  "schedule.regenerateConfirm.title": "Spielplan neu erstellen?",
+  "schedule.regenerateConfirm.description":
+    "Bereits eingetragene Ergebnisse gehen verloren. Mit „Rückgängig“ holst du sie zurück.",
+  "schedule.regenerateConfirm.button": "Neu erstellen",
+  "sync.joinConfirm.title": "Live-Turnier beitreten?",
+  "sync.joinConfirm.description":
+    "Das Turnier mit Code {code} ersetzt dein lokales Turnier. Mit „Rückgängig“ holst du es zurück.",
+  "sync.joinConfirm.button": "Beitreten",
 
   // Update prompt
   "update.title": "Neue Version verfügbar",

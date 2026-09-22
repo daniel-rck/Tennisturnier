@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { playFanfare, playFinale, unlockAudio } from "../bell";
+import { useConfirm } from "../hooks/useConfirm";
 import { useFullscreen } from "../hooks/useFullscreen";
 import { useTranslation } from "../i18n";
 import type { Match, Player, RevealCategory, RevealStep, Round, Tournament } from "../types";
@@ -290,6 +291,7 @@ function RevealController({
   onReset: () => void;
 }) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const buttons: { label: string; target: RevealStep; enabled: boolean }[] = [
     { label: t("reveal.unveil3"), target: 3, enabled: step === 0 },
     { label: t("reveal.unveil2"), target: 2, enabled: step === 3 },
@@ -320,8 +322,16 @@ function RevealController({
       <div className="flex flex-wrap gap-3 items-center pt-1">
         <button
           type="button"
-          onClick={onReset}
-          className="text-xs text-fg-muted hover:text-fg underline"
+          onClick={async () => {
+            const ok = await confirm({
+              title: t("reveal.restartConfirm.title"),
+              description: t("reveal.restartConfirm.description"),
+              confirmLabel: t("reveal.restartConfirm.button"),
+              destructive: true,
+            });
+            if (ok) onReset();
+          }}
+          className="inline-flex items-center min-h-11 px-1 text-xs text-fg-muted hover:text-fg underline"
         >
           {t("reveal.restart")}
         </button>

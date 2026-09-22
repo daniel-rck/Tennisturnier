@@ -47,12 +47,18 @@ const BACKOFF_MAX_MS = 30_000;
 export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseSyncResult {
   const sync = tournament.sync;
   const role: SyncRole = !sync?.enabled ? "none" : sync.ownerToken ? "owner" : "viewer";
+  // Effects and callbacks key on these primitives, not on the `sync` object:
+  // applied snapshots produce a fresh sync identity each time, but its fields
+  // only change with the session itself.
+  const shareCode = sync?.shareCode;
+  const ownerToken = sync?.ownerToken;
 
   const { t } = useTranslation();
   // Async/long-lived paths (poll loop, push) capture `t` at effect-creation
   // time — keep it in a ref so a mid-session language switch still localises
   // freshly produced error messages.
   const tRef = useRef(t);
+  // oxlint-disable-next-line react/refs -- latest-ref: async poll/push paths must localise with the newest `t`
   tRef.current = t;
 
   const [status, setStatus] = useState<SyncStatus>("disabled");
@@ -73,7 +79,7 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
 
   const doPush = useCallback(
     async (json: string, payload: Tournament): Promise<void> => {
-      if (!sync?.ownerToken) return;
+      if (!shareCode || !ownerToken) return;
       if (pushInFlightRef.current) return;
       pushInFlightRef.current = true;
       try {
@@ -88,11 +94,11 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
           setStatus("connecting");
           let pushed = false;
           try {
-            const res = await fetch(`/api/sync/${sync.shareCode}`, {
+            const res = await fetch(`/api/sync/${shareCode}`, {
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${sync.ownerToken}`,
+                Authorization: `Bearer ${ownerToken}`,
               },
               body: JSON.stringify({ tournament: nextPayload }),
             });
@@ -122,11 +128,11 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
         pushInFlightRef.current = false;
       }
     },
-    [sync?.shareCode, sync?.ownerToken],
+    [shareCode, ownerToken],
   );
 
   useEffect(() => {
-    if (role !== "owner" || !sync) return;
+    if (role !== "owner" || !shareCode) return;
     const payload = stripSync(tournament);
     const json = JSON.stringify(payload);
     if (json === lastPushedRef.current) return;
@@ -140,13 +146,13 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     return () => {
       if (pushTimerRef.current != null) window.clearTimeout(pushTimerRef.current);
     };
-  }, [tournament, role, sync, doPush]);
+  }, [tournament, role, shareCode, doPush]);
 
   // Retry push as soon as the browser reports the connection is back, so that
   // edits made while offline don't sit in localStorage forever waiting for the
   // next change to trigger a sync.
   useEffect(() => {
-    if (role !== "owner" || !sync) return;
+    if (role !== "owner" || !shareCode) return;
     const flushPending = () => {
       const payload = stripSync(tournamentRef.current);
       const json = JSON.stringify(payload);
@@ -162,16 +168,14 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     return () => {
       window.removeEventListener("online", flushPending);
     };
-  }, [role, sync, doPush]);
+  }, [role, shareCode, doPush]);
 
   // ---- Viewer poll --------------------------------------------------------
 
-  // Keyed on shareCode, not the `sync` object: applied snapshots produce a
-  // fresh sync identity each time, but its fields only change with the code —
-  // listing the object would restart the poll loop on every update.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on sync?.shareCode instead of the unstable sync object
   useEffect(() => {
-    if (role !== "viewer" || !sync) return;
+    if (role !== "viewer" || !shareCode) return;
+    // Re-attached to every applied snapshot so we stay in viewer mode.
+    const viewerSync: SyncConfig = { shareCode, enabled: true };
     let cancelled = false;
     let timeoutId: number | null = null;
     let backoff = POLL_INTERVAL_MS;
@@ -192,8 +196,8 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
       try {
         const url =
           versionRef.current > 0
-            ? `/api/sync/${sync.shareCode}?since=${versionRef.current}`
-            : `/api/sync/${sync.shareCode}`;
+            ? `/api/sync/${shareCode}?since=${versionRef.current}`
+            : `/api/sync/${shareCode}`;
         const res = await fetch(url, { method: "GET" });
         if (cancelled) return;
         if (res.status === 304) {
@@ -203,7 +207,7 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
           const body = (await res.json()) as ReadResponse;
           versionRef.current = body.version;
           // Re-attach our local sync config so we stay in viewer mode.
-          applyRemote({ ...body.tournament, sync });
+          applyRemote({ ...body.tournament, sync: viewerSync });
           backoff = POLL_INTERVAL_MS;
           setStatus("live");
           setError(null);
@@ -248,12 +252,13 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("online", onOnline);
     };
-  }, [role, sync?.shareCode, applyRemote]);
+  }, [role, shareCode, applyRemote]);
 
   // ---- Idle when disabled -------------------------------------------------
 
   useEffect(() => {
     if (role === "none") {
+      // oxlint-disable-next-line react/set-state-in-effect -- status mirrors the session lifecycle; leaving it is an external transition
       setStatus("disabled");
       setError(null);
       versionRef.current = 0;
@@ -330,10 +335,10 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     // the share code stops working immediately (matches the button's "Code
     // wird ungültig" promise). Failure is non-fatal — the entry self-cleans
     // after the KV TTL anyway.
-    if (sync?.shareCode && sync.ownerToken) {
-      void fetch(`/api/sync/${sync.shareCode}`, {
+    if (shareCode && ownerToken) {
+      void fetch(`/api/sync/${shareCode}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${sync.ownerToken}` },
+        headers: { Authorization: `Bearer ${ownerToken}` },
         keepalive: true,
       }).catch(() => {
         /* swallow — local cleanup still proceeds */
@@ -344,7 +349,7 @@ export function useSync({ tournament, setSync, applyRemote }: UseSyncArgs): UseS
     setError(null);
     versionRef.current = 0;
     lastPushedRef.current = "";
-  }, [setSync, sync?.shareCode, sync?.ownerToken]);
+  }, [setSync, shareCode, ownerToken]);
 
   return {
     status,

@@ -59,6 +59,9 @@ export interface BracketMatch {
   slotB: BracketSlot;
   scoreA?: number;
   scoreB?: number;
+  /** Entries the score was entered for; a changed pairing clears it (see structure.ts). */
+  playedA?: string;
+  playedB?: string;
 }
 
 export interface Tournament {

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "../i18n";
 import type { ResolvedBracketMatch } from "../knockoutScheduler";
 import { groupLetter, resolveBracket } from "../knockoutScheduler";
+import { groupRankLookup } from "../structure";
 import type { BellVariant, GroupMatch, Match, Round, Tournament } from "../types";
 import { EmptyState } from "./EmptyState";
 import { MatchCard } from "./MatchCard";
@@ -330,19 +331,16 @@ function BracketDashboard({
     [tournament.entries],
   );
 
-  const groupWinners = useMemo(() => {
-    // For pure knockout this is irrelevant; for groups-ko we'd need standings.
-    // Keep simple: no winner resolution from groups for the dashboard preview —
-    // BracketPanel handles the authoritative view.
-    return undefined;
-  }, []);
+  const groupWinners = useMemo(() => groupRankLookup(tournament), [tournament]);
 
   const resolved = useMemo(
     () => resolveBracket(tournament.bracket, entryName, groupWinners, t),
     [tournament.bracket, entryName, groupWinners, t],
   );
 
-  const openMatches = resolved.filter((m) => m.scoreA == null || m.scoreB == null);
+  const openMatches = resolved.filter(
+    (m) => !m.isByeMatch && (m.scoreA == null || m.scoreB == null),
+  );
   if (openMatches.length === 0) {
     return (
       <Card variant="flat" className="p-6 text-center text-sm text-fg-muted">
@@ -362,7 +360,8 @@ function BracketDashboard({
             teamBName={m.pendingB}
             scoreA={m.scoreA}
             scoreB={m.scoreB}
-            readOnly={!isOwner}
+            // Locked until both opponents are known (feeder / group placeholders).
+            readOnly={!isOwner || m.entryA == null || m.entryB == null}
             onChange={(a, b) => onScore(m.matchId, a, b)}
           />
         ))}

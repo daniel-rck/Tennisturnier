@@ -35,7 +35,7 @@ export function SegmentedControl<T extends string>({
       {options.map((opt) => {
         const active = opt.value === value;
         return (
-          // biome-ignore lint/a11y/useSemanticElements: a native <input type="radio"> cannot contain the rich label/description child markup these segmented buttons render, and would break the custom styling. The ARIA radiogroup/radio pattern with aria-checked is the correct accessible equivalent here.
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a native <input type="radio"> cannot contain the rich label/description child markup these segmented buttons render, and would break the custom styling. The ARIA radiogroup/radio pattern with aria-checked is the correct accessible equivalent here.
           <button
             key={opt.value}
             type="button"

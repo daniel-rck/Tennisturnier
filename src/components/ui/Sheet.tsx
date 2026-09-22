@@ -1,5 +1,7 @@
+import { X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
+import { useTranslation } from "../../i18n";
 
 interface Props {
   open: boolean;
@@ -22,7 +24,10 @@ export function Sheet({
   variant = "bottom",
   maxWidth = 480,
 }: Props) {
+  const { t } = useTranslation();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Every MatchCard mounts its own sheet — a fixed id would be duplicated.
+  const titleId = useId();
 
   useEffect(() => {
     const el = dialogRef.current;
@@ -31,17 +36,8 @@ export function Sheet({
     if (!open && el.open) el.close();
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open, onClose]);
-
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss on a native <dialog>; keyboard dismissal is handled by the Escape keydown listener above and the dialog's native cancel behavior.
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- backdrop click-to-dismiss on a native <dialog>; Escape is handled by the dialog's native cancel -> close, which fires onClose.
     <dialog
       ref={dialogRef}
       onClose={onClose}
@@ -53,7 +49,7 @@ export function Sheet({
         "fixed inset-0 m-0 w-full h-full max-w-full max-h-full",
         "overflow-visible",
       ].join(" ")}
-      aria-labelledby={title ? "sheet-title" : undefined}
+      aria-labelledby={title ? titleId : undefined}
     >
       <div
         className={[
@@ -69,16 +65,29 @@ export function Sheet({
             <span className="h-1 w-10 rounded-full bg-border-strong" aria-hidden />
           </div>
         )}
-        {(title || description) && (
-          <div className="px-5 pt-4 pb-3 border-b border-border">
+        <div
+          className={[
+            "flex items-start gap-2 pl-5 pr-2",
+            title || description ? "pt-3 pb-3 border-b border-border" : "pt-2",
+          ].join(" ")}
+        >
+          <div className="flex-1 min-w-0 pt-1">
             {title && (
-              <h2 id="sheet-title" className="text-lg font-semibold">
+              <h2 id={titleId} className="text-lg font-semibold">
                 {title}
               </h2>
             )}
             {description && <p className="text-sm text-fg-muted mt-1">{description}</p>}
           </div>
-        )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("common.close")}
+            className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-md text-fg-muted hover:bg-surface-sunken hover:text-fg"
+          >
+            <X size={20} aria-hidden />
+          </button>
+        </div>
         <div
           className={variant === "center" ? "px-5 py-4" : "px-5 py-4"}
           style={variant === "center" ? { maxWidth } : undefined}
