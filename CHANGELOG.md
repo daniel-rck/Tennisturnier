@@ -37,6 +37,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - KO: Wird ein früheres Ergebnis korrigiert, verschwinden Ergebnisse späterer Runden, deren
   Paarung sich dadurch ändert (vorher blieben sie bei den falschen Teams stehen)
 - KO mit Freilosen gilt nach dem Finale als abgeschlossen
+- KO-Ergebnisse lassen sich erst eintragen, wenn beide Gegner feststehen – auch in der
+  Übersicht und bei Gruppen+KO (Gruppenplätze gelten erst, wenn die Gruppe fertig ist);
+  ein Unentschieden im KO gilt nicht als abgeschlossen
+- Beitreten per Link wartet, bis das lokale Turnier geladen ist (keine Rückfrage übersprungen,
+  kein Überschreiben des beigetretenen Turniers mehr)
 - Rundentimer: Pause behält die Restzeit, abgelaufene Zeit wird angezeigt
 - Statistik zählt alle KO-Runden, nicht nur die erste
 - Namen können wieder mit Leerzeichen getippt werden (Trimmen erst beim Verlassen des Felds)

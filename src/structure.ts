@@ -22,17 +22,22 @@ export function groupsOf(t: Tournament): Entry[][] {
   return resolveGroupAssignment(t.entries, t.groupAssignment);
 }
 
-/** Looks up the entry currently holding `rank` in `group` (groups-ko seeding). */
+/**
+ * Looks up the entry holding `rank` in `group` (groups-ko seeding). A group's
+ * ranks only resolve once all of its matches have a result — before that the
+ * KO slot stays a placeholder and cannot be scored.
+ */
 export function groupRankLookup(
   t: Tournament,
 ): ((group: number, rank: number) => string | undefined) | undefined {
   if (t.format !== "groups-ko") return undefined;
   const map = new Map<string, string>();
   groupsOf(t).forEach((g, gi) => {
-    const standings = groupStandings(
-      g,
-      t.groupSchedule.filter((m) => m.group === gi + 1),
-    );
+    const matches = t.groupSchedule.filter((m) => m.group === gi + 1);
+    const finished =
+      matches.length > 0 && matches.every((m) => m.scoreA != null && m.scoreB != null);
+    if (!finished) return;
+    const standings = groupStandings(g, matches);
     standings.forEach((s, ri) => {
       map.set(`${gi + 1}|${ri + 1}`, s.entryId);
     });
@@ -166,12 +171,12 @@ export function syncBracket(t: Tournament, groupRank = groupRankLookup(t)): Brac
   return bracket;
 }
 
-/** True once every playable KO match has a result (bye matches never get one). */
+/** True once every playable KO match has a decisive result (bye matches never get one). */
 export function isBracketComplete(bracket: BracketMatch[]): boolean {
   if (bracket.length === 0) return false;
   return bracket.every((m) => {
     const isBye = m.slotA.kind === "bye" || m.slotB.kind === "bye";
-    return isBye || (m.scoreA != null && m.scoreB != null);
+    return isBye || (m.scoreA != null && m.scoreB != null && m.scoreA !== m.scoreB);
   });
 }
 

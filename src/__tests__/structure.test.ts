@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveBracket } from "../knockoutScheduler";
 import { defaultTournament } from "../storage";
-import { isBracketComplete, syncStructures } from "../structure";
+import { groupRankLookup, isBracketComplete, syncStructures } from "../structure";
 import type { BracketMatch, Entry, Format, Tournament } from "../types";
 
 const entries = (...names: string[]): Entry[] =>
@@ -74,5 +74,34 @@ describe("isBracketComplete", () => {
     expect(isBracketComplete(t.bracket)).toBe(false);
     t = score(t, "F", 6, 2);
     expect(isBracketComplete(t.bracket)).toBe(true);
+  });
+});
+
+describe("groupRankLookup", () => {
+  it("resolves a group's ranks only once all its matches are scored", () => {
+    let t = make("groups-ko", ["a", "b", "c", "d"]);
+    t = { ...t, groupCount: 1, advancePerGroup: 2, groupAssignment: [] };
+    t = syncStructures(t);
+    expect(groupRankLookup(t)?.(1, 1)).toBeUndefined();
+    const scored = t.groupSchedule.map((m, i) => ({
+      ...m,
+      scoreA: i === t.groupSchedule.length - 1 ? undefined : 6,
+      scoreB: 2,
+    }));
+    t = syncStructures({ ...t, groupSchedule: scored });
+    expect(groupRankLookup(t)?.(1, 1)).toBeUndefined();
+    t = syncStructures({
+      ...t,
+      groupSchedule: t.groupSchedule.map((m) => ({ ...m, scoreA: m.scoreA ?? 6 })),
+    });
+    expect(groupRankLookup(t)?.(1, 1)).toBeDefined();
+  });
+});
+
+describe("isBracketComplete — ties", () => {
+  it("does not count a tied final as decided", () => {
+    let t = make("knockout", ["a", "b"]);
+    t = score(t, "R1-M1", 6, 6);
+    expect(isBracketComplete(t.bracket)).toBe(false);
   });
 });

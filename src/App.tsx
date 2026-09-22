@@ -171,10 +171,12 @@ function App() {
     ? selectedSubTab
     : (subTabs[0]?.id ?? "");
 
-  // Auto-join via ?join=<code> URL param — runs once on first mount.
+  // Auto-join via ?join=<code> URL param — runs once, after idb hydration, so
+  // the local-data check sees the real tournament and loadTournament() can't
+  // overwrite the joined snapshot afterwards.
   const joinedRef = useRef(false);
   useEffect(() => {
-    if (joinedRef.current) return;
+    if (!t.hydrated || joinedRef.current) return;
     const params = new URLSearchParams(window.location.search);
     const code = params.get("join");
     if (!code) return;
@@ -205,7 +207,7 @@ function App() {
       await sync.joinSession(code).catch(() => {});
       clearParam();
     })();
-  }, [sync.joinSession]);
+  }, [t.hydrated, sync.joinSession]);
 
   const handleGenerate = useCallback(async () => {
     const hasScores = t.tournament.schedule.some((r) =>
