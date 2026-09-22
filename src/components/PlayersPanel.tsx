@@ -78,6 +78,10 @@ function PlayerRow({
         type="text"
         value={player.name}
         onChange={(e) => onUpdate(player.id, { name: e.target.value })}
+        onBlur={() => {
+          const trimmed = player.name.trim();
+          if (trimmed !== player.name) onUpdate(player.id, { name: trimmed });
+        }}
         className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
       />
       <GenderToggle value={player.gender} onChange={(g) => onUpdate(player.id, { gender: g })} />

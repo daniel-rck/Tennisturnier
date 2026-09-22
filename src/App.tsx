@@ -25,6 +25,7 @@ import { ROUTES } from "./lib/routes.ts";
 import { AppShell, Button, type NavItem } from "./lib/ui";
 import { generateSchedule } from "./scheduler";
 import { migrate } from "./storage";
+import { isBracketComplete } from "./structure";
 import type { Tournament } from "./types";
 
 // Prep-phase panels pull in @dnd-kit (drag-and-drop) — lazy-load them so that
@@ -62,8 +63,7 @@ function inferPhase(t: ReturnType<typeof useTournament>["tournament"]): PhaseId 
   }
   // knockout / groups-ko
   if (t.entries.length < 2 || t.bracket.length === 0) return "prep";
-  const allDone = t.bracket.every((m) => m.scoreA != null && m.scoreB != null);
-  return allDone ? "results" : "live";
+  return isBracketComplete(t.bracket) ? "results" : "live";
 }
 
 /** The active phase is derived from the URL (see src/lib/router.tsx). */
@@ -179,16 +179,32 @@ function App() {
     const code = params.get("join");
     if (!code) return;
     joinedRef.current = true;
-    sync
-      .joinSession(code)
-      .catch(() => {})
-      .finally(() => {
-        params.delete("join");
-        const next = `${window.location.pathname}${
-          params.toString() ? `?${params.toString()}` : ""
-        }`;
-        window.history.replaceState({}, "", next);
-      });
+    const clearParam = () => {
+      params.delete("join");
+      const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      window.history.replaceState({}, "", next);
+    };
+    void (async () => {
+      // Joining replaces the local tournament — ask first when there is one,
+      // and keep it on the undo stack either way.
+      const local = t.tournament;
+      const hasLocalData = local.players.length > 0 || local.entries.length > 0;
+      if (hasLocalData && local.sync?.shareCode !== code.trim().toUpperCase()) {
+        const ok = await confirm({
+          title: tr("sync.joinConfirm.title"),
+          description: tr("sync.joinConfirm.description", { code }),
+          confirmLabel: tr("sync.joinConfirm.button"),
+          destructive: true,
+        });
+        if (!ok) {
+          clearParam();
+          return;
+        }
+      }
+      t.snapshot();
+      await sync.joinSession(code).catch(() => {});
+      clearParam();
+    })();
   }, [sync.joinSession]);
 
   const handleGenerate = useCallback(() => {
@@ -227,9 +243,12 @@ function App() {
 
   const handleReset = useCallback(() => {
     t.snapshot();
+    // End the live session first, so the owner's share code stops working
+    // instead of lingering on the server until the KV TTL runs out.
+    if (sync.role !== "none") sync.leaveSession();
     t.reset();
     setPhase("prep");
-  }, [t.snapshot, t.reset, setPhase]);
+  }, [t.snapshot, t.reset, setPhase, sync.role, sync.leaveSession]);
 
   const handleNewTournament = useCallback(async () => {
     const ok = await confirm({
@@ -247,9 +266,9 @@ function App() {
   };
 
   const handleExport = () => {
-    const exportable = t.tournament.sync
-      ? { ...t.tournament, sync: { ...t.tournament.sync, ownerToken: undefined } }
-      : t.tournament;
+    // Never export the sync config: without the owner token a re-import would
+    // turn the owner into a viewer of their own session.
+    const { sync: _sync, ...exportable } = t.tournament;
     const blob = new Blob([JSON.stringify(exportable, null, 2)], {
       type: "application/json",
     });
@@ -286,7 +305,8 @@ function App() {
     });
     if (ok) {
       t.snapshot();
-      t.replaceTournament(next);
+      // Keep this device's own sync role; an imported file carries none.
+      t.replaceTournament({ ...next, sync: t.tournament.sync });
       // re-infer phase from new data
       setPhase(inferPhase(next));
       toast({ variant: "success", title: tr("toast.loaded") });
@@ -515,19 +535,13 @@ function App() {
             {phase === "live" && subTab === "groups" && (
               <GroupsPanel
                 tournament={t.tournament}
-                onSetGroupSchedule={t.setGroupSchedule}
                 onScore={t.setGroupScore}
                 onSetGroupCount={t.setGroupCount}
-                onInitGroupAssignment={t.initGroupAssignment}
                 onReshuffle={handleReshuffle}
               />
             )}
             {phase === "live" && subTab === "bracket" && (
-              <BracketPanel
-                tournament={t.tournament}
-                onSetBracket={t.setBracket}
-                onScore={t.setBracketScore}
-              />
+              <BracketPanel tournament={t.tournament} onScore={t.setBracketScore} />
             )}
             {phase === "live" && subTab === "statistics" && (
               <StatisticsPanel tournament={t.tournament} />

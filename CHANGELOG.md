@@ -20,6 +20,19 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Drag-and-Drop-Panels (`@dnd-kit`) werden erst bei Bedarf nachgeladen
 
 ### Behoben
+- Gruppen-, KO- und Gruppen+KO-Turniere lassen sich wieder starten: Gruppenplan und
+  Bracket werden direkt aus den Teams gebaut, statt erst beim Öffnen des jeweiligen Tabs
+  (vorher sprang „Turnier läuft“ zurück in die Vorbereitung)
+- KO: Wird ein früheres Ergebnis korrigiert, verschwinden Ergebnisse späterer Runden, deren
+  Paarung sich dadurch ändert (vorher blieben sie bei den falschen Teams stehen)
+- KO mit Freilosen gilt nach dem Finale als abgeschlossen
+- Rundentimer: Pause behält die Restzeit, abgelaufene Zeit wird angezeigt
+- Statistik zählt alle KO-Runden, nicht nur die erste
+- Namen können wieder mit Leerzeichen getippt werden (Trimmen erst beim Verlassen des Felds)
+- Export enthält keine Sync-Daten mehr; ein Re-Import macht den Owner nicht zum Viewer
+- Beitreten per Link fragt nach, bevor ein lokales Turnier ersetzt wird (und ist rückgängig machbar)
+- „Neues Turnier“ beendet eine laufende Live-Sitzung sauber
+- Geschlechtswechsel verwirft einen Mixed-Spielplan, dessen Paarungen ungültig würden
 - Live-Sync: Netzwerkfehler beim Starten/Beitreten hängen nicht mehr dauerhaft im
   Status „verbinde…“; Viewer-Polling schützt jetzt vor überlappenden Anfragen
 - Owner-Token wird in der Oberfläche maskiert dargestellt (Kopieren weiterhin möglich)

@@ -62,6 +62,10 @@ function EntryRow({
     opacity: isDragging ? 0.5 : 1,
   };
   const memberCount = entryFormat === "singles" ? 1 : 2;
+  const trimMembers = () => {
+    const trimmed = entry.members.map((m) => m.trim());
+    if (trimmed.some((m, i) => m !== entry.members[i])) onUpdate(entry.id, { members: trimmed });
+  };
   return (
     <div
       ref={setNodeRef}
@@ -89,6 +93,7 @@ function EntryRow({
               value={entry.members[0] ?? ""}
               placeholder={t("entries.placeholder.name")}
               onChange={(e) => onUpdate(entry.id, { members: [e.target.value] })}
+              onBlur={trimMembers}
               className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
             />
           </>
@@ -112,6 +117,7 @@ function EntryRow({
                     next[i] = e.target.value;
                     onUpdate(entry.id, { members: next.slice(0, memberCount) });
                   }}
+                  onBlur={trimMembers}
                   className="min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent text-sm"
                 />
               ))}

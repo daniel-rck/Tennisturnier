@@ -455,6 +455,10 @@ export const en: Record<TranslationKey, string> = {
   "toast.loadConfirm.description": 'Load "{name}" — the current tournament will be overwritten.',
   "toast.loadConfirm.button": "Load",
   "toast.loaded": "Tournament loaded",
+  "sync.joinConfirm.title": "Join live tournament?",
+  "sync.joinConfirm.description":
+    "The tournament with code {code} replaces your local tournament. Use “Undo” to get it back.",
+  "sync.joinConfirm.button": "Join",
 
   // Update prompt
   "update.title": "New version available",

@@ -1,3 +1,5 @@
+import { resolveBracket } from "./knockoutScheduler";
+import { groupRankLookup } from "./structure";
 import type { Tournament } from "./types";
 
 export interface BestPartnerOrOpponent {
@@ -177,12 +179,11 @@ export function computePlayerStats(t: Tournament): PlayerStat[] {
     recordMatch(aggs, teamA, teamB, m.scoreA, m.scoreB, nameOfEntryMember);
   }
 
-  for (const m of t.bracket) {
+  // Resolve feeder / group-rank slots, so later KO rounds count too.
+  for (const m of resolveBracket(t.bracket, (id) => id, groupRankLookup(t))) {
     if (m.scoreA == null || m.scoreB == null) continue;
-    const slotEntry = (slot: typeof m.slotA): string | null =>
-      slot.kind === "entry" ? slot.entryId : null;
-    const aId = slotEntry(m.slotA);
-    const bId = slotEntry(m.slotB);
+    const aId = m.entryA;
+    const bId = m.entryB;
     if (!aId || !bId) continue;
     const teamA = expandEntry(aId);
     const teamB = expandEntry(bId);

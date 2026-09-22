@@ -180,4 +180,47 @@ describe("computePlayerStats — groups + bracket", () => {
     });
     expect(computePlayerStats(t)).toEqual([]);
   });
+
+  it("counts later KO rounds once their feeders are decided", () => {
+    const t = baseTournament({
+      format: "knockout",
+      entries: [
+        { id: "e1", name: "A", members: ["Anna"] },
+        { id: "e2", name: "B", members: ["Bob"] },
+        { id: "e3", name: "C", members: ["Cara"] },
+      ],
+      bracket: [
+        {
+          matchId: "R1-M1",
+          round: 1,
+          position: 1,
+          slotA: { kind: "entry", entryId: "e1" },
+          slotB: { kind: "bye" },
+        },
+        {
+          matchId: "R1-M2",
+          round: 1,
+          position: 2,
+          slotA: { kind: "entry", entryId: "e2" },
+          slotB: { kind: "entry", entryId: "e3" },
+          scoreA: 6,
+          scoreB: 2,
+        },
+        {
+          matchId: "F",
+          round: 2,
+          position: 1,
+          slotA: { kind: "feeder", matchId: "R1-M1" },
+          slotB: { kind: "feeder", matchId: "R1-M2" },
+          scoreA: 6,
+          scoreB: 4,
+        },
+      ],
+    });
+    const byName = new Map(computePlayerStats(t).map((s) => [s.name, s]));
+    expect(byName.get("Anna")?.wins).toBe(1);
+    expect(byName.get("Bob")?.wins).toBe(1);
+    expect(byName.get("Bob")?.losses).toBe(1);
+    expect(byName.get("Cara")?.losses).toBe(1);
+  });
 });

@@ -1,89 +1,19 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { assignGroups, groupStandings, resolveGroupAssignment } from "../groupScheduler";
+import { useCallback, useMemo } from "react";
 import { type TranslationKey, useTranslation } from "../i18n";
-import { buildBracket, entrySlots, groupAdvanceSlots, resolveBracket } from "../knockoutScheduler";
-import type { BracketMatch, Tournament } from "../types";
+import { resolveBracket } from "../knockoutScheduler";
+import { groupRankLookup } from "../structure";
+import type { Tournament } from "../types";
 import { EmptyState } from "./EmptyState";
 import { ScoreInput } from "./ScoreInput";
 
 interface Props {
   tournament: Tournament;
-  onSetBracket: (bracket: BracketMatch[]) => void;
   onScore: (matchId: string, a: number | undefined, b: number | undefined) => void;
 }
 
-export function BracketPanel({ tournament, onSetBracket, onScore }: Props) {
+export function BracketPanel({ tournament, onScore }: Props) {
   const { t } = useTranslation();
-  const groupWinners = useMemo(() => {
-    if (tournament.format !== "groups-ko") return undefined;
-    const groups =
-      tournament.groupAssignment.length === tournament.groupCount
-        ? resolveGroupAssignment(tournament.entries, tournament.groupAssignment)
-        : assignGroups(tournament.entries, tournament.groupCount).groups;
-    const map = new Map<string, string>();
-    groups.forEach((g, gi) => {
-      const standings = groupStandings(
-        g,
-        tournament.groupSchedule.filter((m) => m.group === gi + 1),
-      );
-      standings.forEach((s, ri) => {
-        map.set(`${gi + 1}|${ri + 1}`, s.entryId);
-      });
-    });
-    return (group: number, rank: number) => map.get(`${group}|${rank}`);
-  }, [
-    tournament.format,
-    tournament.entries,
-    tournament.groupCount,
-    tournament.groupAssignment,
-    tournament.groupSchedule,
-  ]);
-
-  const desired = useMemo(() => {
-    const opts = { thirdPlaceMatch: tournament.thirdPlaceMatch };
-    if (tournament.format === "knockout") {
-      return buildBracket(entrySlots(tournament.entries.map((e) => e.id)), opts);
-    }
-    if (tournament.format === "groups-ko") {
-      return buildBracket(
-        groupAdvanceSlots(tournament.groupCount, tournament.advancePerGroup),
-        opts,
-      );
-    }
-    return [];
-  }, [
-    tournament.format,
-    tournament.entries,
-    tournament.groupCount,
-    tournament.advancePerGroup,
-    tournament.thirdPlaceMatch,
-  ]);
-
-  // Sync bracket structure when entry / format / advancePerGroup changes
-  useEffect(() => {
-    const sameStructure =
-      tournament.bracket.length === desired.length &&
-      desired.every((d, i) => {
-        const cur = tournament.bracket[i];
-        return (
-          cur &&
-          cur.matchId === d.matchId &&
-          cur.round === d.round &&
-          cur.position === d.position &&
-          slotEq(cur.slotA, d.slotA) &&
-          slotEq(cur.slotB, d.slotB)
-        );
-      });
-    if (!sameStructure) {
-      const scoreMap = new Map<string, { a?: number; b?: number }>();
-      for (const m of tournament.bracket) scoreMap.set(m.matchId, { a: m.scoreA, b: m.scoreB });
-      const merged = desired.map((d) => {
-        const s = scoreMap.get(d.matchId);
-        return { ...d, scoreA: s?.a, scoreB: s?.b };
-      });
-      onSetBracket(merged);
-    }
-  }, [desired, tournament.bracket, onSetBracket]);
+  const groupWinners = useMemo(() => groupRankLookup(tournament), [tournament]);
 
   const entryName = useCallback(
     (id: string) => tournament.entries.find((e) => e.id === id)?.name ?? "?",
@@ -281,13 +211,4 @@ function SlotRow({
       <ScoreInput value={score} onChange={onChange} disabled={!editable} ariaLabel={ariaLabel} />
     </div>
   );
-}
-
-function slotEq(a: BracketMatch["slotA"], b: BracketMatch["slotA"]): boolean {
-  if (a.kind !== b.kind) return false;
-  if (a.kind === "entry" && b.kind === "entry") return a.entryId === b.entryId;
-  if (a.kind === "feeder" && b.kind === "feeder") return a.matchId === b.matchId;
-  if (a.kind === "group-rank" && b.kind === "group-rank")
-    return a.group === b.group && a.rank === b.rank;
-  return true;
 }

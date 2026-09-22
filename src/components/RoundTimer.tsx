@@ -36,10 +36,13 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
   // oxlint-disable-next-line react/refs -- latest-ref: the interval must ring the newest bell variant without restarting
   variantRef.current = bellVariant;
 
-  useEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- follow the configured duration while idle
+  // Follow a changed duration while the clock isn't running. Deliberately not
+  // keyed on `running`: pausing (and expiring) must keep the remaining time.
+  const [prevMinutes, setPrevMinutes] = useState(minutes);
+  if (minutes !== prevMinutes) {
+    setPrevMinutes(minutes);
     if (!running) setRemaining(minutes * 60);
-  }, [minutes, running]);
+  }
 
   useEffect(() => {
     if (!running) return;
@@ -105,7 +108,7 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
             "font-mono text-3xl 2xl:text-5xl tabular-nums " +
             (expired ? "text-danger-fg" : "text-fg")
           }
-          aria-live="polite"
+          role="timer"
         >
           {fmt(remaining)}
         </div>
@@ -187,7 +190,9 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
         </label>
       </div>
       {ringing && (
-        <p className="mt-2 text-sm text-danger-fg font-medium">{t("timer.expired.ringing")}</p>
+        <p role="status" className="mt-2 text-sm text-danger-fg font-medium">
+          {t("timer.expired.ringing")}
+        </p>
       )}
       {expired && !ringing && (
         <p className="mt-2 text-sm text-danger-fg">{t("timer.expired.idle")}</p>

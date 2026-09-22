@@ -464,6 +464,10 @@ export const de = {
   "toast.loadConfirm.description": '„{name}" laden — das aktuelle Turnier wird überschrieben.',
   "toast.loadConfirm.button": "Laden",
   "toast.loaded": "Turnier geladen",
+  "sync.joinConfirm.title": "Live-Turnier beitreten?",
+  "sync.joinConfirm.description":
+    "Das Turnier mit Code {code} ersetzt dein lokales Turnier. Mit „Rückgängig“ holst du es zurück.",
+  "sync.joinConfirm.button": "Beitreten",
 
   // Update prompt
   "update.title": "Neue Version verfügbar",

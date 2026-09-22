@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type SetStateAction, useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { assignGroups } from "../groupScheduler";
 import {
   defaultTournament,
@@ -6,14 +6,13 @@ import {
   migrateFromLocalStorage,
   saveTournament,
 } from "../storage";
+import { syncStructures } from "../structure";
 import type {
   BellVariant,
-  BracketMatch,
   Entry,
   EntryFormat,
   Format,
   Gender,
-  GroupMatch,
   Mode,
   Player,
   RevealCategory,
@@ -31,11 +30,17 @@ const newId = () =>
 
 const UNDO_LIMIT = 10;
 
+const reduceTournament = (prev: Tournament, action: SetStateAction<Tournament>): Tournament =>
+  syncStructures(typeof action === "function" ? action(prev) : action);
+
 export function useTournament() {
   // idb is async, so we start from defaults and hydrate in an effect. `hydrated`
   // gates persistence (so the initial default never clobbers stored data) and
   // lets the UI hold a loading state until the real tournament is read.
-  const [tournament, setTournament] = useState<Tournament>(() => defaultTournament());
+  // Every update runs through syncStructures (a pure reducer), so group
+  // schedule and bracket always match the entries/settings — independent of
+  // which panel is mounted.
+  const [tournament, setTournament] = useReducer(reduceTournament, undefined, defaultTournament);
   const [hydrated, setHydrated] = useState(false);
   const hydratedRef = useRef(false);
   const undoStackRef = useRef<Tournament[]>([]);
@@ -69,12 +74,16 @@ export function useTournament() {
   }, [tournament]);
 
   /** Save current state onto the undo stack. Call before destructive actions. */
+  // Last committed state, read by snapshot() outside of a state updater (an
+  // updater with side effects runs twice under StrictMode).
+  const committedRef = useRef(tournament);
+  useEffect(() => {
+    committedRef.current = tournament;
+  }, [tournament]);
+
   const snapshot = useCallback(() => {
-    setTournament((prev) => {
-      undoStackRef.current = [...undoStackRef.current.slice(-(UNDO_LIMIT - 1)), prev];
-      setUndoDepth(undoStackRef.current.length);
-      return prev;
-    });
+    undoStackRef.current = [...undoStackRef.current.slice(-(UNDO_LIMIT - 1)), committedRef.current];
+    setUndoDepth(undoStackRef.current.length);
   }, []);
 
   const undo = useCallback(() => {
@@ -108,8 +117,17 @@ export function useTournament() {
       setTournament((prev) => ({
         ...prev,
         players: prev.players.map((p) =>
-          p.id === id ? { ...p, ...patch, name: patch.name?.trim() ?? p.name } : p,
+          // Names are stored as typed (trimmed on blur) so a space between
+          // first and last name survives the keystroke.
+          p.id === id ? { ...p, ...patch } : p,
         ),
+        // A gender change can invalidate a mixed schedule's pairings.
+        schedule:
+          patch.gender !== undefined &&
+          prev.mode === "mixed" &&
+          prev.players.some((p) => p.id === id && p.gender !== patch.gender)
+            ? []
+            : prev.schedule,
       })),
     [],
   );
@@ -298,7 +316,8 @@ export function useTournament() {
         ...prev,
         entries: prev.entries.map((e) => {
           if (e.id !== id) return e;
-          const members = patch.members ? patch.members.map((m) => m.trim()) : e.members;
+          // Members are stored as typed (trimmed on blur); deriveEntryName trims.
+          const members = patch.members ?? e.members;
           const explicitName = patch.name?.trim();
           const autoName = deriveEntryName(members);
           // If user typed a name, keep it; if user cleared name, regenerate auto.
@@ -347,20 +366,6 @@ export function useTournament() {
     [],
   );
 
-  /** Default snake-allocate the current entries into groupCount groups. */
-  const initGroupAssignment = useCallback(
-    () =>
-      setTournament((prev) => {
-        if (prev.groupAssignment.length === prev.groupCount) return prev;
-        const { groups } = assignGroups(prev.entries, prev.groupCount);
-        return {
-          ...prev,
-          groupAssignment: groups.map((g) => g.map((e) => e.id)),
-        };
-      }),
-    [],
-  );
-
   /** Re-shuffle group assignment using snake allocation; clears scores. */
   const reshuffleGroups = useCallback(
     () =>
@@ -394,11 +399,6 @@ export function useTournament() {
     [],
   );
 
-  const setGroupSchedule = useCallback(
-    (groupSchedule: GroupMatch[]) => setTournament((prev) => ({ ...prev, groupSchedule })),
-    [],
-  );
-
   const setGroupScore = useCallback(
     (group: number, matchIndex: number, scoreA: number | undefined, scoreB: number | undefined) =>
       setTournament((prev) => ({
@@ -407,11 +407,6 @@ export function useTournament() {
           m.group === group && m.matchIndex === matchIndex ? { ...m, scoreA, scoreB } : m,
         ),
       })),
-    [],
-  );
-
-  const setBracket = useCallback(
-    (bracket: BracketMatch[]) => setTournament((prev) => ({ ...prev, bracket })),
     [],
   );
 
@@ -511,12 +506,9 @@ export function useTournament() {
     removeEntry,
     setEntriesOrder,
     sortEntriesByName,
-    initGroupAssignment,
     reshuffleGroups,
     setMatchScore,
-    setGroupSchedule,
     setGroupScore,
-    setBracket,
     setBracketScore,
     setThirdPlaceMatch,
     setPerGenderRanking,
