@@ -18,13 +18,13 @@ const SIZES: Record<Size, string> = {
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-brand text-white hover:bg-brand-hover disabled:bg-surface-sunken disabled:text-fg-subtle disabled:border disabled:border-dashed disabled:border-border-strong disabled:cursor-not-allowed",
+    "bg-brand text-fg-on-accent hover:bg-brand-hover disabled:bg-surface-sunken disabled:text-fg-subtle disabled:border disabled:border-dashed disabled:border-border-strong disabled:cursor-not-allowed",
   secondary:
     "bg-surface text-fg border border-border-strong hover:border-brand-hover hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed",
   ghost:
     "bg-transparent text-fg-muted hover:text-fg hover:bg-surface-sunken disabled:opacity-50 disabled:cursor-not-allowed",
   danger:
-    "bg-danger-fg text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed",
+    "bg-danger text-fg-on-accent hover:bg-danger-strong disabled:opacity-50 disabled:cursor-not-allowed",
   gold: "bg-gold text-court-deep font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-card",
 };
 
@@ -42,7 +42,6 @@ export function Button({
       type={type}
       className={[
         "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand",
         SIZES[size],
         VARIANTS[variant],
         fullWidth ? "w-full" : "",

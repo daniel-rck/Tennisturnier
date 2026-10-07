@@ -96,7 +96,7 @@ export function PrivacyDialog({ open, onClose }: Props) {
             ref={closeBtnRef}
             type="button"
             onClick={onClose}
-            className="rounded-md bg-brand text-white px-3 py-1.5 text-sm font-medium hover:bg-brand-hover"
+            className="rounded-md bg-brand text-fg-on-accent px-3 py-1.5 text-sm font-medium hover:bg-brand-hover"
           >
             {t("common.close")}
           </button>

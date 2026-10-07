@@ -118,7 +118,7 @@ export function SyncPanel({ tournament, status, role, error, onCreate, onJoin, o
               type="button"
               onClick={handleCreate}
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-md bg-brand px-3 py-1.5 text-sm text-white font-medium hover:bg-brand-hover disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-md bg-brand px-3 py-1.5 text-sm text-fg-on-accent font-medium hover:bg-brand-hover disabled:opacity-50"
             >
               {busy && <Spinner />}
               {busy ? t("sync.starting") : t("sync.start")}

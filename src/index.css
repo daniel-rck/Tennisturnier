@@ -1,16 +1,13 @@
 /*
- * App stylesheet. The design tokens now come from the shared web-base theme
- * (src/lib/ui/theme.css, accent hue 155 = emerald). Everything below maps the
- * app's existing token names + utilities onto that shared system so the whole
- * UI adopts the shared palette, and keeps the app-specific functional bits
- * (manual dark toggle, animations, print, reveal-fullscreen, medal colors).
+ * App stylesheet. The design tokens come from web-base (src/lib/ui/tokens.css,
+ * owned) through the theme.css seam (accent hue 175 = Smaragd). Everything
+ * below maps the app's existing token names + utilities onto that shared
+ * system and keeps the app-specific functional bits (animations, print,
+ * reveal-fullscreen, medal colors). The `dark:` variant — following both the
+ * OS and a forced `data-theme` — comes from tokens.css.
  */
 
 @import "./lib/ui/theme.css";
-
-/* Manual dark toggle via [data-theme="dark"] on <html>, in addition to the
-   shared theme's prefers-color-scheme handling. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
   /* ── App token aliases → shared accent/semantic system ─────────────────
@@ -37,11 +34,12 @@
   --color-clay: var(--color-warning);
   --color-clay-soft: oklch(0.95 0.04 80);
   --color-warn-bg: oklch(0.95 0.05 80);
-  --color-warn-fg: oklch(0.45 0.12 80);
+  /* Text on the warning tint — the shared AA-checked shade, light and dark. */
+  --color-warn-fg: var(--color-warning-fg);
 
-  /* Danger (red) */
+  /* Danger (red). Text on the tint is the shared `--color-danger-fg`; fills
+     use `bg-danger` (hover `bg-danger-strong`) with `text-fg-on-accent`. */
   --color-danger-bg: oklch(0.95 0.04 25);
-  --color-danger-fg: var(--color-danger);
 
   /* Medals — semantic to the podium, no shared equivalent (kept literal). */
   --color-gold: #c9a961;
@@ -69,7 +67,7 @@
 }
 
 @utility btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white min-h-[44px];
+  @apply inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-fg-on-accent min-h-[44px];
   @apply hover:bg-brand-hover transition-colors;
   @apply disabled:bg-surface-sunken disabled:text-fg-subtle disabled:border disabled:border-dashed disabled:border-border-strong disabled:cursor-not-allowed;
 }
@@ -81,8 +79,8 @@
 }
 
 @utility btn-danger {
-  @apply inline-flex items-center justify-center gap-2 rounded-md bg-danger-fg px-4 py-2 text-sm font-medium text-white min-h-[44px];
-  @apply hover:opacity-90 transition-opacity;
+  @apply inline-flex items-center justify-center gap-2 rounded-md bg-danger px-4 py-2 text-sm font-medium text-fg-on-accent min-h-[44px];
+  @apply hover:bg-danger-strong transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
@@ -103,19 +101,9 @@
 }
 
 @layer base {
-  html {
-    color-scheme: light dark;
-  }
-  /* Manual dark toggle: override the shared surface/fg/border tokens. */
+  /* Dark values of the app's own tints (the shared surface/fg tokens flip in
+     tokens.css). Forced dark, then system dark without a forced light. */
   :root[data-theme="dark"] {
-    color-scheme: dark;
-    --color-surface: oklch(0.18 0 0);
-    --color-surface-muted: oklch(0.22 0 0);
-    --color-surface-sunken: oklch(0.14 0 0);
-    --color-border: oklch(0.3 0 0);
-    --color-fg: oklch(0.95 0 0);
-    --color-fg-muted: oklch(0.7 0 0);
-    --color-fg-subtle: oklch(0.55 0 0);
     --color-border-strong: oklch(0.4 0 0);
     --color-brand-soft: oklch(0.3 0.08 var(--accent-h));
     --color-court-soft: oklch(0.3 0.08 var(--accent-h));
@@ -126,7 +114,7 @@
   /* System dark (no manual override set) — keep the app-specific tints in sync
      with the shared theme's media-based surface/fg flip. */
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
+    :root:not([data-theme="light"]) {
       --color-border-strong: oklch(0.4 0 0);
       --color-brand-soft: oklch(0.3 0.08 var(--accent-h));
       --color-court-soft: oklch(0.3 0.08 var(--accent-h));
@@ -269,16 +257,6 @@ html[data-reveal-fullscreen="true"] footer.no-print {
 html[data-reveal-fullscreen="true"] main > div {
   max-width: 100%;
   padding: 2rem 3rem;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms;
-    animation-iteration-count: 1;
-    transition-duration: 0.01ms;
-  }
 }
 
 /* Print stays light — overrides dark tokens. */

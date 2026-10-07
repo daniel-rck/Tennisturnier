@@ -97,7 +97,7 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
         <button
           type="button"
           onClick={silence}
-          className="w-full sm:hidden rounded-md bg-danger-fg px-4 py-4 text-base text-white font-semibold hover:opacity-90 animate-pulse min-h-[60px] mb-3"
+          className="w-full sm:hidden rounded-md bg-danger px-4 py-4 text-base text-fg-on-accent font-semibold hover:bg-danger-strong animate-pulse min-h-[60px] mb-3"
         >
           {t("timer.silence")}
         </button>
@@ -117,7 +117,7 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
             <button
               type="button"
               onClick={silence}
-              className="hidden sm:inline-flex items-center justify-center rounded-md bg-danger-fg px-4 py-2 text-sm text-white font-medium hover:opacity-90 animate-pulse min-w-[8rem] min-h-[44px]"
+              className="hidden sm:inline-flex items-center justify-center rounded-md bg-danger px-4 py-2 text-sm text-fg-on-accent font-medium hover:bg-danger-strong animate-pulse min-w-[8rem] min-h-[44px]"
             >
               {t("timer.silence")}
             </button>
@@ -125,7 +125,7 @@ export function RoundTimer({ minutes, onMinutesChange, bellVariant, onBellVarian
             <button
               type="button"
               onClick={start}
-              className="inline-flex items-center justify-center rounded-md bg-brand px-3 py-2 text-sm text-white font-medium hover:bg-brand-hover min-w-[6rem] min-h-[44px]"
+              className="inline-flex items-center justify-center rounded-md bg-brand px-3 py-2 text-sm text-fg-on-accent font-medium hover:bg-brand-hover min-w-[6rem] min-h-[44px]"
             >
               {remaining > 0 && remaining < minutes * 60 ? t("timer.continue") : t("timer.start")}
             </button>

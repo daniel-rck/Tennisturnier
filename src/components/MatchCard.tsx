@@ -77,7 +77,7 @@ export function MatchCard({
             readOnly
               ? "cursor-default"
               : "cursor-pointer hover:bg-surface-muted active:bg-surface-sunken",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset transition-colors",
+            "focus-visible:-outline-offset-2 transition-colors",
           ].join(" ")}
           aria-label={
             scoreA == null && scoreB == null

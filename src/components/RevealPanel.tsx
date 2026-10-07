@@ -311,7 +311,7 @@ function RevealController({
             className={
               "rounded-md px-3 py-2 text-sm font-medium transition min-h-[44px] " +
               (b.enabled
-                ? "bg-brand text-white hover:bg-brand-hover"
+                ? "bg-brand text-fg-on-accent hover:bg-brand-hover"
                 : "bg-surface-sunken text-fg-subtle cursor-not-allowed")
             }
           >

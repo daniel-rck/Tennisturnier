@@ -105,7 +105,7 @@ export function SubNav({ current, onChange, tabs }: SubNavProps) {
             className={[
               "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors min-h-[36px]",
               active
-                ? "bg-brand text-white"
+                ? "bg-brand text-fg-on-accent"
                 : "bg-surface-sunken text-fg-muted hover:bg-surface-muted hover:text-fg",
             ].join(" ")}
           >

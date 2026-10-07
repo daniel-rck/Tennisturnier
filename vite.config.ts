@@ -29,7 +29,7 @@ export default defineConfig({
         short_name: "Turnier",
         description:
           "Spielplan-Generator für Tennisturniere — gemischtes Doppel, Damen-/Herren-Doppel, freies Doppel.",
-        theme_color: "#15803d",
+        theme_color: "#007e5a",
         background_color: "#f8fafc",
         display: "standalone",
         scope: "/",

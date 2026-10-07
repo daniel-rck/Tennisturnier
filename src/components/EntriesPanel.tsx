@@ -96,7 +96,7 @@ function EntryRow({
               aria-label={t("entries.placeholder.name")}
               onChange={(e) => onUpdate(entry.id, { members: [e.target.value] })}
               onBlur={trimMembers}
-              className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
+              className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand bg-transparent"
             />
           </>
         ) : (
@@ -121,7 +121,7 @@ function EntryRow({
                     onUpdate(entry.id, { members: next.slice(0, memberCount) });
                   }}
                   onBlur={trimMembers}
-                  className="min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent text-sm"
+                  className="min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand bg-transparent text-sm"
                 />
               ))}
             </div>
@@ -240,7 +240,7 @@ export function EntriesPanel({
                 setDrafts(next);
               }}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              className="flex-1 min-w-[8rem] min-h-[44px] rounded-md border border-border-strong bg-surface px-3 py-2 focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none"
+              className="flex-1 min-w-[8rem] min-h-[44px] rounded-md border border-border-strong bg-surface px-3 py-2 focus:border-brand"
             />
           ))}
           <Button onClick={submit} variant="primary" size="md">
@@ -438,7 +438,7 @@ function BulkEntriesSheet({
               : t("entries.bulkImport.placeholderSingles")
           }
           rows={8}
-          className="w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm font-mono focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none resize-y"
+          className="w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm font-mono focus:border-brand resize-y"
         />
         {parsed.length > 0 && (
           <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
