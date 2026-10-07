@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { clearAll } from "../lib/db/index.ts";
 import {
@@ -11,33 +10,15 @@ import {
 const KEY_V2 = "tennisturnier:v2";
 const KEY_V1 = "tennisturnier:v1";
 
-// Minimal in-memory localStorage so the legacy-migration path can be tested
-// without a full DOM environment.
-function makeLocalStorage(): Storage {
-  const m = new Map<string, string>();
-  return {
-    getItem: (k) => m.get(k) ?? null,
-    setItem: (k, v) => {
-      m.set(k, String(v));
-    },
-    removeItem: (k) => {
-      m.delete(k);
-    },
-    clear: () => m.clear(),
-    key: (i) => Array.from(m.keys())[i] ?? null,
-    get length() {
-      return m.size;
-    },
-  } as Storage;
-}
-
+// jsdom provides localStorage and src/test/setup.ts installs fake-indexeddb,
+// so the legacy-migration path runs against the real APIs.
 beforeEach(async () => {
-  globalThis.localStorage = makeLocalStorage();
+  localStorage.clear();
   await clearAll();
 });
 
 afterEach(() => {
-  globalThis.localStorage.clear();
+  localStorage.clear();
 });
 
 describe("idb persistence", () => {
