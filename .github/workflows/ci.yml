@@ -16,10 +16,13 @@ jobs:
   # lint (oxlint + oxfmt) → typecheck (App + SW + Worker) → test (Vitest) → build (SPA + PWA).
   # The Worker deploy is handled by Cloudflare Workers Builds (Git integration).
   ci:
-    uses: daniel-rck/web-base/.github/workflows/web-app-ci.yml@main
+    uses: daniel-rck/web-base/.github/workflows/web-app-ci.yml@v0.6.0
 
   # Fails the build when an owned web-base building block has drifted from the
-  # base. Scaffold seams (theme.css accent, db schema, routes, worker handlers)
-  # are ignored. Swap `@main` for `@v0.3.1` once that tag exists on web-base.
+  # base, a block of the core template is missing, or a leftover is obsolete.
+  # Scaffold seams (theme.css accent, db schema, routes, worker handlers) are
+  # ignored. The CLI runs at the app's stamped `webBase.version`.
   web-base-check:
-    uses: daniel-rck/web-base/.github/workflows/web-base-check.yml@main
+    uses: daniel-rck/web-base/.github/workflows/web-base-check.yml@v0.6.0
+    with:
+      strict: true

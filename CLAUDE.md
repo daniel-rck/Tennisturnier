@@ -45,17 +45,29 @@ bun run build       # SPA + PWA
   `i < arr.length`, Zugriffe nach einem Längen-Check). `noUncheckedIndexedAccess`
   sieht diesen Beweis nicht. `at()` behält eine echte Laufzeitprüfung und wirft
   laut, wenn eine Annahme kippt — ein `!` würde die Prüfung ersatzlos streichen.
-- **Akzent ist `--accent-h: 155`** (Emerald — Tennisplatz). Achtung: das liegt
-  nur 5° neben `--color-success` (150); ein `Badge variant="success"` und ein
-  Accent-Chip sind hier schwer zu unterscheiden. Als Follow-up in web-bases
-  `04-layout-system.md` notiert.
-- **Theme**: Persistenz und der `data-theme`-Vertrag kommen aus
-  `src/lib/ui/useTheme.ts` (web-base). `src/hooks/useTheme.ts` ist nur ein
-  dünner Wrapper, der `cycle()` und den `theme-color`-Meta-Sync ergänzt. Der
-  alte App-Key `tennisturnier:theme` wird in `public/theme-init.js` einmalig
-  nach `theme` migriert — nicht entfernen, solange Nutzer mit altem State existieren.
+- **Akzent ist `--accent-h: 175`** (Smaragd — Tennisplatz), seit web-base 0.6.0
+  mit ≥ 25° Abstand zu `success` (150). `theme_color` ist `#007e5a`
+  (accent-600) in `vite.config.ts` und `index.html`. Die Tokens kommen aus
+  dem owned `src/lib/ui/tokens.css`; `theme.css` setzt nur den Hue, die
+  App-Aliase (`brand`, `court`, Medaillen …) stehen in `src/index.css`.
+- **Theme**: Persistenz, der `data-theme`-Vertrag und der seitenweite Store
+  kommen aus `src/lib/ui/useTheme.ts` (web-base). `src/hooks/useTheme.ts` ist
+  nur ein dünner Wrapper, der `cycle()` und den `theme-color`-Meta-Sync
+  ergänzt (hell `#007e5a`, dunkel `#051410`). Der alte App-Key
+  `tennisturnier:theme` wird in `public/theme-init.js` einmalig nach `theme`
+  migriert — nicht entfernen, solange Nutzer mit altem State existieren.
 - **i18n**: alle UI-Strings über `useTranslation()` / `TranslationKey`. Deshalb
-  hat die App einen eigenen `ThemeToggle` statt des deutschen aus web-base.
+  hat die App einen eigenen `ThemeToggle` (über den `themeToggle`-Slot der
+  `AppShell`) und ein eigenes `src/components/UpdatePrompt.tsx` über web-bases
+  `useAppUpdate()` statt der deutschen Varianten aus web-base. Owned Dateien
+  werden dafür nicht geforkt: `RouteError`, `NotFound`, `OfflineIndicator` und
+  der Skip-Link der `AppShell` sind nur deutsch (Follow-up für web-base).
+- **Router**: `<App/>` ist die Root-Layout-Route (`src/lib/router.tsx`) und
+  hält Shell + Turnier-State. Die Phase kommt aus dem `handle` der passenden
+  Kind-Route (`/`, `/live`, `/ergebnis`); unbekannte Pfade rendern `NotFound`
+  über das `<Outlet/>` in der Shell (vorher Redirect auf `/`).
+- **Worker**: `worker/index.ts` delegiert an `routeRequest()` aus dem owned
+  `worker/base.ts`; `handleApi()` routet nur `/api/sync*` an `functions/`.
 - **Der KV-Binding-Name `TOURNAMENTS`** ist in `functions/_shared/kv.ts`
   fest verdrahtet. In `wrangler.toml` nicht umbenennen.
 
@@ -64,4 +76,11 @@ bun run build       # SPA + PWA
 - **KV-only-Sync statt des `sync`-Templates.** Turnierdaten werden bewusst per
   Share-Code geteilt und sind nicht im selben Sinn schützenswert wie die
   E2E-verschlüsselten Daten anderer Apps. Dokumentiert in `docs/specs/sync.md`.
-- **Eigener `ThemeToggle`** wegen i18n (siehe oben); der Hook ist der geteilte.
+- **Eigener `ThemeToggle` und `UpdatePrompt`** wegen i18n (siehe oben); Hook
+  bzw. `useAppUpdate()` sind die geteilten.
+- **Eigene `vitest.config.ts`** statt der Template-Variante, die die
+  `vite.config.ts` merged: die Tests sind reine Logik und brauchen die
+  React-/Tailwind-/PWA-Plugins nicht. Sie lädt aber `src/test/setup.ts` (jsdom).
+- **`web-base pins` meldet „ahead"**: React 19.3, Vite 8.3, Vitest 5 u. a.
+  liegen über der Pin-Tabelle. Nicht per `pins --apply` absenken — Vitest 5 → 4
+  wäre ein Major-Downgrade.
