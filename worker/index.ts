@@ -1,64 +1,42 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import type { SyncEnv } from "../functions/_shared/kv";
+import type { SyncEnv } from "../functions/_shared/kv.ts";
 import {
   onRequestDelete as deleteSync,
   onRequestGet as readSync,
   onRequestPut as writeSync,
-} from "../functions/api/sync/[code]";
-import { onRequestPost as createSync } from "../functions/api/sync/index";
+} from "../functions/api/sync/[code].ts";
+import { onRequestPost as createSync } from "../functions/api/sync/index.ts";
+import { json, routeRequest } from "./base.ts";
 
-interface Env extends SyncEnv {
+// `TOURNAMENTS` (KV) comes from SyncEnv — the binding name is hard-wired in
+// functions/_shared/kv.ts and wrangler.toml; never rename it.
+export interface Env extends SyncEnv {
   ASSETS: Fetcher;
 }
 
 const CODE_ROUTE = /^\/api\/sync\/([^/]+)$/;
 
+// /healthz, the /api error boundary (a throw becomes a logged 500
+// `{ error: "internal" }`), stale-asset 404s and the SPA fallback live in the
+// owned worker/base.ts.
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
+  fetch: (request, env, ctx) => routeRequest(request, env, ctx, handleApi),
+} satisfies ExportedHandler<Env>;
 
-    if (url.pathname === "/api/sync" || CODE_ROUTE.test(url.pathname)) {
-      try {
-        return await routeSync(request, env, ctx, url);
-      } catch (err) {
-        // Last-resort guard: anything thrown by a sync handler becomes a JSON
-        // 500 instead of an opaque Cloudflare error page, so the client can
-        // surface a useful message.
-        const message = err instanceof Error ? err.message : String(err);
-        return new Response(JSON.stringify({ error: "sync_internal_error", message }), {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-store",
-          },
-        });
-      }
-    }
+/** Everything under `/api`: the KV share-code sync (docs/specs/sync.md). */
+async function handleApi(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const { pathname } = new URL(request.url);
 
-    // Everything else: static SPA from the [assets] binding.
-    return env.ASSETS.fetch(request);
-  },
-};
-
-async function routeSync(
-  request: Request,
-  env: Env,
-  ctx: ExecutionContext,
-  url: URL,
-): Promise<Response> {
-  if (url.pathname === "/api/sync") {
+  if (pathname === "/api/sync") {
     if (request.method === "POST") {
       return createSync(makeCtx(request, env, ctx, {} as never));
     }
     return methodNotAllowed(["POST"]);
   }
 
-  // The outer fetch guard guarantees the path matches CODE_ROUTE here; if it
-  // ever doesn't, surface that as a diagnostic 500 via the catch in fetch()
-  // rather than silently 404'ing.
-  const m = CODE_ROUTE.exec(url.pathname);
-  if (!m) throw new Error(`routeSync: unexpected path ${url.pathname}`);
+  const m = CODE_ROUTE.exec(pathname);
+  if (!m) return json({ error: "not_found" }, 404);
 
   const params = { code: m[1] } as { code: string };
   const fnCtx = makeCtx(request, env, ctx, params);

@@ -1,5 +1,7 @@
-import { type DBSchema, type IDBPDatabase, openDB } from "idb";
+import type { DBSchema } from "idb";
 import type { Tournament } from "../../types.ts";
+import { clearStores } from "./mutations.ts";
+import { createDBOpener } from "./open.ts";
 
 // The app persists a single, current tournament. It lives in the `tournaments`
 // store under a fixed key (out-of-line keys, since Tournament has no own id).
@@ -10,37 +12,22 @@ export interface AppSchema extends DBSchema {
 export const TOURNAMENTS_STORE = "tournaments";
 export const CURRENT_KEY = "current";
 
-const DB_NAME = "tennisturnier";
-const DB_VERSION = 1;
+export const getDB = createDBOpener<AppSchema>({
+  // Never rename: a new name starts every user with an empty database.
+  name: "tennisturnier",
+  version: 1,
+  upgrade(db) {
+    // v1 — the shipped step, unchanged. A schema change bumps `version` and
+    // adds an `if (oldVersion < N)` step below; never edit this one.
+    if (!db.objectStoreNames.contains(TOURNAMENTS_STORE)) {
+      db.createObjectStore(TOURNAMENTS_STORE);
+    }
+  },
+});
 
-let dbPromise: Promise<IDBPDatabase<AppSchema>> | null = null;
-
-export function getDB(): Promise<IDBPDatabase<AppSchema>> {
-  if (!dbPromise) {
-    dbPromise = openDB<AppSchema>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(TOURNAMENTS_STORE)) {
-          db.createObjectStore(TOURNAMENTS_STORE);
-        }
-      },
-    });
-  }
-  return dbPromise;
-}
-
-/** Test helper: wipe all stores in the current DB. */
+/** Wipe every store (tests' `beforeEach`, a "delete all data" action). */
 export async function clearAll(): Promise<void> {
-  const db = await getDB();
-  const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
-  await Promise.all(Array.from(db.objectStoreNames).map((name) => tx.objectStore(name).clear()));
-  await tx.done;
-  notifyMutation("*");
+  await clearStores(await getDB());
 }
 
-/** Notify subscribers of mutations. Channels are per-store. */
-export function notifyMutation(storeName: string): void {
-  if (typeof BroadcastChannel === "undefined") return;
-  const channel = new BroadcastChannel(`db:${storeName}`);
-  channel.postMessage({ type: "mutation", at: Date.now() });
-  channel.close();
-}
+export { notifyMutation } from "./mutations.ts";

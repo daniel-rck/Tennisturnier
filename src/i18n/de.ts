@@ -505,10 +505,6 @@ export const de = {
   "install.title": "Als App installieren (Rechtsklick zum Ausblenden)",
   "install.label": "App installieren",
 
-  // Offline banner
-  "offline.message":
-    "Offline — Änderungen werden lokal gespeichert und synchronisieren, sobald die Verbindung zurück ist.",
-
   // Privacy dialog
   "privacy.title": "Datenschutzerklärung",
   "privacy.intro":

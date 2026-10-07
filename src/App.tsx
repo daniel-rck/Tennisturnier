@@ -1,10 +1,9 @@
 import { MoreHorizontal, Play, Plus, Settings, Trophy, Undo2 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 import { BracketPanel } from "./components/BracketPanel";
 import { Dashboard } from "./components/Dashboard";
 import { GroupsPanel } from "./components/GroupsPanel";
-import { OfflineBanner } from "./components/OfflineBanner";
 import { OnboardingDialog } from "./components/OnboardingDialog";
 import { PrintView } from "./components/PrintView";
 import { RankingPanel } from "./components/RankingPanel";
@@ -15,13 +14,14 @@ import { Spinner } from "./components/Spinner";
 import { StatisticsPanel } from "./components/StatisticsPanel";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { type PhaseId, SubNav } from "./components/ui/PhaseNav";
-import { UpdatePrompt } from "./components/UpdatePrompt";
 import { useConfirm } from "./hooks/useConfirm";
 import { useSync } from "./hooks/useSync";
 import { useToast } from "./hooks/useToast";
 import { useTournament } from "./hooks/useTournament";
 import { useTranslation } from "./i18n";
+import type { PhaseHandle } from "./lib/router.tsx";
 import { ROUTES } from "./lib/routes.ts";
+import { useDocumentTitle } from "./lib/routing/useDocumentTitle.ts";
 import { AppShell, Button, type NavItem } from "./lib/ui";
 import { generateSchedule } from "./scheduler";
 import { migrate } from "./storage";
@@ -66,11 +66,18 @@ function inferPhase(t: ReturnType<typeof useTournament>["tournament"]): PhaseId 
   return isBracketComplete(t.bracket) ? "results" : "live";
 }
 
-/** The active phase is derived from the URL (see src/lib/router.tsx). */
-function phaseFromPath(pathname: string): PhaseId {
-  if (pathname === ROUTES.live) return "live";
-  if (pathname === ROUTES.results) return "results";
-  return "prep";
+/**
+ * The active phase is derived from the URL: the matched phase route's `handle`
+ * (see src/lib/router.tsx). `undefined` means no phase route matched — the
+ * `*` route renders NotFound into the shell.
+ */
+function usePhaseFromRoute(): PhaseId | undefined {
+  const matches = useMatches();
+  for (const m of matches) {
+    const handle = m.handle as PhaseHandle | undefined;
+    if (handle?.phase) return handle.phase;
+  }
+  return undefined;
 }
 
 function pathForPhase(phase: PhaseId): string {
@@ -108,7 +115,9 @@ function App() {
   // Phase is route-driven (/, /live, /ergebnis); sub-tabs stay local state.
   const location = useLocation();
   const navigate = useNavigate();
-  const phase = phaseFromPath(location.pathname);
+  const routePhase = usePhaseFromRoute();
+  const notFound = routePhase === undefined;
+  const phase: PhaseId = routePhase ?? "prep";
   const setPhase = useCallback(
     (p: PhaseId) => {
       navigate(pathForPhase(p));
@@ -355,6 +364,11 @@ function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [canUndo, undo]);
 
+  const phaseLabel = tr(
+    phase === "live" ? "phase.live" : phase === "results" ? "phase.results" : "phase.prep",
+  );
+  useDocumentTitle(notFound ? undefined : phaseLabel);
+
   const navItems: NavItem[] = [
     {
       to: ROUTES.setup,
@@ -385,7 +399,6 @@ function App() {
 
   return (
     <>
-      <OfflineBanner />
       <AppShell
         title={t.tournament.name || tr("app.defaultName")}
         logo={<TennisLogo />}
@@ -434,149 +447,162 @@ function App() {
           </>
         }
       >
-        {/* Sub-tabs — pinned below the app header while the page scrolls.
+        {notFound ? (
+          <Outlet />
+        ) : (
+          <>
+            {/* The header title is branding, not a heading (web-base 0.6.0): the
+            page's <h1> names the tournament and the phase for screen readers. */}
+            <h1 className="sr-only">
+              {(t.tournament.name || tr("app.defaultName")) + " – " + phaseLabel}
+            </h1>
+            {/* Sub-tabs — pinned below the app header while the page scrolls.
             Panels with their own sticky bars offset against header + this row. */}
-        <div className="sticky top-14 z-10 -mx-4 px-4 -mt-2 mb-5 border-b border-border bg-surface">
-          <SubNav current={subTab} onChange={setSubTab} tabs={subTabs} />
-        </div>
+            <div className="sticky top-14 z-10 -mx-4 px-4 -mt-2 mb-5 border-b border-border bg-surface">
+              <SubNav current={subTab} onChange={setSubTab} tabs={subTabs} />
+            </div>
 
-        <div key={`${phase}-${subTab}`} className="animate-fade-in">
-          <Suspense
-            fallback={
-              <div className="py-16 flex justify-center">
-                <Spinner />
-              </div>
-            }
-          >
-            {/* PREP PHASE */}
-            {phase === "prep" && subTab === "setup" && (
-              <SetupWizard
-                name={t.tournament.name}
-                format={t.tournament.format}
-                entryFormat={t.tournament.entryFormat}
-                courts={t.tournament.courts}
-                rounds={t.tournament.rounds}
-                mode={t.tournament.mode}
-                allowPartialFinalRound={t.tournament.allowPartialFinalRound}
-                groupCount={t.tournament.groupCount}
-                advancePerGroup={t.tournament.advancePerGroup}
-                thirdPlaceMatch={t.tournament.thirdPlaceMatch}
-                perGenderRanking={t.tournament.perGenderRanking}
-                onName={t.setName}
-                onFormat={t.setFormat}
-                onEntryFormat={t.setEntryFormat}
-                onCourts={t.setCourts}
-                onRounds={t.setRounds}
-                onMode={t.setMode}
-                onAllowPartialFinalRound={t.setAllowPartialFinalRound}
-                onGroupCount={t.setGroupCount}
-                onAdvancePerGroup={t.setAdvancePerGroup}
-                onThirdPlaceMatch={t.setThirdPlaceMatch}
-                onPerGenderRanking={t.setPerGenderRanking}
-                onFinish={() => {
-                  const next = subTabs.find((s) => s.id !== "setup");
-                  if (next) setSubTab(next.id);
-                }}
-              />
-            )}
-            {phase === "prep" && subTab === "players" && (
-              <PlayersPanel
-                players={t.tournament.players}
-                onAdd={t.addPlayer}
-                onUpdate={t.updatePlayer}
-                onRemove={t.removePlayer}
-                onSort={t.sortPlayersBy}
-                onArrayMove={t.setPlayersOrder}
-                onContinue={() => {
-                  if (t.tournament.schedule.length === 0) handleGenerate();
-                  else setPhase("live");
-                }}
-                continueLabel={
-                  t.tournament.schedule.length === 0
-                    ? tr("dashboard.scheduleButton")
-                    : tr("phase.live")
+            <div key={`${phase}-${subTab}`} className="animate-fade-in">
+              <Suspense
+                fallback={
+                  <div className="py-16 flex justify-center">
+                    <Spinner />
+                  </div>
                 }
-              />
-            )}
-            {phase === "prep" && subTab === "entries" && (
-              <EntriesPanel
-                entries={t.tournament.entries}
-                entryFormat={t.tournament.entryFormat}
-                onAdd={t.addEntry}
-                onUpdate={t.updateEntry}
-                onRemove={t.removeEntry}
-                onReorder={t.setEntriesOrder}
-                onSortByName={t.sortEntriesByName}
-                onContinue={() => setPhase("live")}
-                continueLabel={tr("phase.live")}
-              />
-            )}
+              >
+                {/* PREP PHASE */}
+                {phase === "prep" && subTab === "setup" && (
+                  <SetupWizard
+                    name={t.tournament.name}
+                    format={t.tournament.format}
+                    entryFormat={t.tournament.entryFormat}
+                    courts={t.tournament.courts}
+                    rounds={t.tournament.rounds}
+                    mode={t.tournament.mode}
+                    allowPartialFinalRound={t.tournament.allowPartialFinalRound}
+                    groupCount={t.tournament.groupCount}
+                    advancePerGroup={t.tournament.advancePerGroup}
+                    thirdPlaceMatch={t.tournament.thirdPlaceMatch}
+                    perGenderRanking={t.tournament.perGenderRanking}
+                    onName={t.setName}
+                    onFormat={t.setFormat}
+                    onEntryFormat={t.setEntryFormat}
+                    onCourts={t.setCourts}
+                    onRounds={t.setRounds}
+                    onMode={t.setMode}
+                    onAllowPartialFinalRound={t.setAllowPartialFinalRound}
+                    onGroupCount={t.setGroupCount}
+                    onAdvancePerGroup={t.setAdvancePerGroup}
+                    onThirdPlaceMatch={t.setThirdPlaceMatch}
+                    onPerGenderRanking={t.setPerGenderRanking}
+                    onFinish={() => {
+                      const next = subTabs.find((s) => s.id !== "setup");
+                      if (next) setSubTab(next.id);
+                    }}
+                  />
+                )}
+                {phase === "prep" && subTab === "players" && (
+                  <PlayersPanel
+                    players={t.tournament.players}
+                    onAdd={t.addPlayer}
+                    onUpdate={t.updatePlayer}
+                    onRemove={t.removePlayer}
+                    onSort={t.sortPlayersBy}
+                    onArrayMove={t.setPlayersOrder}
+                    onContinue={() => {
+                      if (t.tournament.schedule.length === 0) handleGenerate();
+                      else setPhase("live");
+                    }}
+                    continueLabel={
+                      t.tournament.schedule.length === 0
+                        ? tr("dashboard.scheduleButton")
+                        : tr("phase.live")
+                    }
+                  />
+                )}
+                {phase === "prep" && subTab === "entries" && (
+                  <EntriesPanel
+                    entries={t.tournament.entries}
+                    entryFormat={t.tournament.entryFormat}
+                    onAdd={t.addEntry}
+                    onUpdate={t.updateEntry}
+                    onRemove={t.removeEntry}
+                    onReorder={t.setEntriesOrder}
+                    onSortByName={t.sortEntriesByName}
+                    onContinue={() => setPhase("live")}
+                    continueLabel={tr("phase.live")}
+                  />
+                )}
 
-            {/* LIVE PHASE */}
-            {phase === "live" && subTab === "overview" && (
-              <Dashboard
-                tournament={t.tournament}
-                isOwner={isOwner}
-                onTimerMinutes={t.setTimerMinutes}
-                onBellVariant={t.setBellVariant}
-                onMatchScore={t.setMatchScore}
-                onGroupScore={t.setGroupScore}
-                onBracketScore={t.setBracketScore}
-                onGotoSetup={() => setPhase("prep")}
-                onGotoSchedule={() => {
-                  const target =
-                    t.tournament.format === "rotation"
-                      ? "schedule"
-                      : t.tournament.format === "knockout"
-                        ? "bracket"
-                        : "groups";
-                  setSubTab(target);
-                }}
-                onGenerate={handleGenerate}
-              />
-            )}
-            {phase === "live" && subTab === "schedule" && (
-              <SchedulePanel
-                tournament={t.tournament}
-                onGenerate={handleGenerate}
-                onTimerMinutes={t.setTimerMinutes}
-                onBellVariant={t.setBellVariant}
-                onScore={t.setMatchScore}
-                warnings={warnings}
-                isGenerating={isGenerating}
-              />
-            )}
-            {phase === "live" && subTab === "groups" && (
-              <GroupsPanel
-                tournament={t.tournament}
-                onScore={t.setGroupScore}
-                onSetGroupCount={t.setGroupCount}
-                onReshuffle={handleReshuffle}
-              />
-            )}
-            {phase === "live" && subTab === "bracket" && (
-              <BracketPanel tournament={t.tournament} onScore={t.setBracketScore} />
-            )}
-            {phase === "live" && subTab === "statistics" && (
-              <StatisticsPanel tournament={t.tournament} />
-            )}
+                {/* LIVE PHASE */}
+                {phase === "live" && subTab === "overview" && (
+                  <Dashboard
+                    tournament={t.tournament}
+                    isOwner={isOwner}
+                    onTimerMinutes={t.setTimerMinutes}
+                    onBellVariant={t.setBellVariant}
+                    onMatchScore={t.setMatchScore}
+                    onGroupScore={t.setGroupScore}
+                    onBracketScore={t.setBracketScore}
+                    onGotoSetup={() => setPhase("prep")}
+                    onGotoSchedule={() => {
+                      const target =
+                        t.tournament.format === "rotation"
+                          ? "schedule"
+                          : t.tournament.format === "knockout"
+                            ? "bracket"
+                            : "groups";
+                      setSubTab(target);
+                    }}
+                    onGenerate={handleGenerate}
+                  />
+                )}
+                {phase === "live" && subTab === "schedule" && (
+                  <SchedulePanel
+                    tournament={t.tournament}
+                    onGenerate={handleGenerate}
+                    onTimerMinutes={t.setTimerMinutes}
+                    onBellVariant={t.setBellVariant}
+                    onScore={t.setMatchScore}
+                    warnings={warnings}
+                    isGenerating={isGenerating}
+                  />
+                )}
+                {phase === "live" && subTab === "groups" && (
+                  <GroupsPanel
+                    tournament={t.tournament}
+                    onScore={t.setGroupScore}
+                    onSetGroupCount={t.setGroupCount}
+                    onReshuffle={handleReshuffle}
+                  />
+                )}
+                {phase === "live" && subTab === "bracket" && (
+                  <BracketPanel tournament={t.tournament} onScore={t.setBracketScore} />
+                )}
+                {phase === "live" && subTab === "statistics" && (
+                  <StatisticsPanel tournament={t.tournament} />
+                )}
 
-            {/* RESULTS PHASE */}
-            {phase === "results" && subTab === "ranking" && (
-              <RankingPanel
-                tournament={t.tournament}
-                isOwner={isOwner}
-                onSetRevealActive={t.setRevealActive}
-                onSetRevealStep={t.setRevealStep}
-                onResetReveal={t.resetReveal}
-              />
-            )}
-            {phase === "results" && subTab === "statistics" && (
-              <StatisticsPanel tournament={t.tournament} />
-            )}
-            {phase === "results" && subTab === "print" && <PrintView tournament={t.tournament} />}
-          </Suspense>
-        </div>
+                {/* RESULTS PHASE */}
+                {phase === "results" && subTab === "ranking" && (
+                  <RankingPanel
+                    tournament={t.tournament}
+                    isOwner={isOwner}
+                    onSetRevealActive={t.setRevealActive}
+                    onSetRevealStep={t.setRevealStep}
+                    onResetReveal={t.resetReveal}
+                  />
+                )}
+                {phase === "results" && subTab === "statistics" && (
+                  <StatisticsPanel tournament={t.tournament} />
+                )}
+                {phase === "results" && subTab === "print" && (
+                  <PrintView tournament={t.tournament} />
+                )}
+              </Suspense>
+            </div>
+          </>
+        )}
 
         <footer className="no-print mt-10 text-center text-xs text-fg-subtle">
           <div className="opacity-70">{tr("app.tagline")}</div>
@@ -597,7 +623,6 @@ function App() {
         onExport={handleExport}
         onImport={handleImport}
       />
-      <UpdatePrompt />
       {showOnboarding && <OnboardingDialog onDone={finishOnboarding} onImport={handleImport} />}
     </>
   );
