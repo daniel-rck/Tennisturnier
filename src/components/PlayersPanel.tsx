@@ -84,7 +84,7 @@ function PlayerRow({
           const trimmed = player.name.trim();
           if (trimmed !== player.name) onUpdate(player.id, { name: trimmed });
         }}
-        className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand focus:ring-1 focus:ring-brand outline-none bg-transparent"
+        className="flex-1 min-w-0 h-10 rounded-md border border-transparent px-2 hover:border-border focus:border-brand bg-transparent"
       />
       <GenderToggle value={player.gender} onChange={(g) => onUpdate(player.id, { gender: g })} />
       <button
@@ -134,7 +134,7 @@ function GenderToggle({ value, onChange }: { value: Gender; onChange: (g: Gender
         aria-label={t("gender.male")}
         className={[
           "inline-flex items-center justify-center min-h-11 min-w-11 rounded-full px-2.5 font-semibold transition-colors",
-          value === "M" ? "bg-court text-white shadow-sm" : "text-fg-muted hover:text-fg",
+          value === "M" ? "bg-court text-fg-on-accent shadow-sm" : "text-fg-muted hover:text-fg",
         ].join(" ")}
       >
         ♂
@@ -215,7 +215,7 @@ export function PlayersPanel({
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            className="flex-1 min-w-0 min-h-[44px] rounded-md border border-border-strong bg-surface px-3 py-2 focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none"
+            className="flex-1 min-w-0 min-h-[44px] rounded-md border border-border-strong bg-surface px-3 py-2 focus:border-brand"
           />
           <GenderToggle value={draftGender} onChange={setDraftGender} />
           <Button onClick={submit} variant="primary" size="md">
@@ -411,7 +411,7 @@ function BulkImportSheet({
           placeholder={t("players.bulkImport.placeholder")}
           aria-label={t("players.bulkImport.title")}
           rows={8}
-          className="w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm font-mono focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none resize-y"
+          className="w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm font-mono focus:border-brand resize-y"
         />
         {parsed.length > 0 && (
           <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">

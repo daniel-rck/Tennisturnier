@@ -13,7 +13,7 @@ const TONES: Record<Tone, string> = {
   warn: "bg-warn-bg text-warn-fg",
   danger: "bg-danger-bg text-danger-fg",
   gold: "bg-gold-soft text-gold border border-gold/30",
-  live: "bg-danger-fg text-white animate-live-pulse",
+  live: "bg-danger text-fg-on-accent animate-live-pulse",
 };
 
 export function Pill({ tone = "neutral", className = "", children, ...rest }: BadgeProps) {
@@ -46,7 +46,7 @@ export function TogglePill({
       className={[
         "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors min-h-[36px]",
         active
-          ? "bg-brand text-white"
+          ? "bg-brand text-fg-on-accent"
           : "bg-surface-sunken text-fg-muted hover:bg-surface-muted hover:text-fg",
         className,
       ].join(" ")}

@@ -496,10 +496,6 @@ export const en: Record<TranslationKey, string> = {
   "install.title": "Install as an app (right-click to hide)",
   "install.label": "Install app",
 
-  // Offline banner
-  "offline.message":
-    "Offline — changes are stored locally and will sync when the connection returns.",
-
   // Privacy dialog
   "privacy.title": "Privacy policy",
   "privacy.intro":

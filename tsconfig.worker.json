@@ -12,6 +12,7 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
     "types": ["@cloudflare/workers-types"]
   },
   "include": ["worker/**/*.ts", "functions/**/*.ts"],

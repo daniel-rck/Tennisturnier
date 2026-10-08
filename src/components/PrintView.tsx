@@ -32,7 +32,7 @@ export function PrintView({ tournament }: Props) {
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-md bg-brand px-4 py-2 text-white text-sm font-medium hover:bg-brand-hover"
+          className="rounded-md bg-brand px-4 py-2 text-fg-on-accent text-sm font-medium hover:bg-brand-hover"
           disabled={!hasContent}
         >
           {t("print.button")}

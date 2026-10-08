@@ -9,9 +9,26 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefügt
 - Badges, prägnanter README, CONTRIBUTING-Leitfaden, Issue- und PR-Templates
+- „Zum Inhalt springen“-Link für Tastatur-Nutzer:innen (erstes fokussierbares Element)
+- Offline-Hinweis als Badge im Header (ersetzt das bisherige Offline-Banner)
+- Fehlerseite statt leerer Seite bei Fehlern in der Navigation; nach einem Deploy
+  mit fehlenden Programmteilen gibt es „Neu laden“
+- „Seite nicht gefunden“ für unbekannte Adressen (vorher stille Weiterleitung auf die Startseite)
+- Seitentitel im Browser-Tab nennt die aktuelle Phase (z. B. „Turnier läuft · Tennisturnier-Planer“)
+- Update-Hinweis prüft stündlich auf neue Versionen, auch wenn die App lange offen bleibt
 
 ### Geändert
 - Tooling: web-base 0.5.0 — Lint/Format mit oxlint + oxfmt statt Biome
+- web-base 0.6.0: neue Akzentfarbe Smaragd (Hue 175 statt 155) mit klarem Abstand zum
+  Erfolgs-Grün; Theme-Farbe der installierten App ist jetzt `#007e5a`
+- Kräftigere Akzent- und Gefahr-Töne: Text auf Buttons und Hinweisen erreicht überall
+  WCAG AA (4,5:1), auch im Dark Mode
+- Tastaturfokus als echter Fokusrahmen statt Schatten-Ring — bleibt im
+  Windows-Kontrastmodus sichtbar
+- Update-Hinweis sitzt auf dem Handy oberhalb der unteren Navigation
+- Keine Schriftarten mehr von Google Fonts (wurden ohnehin nicht verwendet) — keine
+  Verbindung zu Drittanbietern beim Laden
+- Strengere Sicherheits-Header (Content-Security-Policy, HSTS, Frame-Schutz)
 - Abhängigkeiten aktualisiert (u. a. React 19.3, Vite 8.3, Vitest 5)
 - Build-Stack: Upgrade auf Vite 8, `@vitejs/plugin-react` 6, `vite-plugin-pwa` 1.3 und Vitest 4
 - Vollständige Internationalisierung: Spielplan-/Gruppen-Warnungen, KO-Bracket-Platzhalter
@@ -53,6 +70,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Status „verbinde…“; Viewer-Polling schützt jetzt vor überlappenden Anfragen
 - Owner-Token wird in der Oberfläche maskiert dargestellt (Kopieren weiterhin möglich)
 - `parsePositiveInt` weist negative Eingaben korrekt ab (Fallback statt negativem Wert)
+- Dark Mode nach Systemeinstellung: die aktive Phase in der Navigation wird auch ohne
+  manuell gewähltes Theme dunkel hervorgehoben
+- Warnhinweise sind im Dark Mode wieder lesbar (dunkler Text auf dunklem Grund)
+- Die Browser-Leistenfarbe folgt jetzt dem manuell gewählten Theme
+- Ein in einem anderen Tab gewechseltes Theme wird übernommen
 
 ## [0.1.0] - 2026-05-18
 

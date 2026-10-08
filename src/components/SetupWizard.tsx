@@ -92,7 +92,7 @@ function Stepper({ step }: { step: Step }) {
                 className={[
                   "inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-semibold shrink-0",
                   current
-                    ? "bg-brand text-white"
+                    ? "bg-brand text-fg-on-accent"
                     : reached
                       ? "bg-brand-soft text-brand-soft-fg"
                       : "bg-surface-sunken text-fg-subtle",
@@ -145,7 +145,7 @@ function StepFormat({
           value={name}
           onChange={(e) => onName(e.target.value)}
           placeholder={t("app.defaultName")}
-          className="w-full rounded-md border border-border-strong bg-surface px-3 py-2.5 text-base focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none"
+          className="w-full rounded-md border border-border-strong bg-surface px-3 py-2.5 text-base focus:border-brand"
         />
       </Card>
 
@@ -350,7 +350,7 @@ function NumberField({
         min={min}
         max={max}
         onChange={onChange}
-        className="w-full rounded-md border border-border-strong bg-surface px-3 py-2.5 tabular focus:border-brand focus:ring-2 focus:ring-brand/30 outline-none"
+        className="w-full rounded-md border border-border-strong bg-surface px-3 py-2.5 tabular focus:border-brand"
       />
     </div>
   );

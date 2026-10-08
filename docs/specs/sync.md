@@ -18,7 +18,11 @@ Tennisturnier keeps its **simpler, KV-only** share-code sync:
   (binding `TOURNAMENTS`).
 - An owner token (bearer) authorizes writes/deletes; readers only need the code.
 - Endpoints live under `functions/api/sync/*` and are routed by
-  `worker/index.ts`. Shared helpers (code/token generation, constant-time
+  `handleApi()` in `worker/index.ts`, which the owned web-base router
+  (`routeRequest()` in `worker/base.ts`, since 0.6.0) calls for every `/api`
+  request. Unknown `/api/*` paths answer `404 { "error": "not_found" }`; a
+  throwing handler becomes a logged `500 { "error": "internal" }` (no
+  exception message in the body). Shared helpers (code/token generation, constant-time
   compare, KV access) live in `functions/_shared/kv.ts`.
 - The payload is the tournament JSON, **not** end-to-end encrypted.
 
@@ -44,6 +48,9 @@ Phase 5 of the migration only aligned tooling, not the protocol:
   so CI's `typecheck` covers the worker.
 - `wrangler.toml` `compatibility_date` refreshed; the `TOURNAMENTS` KV binding
   is unchanged.
+- web-base 0.6.0: the worker delegates to `routeRequest()` (see above); the
+  service worker (`src/sw/index.ts`) keeps `/api/*` network-only on top of the
+  owned `registerAppShell()`, so viewers never see a cached snapshot.
 
 ## Revisit when
 

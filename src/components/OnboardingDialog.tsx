@@ -71,7 +71,7 @@ export function OnboardingDialog({ onDone, onImport }: Props) {
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="w-full sm:max-w-md sm:m-4 bg-surface text-fg shadow-xl rounded-t-3xl sm:rounded-2xl outline-none animate-scale-fade-in"
+        className="w-full sm:max-w-md sm:m-4 bg-surface text-fg shadow-xl rounded-t-3xl sm:rounded-2xl focus:outline-hidden animate-scale-fade-in"
       >
         <div key={slide.key} className="px-6 pt-8 pb-4 text-center animate-fade-in">
           <div className="text-6xl mb-4" aria-hidden>
